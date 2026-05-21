@@ -4,6 +4,10 @@ import LoginView from '../components/LoginView.vue';
 
 const routes = [
   {
+    path: '/',
+    redirect: '/login', //Leitet direkt auf die /login weiter wenn man localhost aufruft
+  },
+  {  
     path: '/login',
     name: 'login',
     component: LoginView

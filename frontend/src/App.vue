@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <RouterView />
+  <RouterView /> <!-- hier werden die Router-Seiten eingebnlendet -->
 </template>
 
 <style scoped>
