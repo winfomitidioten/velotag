@@ -5,7 +5,7 @@
             <!-- Logo & Tagline -->
              <div class="header">
                 <img src="@/assets/logo.png" alt="velotag logo" class="logo" />
-                <p class="tagline">Document your rides</p>
+                <p class="tagline">Deine Touren - alle auf einen Blick</p>
              </div>
              
              <!-- Tab-Switcher (Login/Register) -->
@@ -17,25 +17,25 @@
                 <button
                     :class="['tab', activeTab === 'register' ? 'tab--active' : '']"
                     @click="activeTab = 'register'"
-                >Register</button>
+                >Registrierung</button>
               </div>
 
               <!-- Login-Formular -->
                <form v-if="activeTab == 'login'" @submit.prevent="handleLogin">
                     <div class="field">
-                        <label>Email</label>
+                        <label>E-Mail</label>
                         <div class="input-wrapper">
                             <span class="input-icon">✉</span>
                             <input
                                 type="email"
                                 v-model="email"
                                 required
-                                placeholder="your@email.com"
+                                placeholder="deine@email.com"
                             />
                         </div>
                     </div>
                     <div class="field">
-                    <label>Password</label>
+                    <label>Passwort</label>
                     <div class="input-wrapper">
                         <span class="input-icon">🔒</span>
                         <input
@@ -48,10 +48,10 @@
                 </div>
 
                 <button type="submit" class="btn-primary" :disabled="loading">
-                    {{ loading ? 'Loading...' : 'Sign In' }}
+                    {{ loading ? 'Lädt...' : 'Anmelden' }}
                 </button>
 
-                <a class="forgot">Forgot password?</a>
+                <a class="forgot">Passwort vergessen?</a>
                 <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
                </form>
@@ -66,13 +66,13 @@
                         </div>
                     </div>
                     <div class="field">
-                        <label>Password</label>
+                        <label>Passwort</label>
                         <div class="input-wrapper">
                             <span class="input-icon">🔒</span>
                             <input type="password" placeholder="••••••••" />
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary">Register</button>
+                    <button type="submit" class="btn-primary">Registriere dich!</button>
                 </form>
         </div>
     </div>
@@ -99,14 +99,18 @@ const handleLogin = async () => {
         });
         localStorage.setItem('auth_token', response.data.token);
     } catch (error) {
-        if (error.response?.data?.non_field_errors) {
-            errorMessage.value = 'E-Mail oder Passwort ist falsch!';
-        } else if (error.response?.data?.detail) {
-            errorMessage.value = error.response.data.detail;
+        if (error.response) {
+            const data = error.response.data;
+
+            if (data.non_field_errors) {
+                errorMessage.value = 'Es wurde kein Konto mit dieser E-Mail-Adresse gefunden.';
+            } else {
+                errorMessage.value = 'Ungültige Eingabe. Bitte überprüfe deine Daten.';
+            }
         } else if (error.request) {
-            errorMessage.value = 'Keine Verbindung zum Server.';
+            errorMessage.value = 'Verbindung zum Server fehlgeschlagen. Bitte versuche es später noch einmal.';
         } else {
-            errorMessage.value = 'Ein unerwarteter Fehler ist aufgetreten.';
+            errorMessage.value = 'Ein unerwarteter Fehler ist aufgetreten. Versuche es später noch einmal.';
         }
     } finally {
         loading.value = false;
