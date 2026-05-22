@@ -1,9 +1,60 @@
 <script setup>
+    import { ref, onMounted } from 'vue'
+    import axios from 'axios'
 
+    const profile = ref({
+        firstname: '',
+        lastname: '',
+        mail: ''
+    })
+    const newPassword = ref('')
+    const confirmPassword = ref('')
+    const loading = ref(true)
+    const fetchProfile = async () => {
+        try{
+            loading.value = true
+            const response = await axios.get('http://127.0.0.1:8000/api/profil/')
+            profile.value = response.data
+        } catch(err) {
+            console.error('Fehler: ', err)
+        } finally{
+            loading.value = false
+        }
+    }
+
+    const updateProfile = async () => {
+        if(newPassword.value || confirmPassword.value) {
+            if(newPassword.value !== confirmPassword.value) {
+                alert("Die passwörter stimmen nicht über ein")
+                return
+            }
+        }
+        try{
+            const payload = {
+                ...profile.value
+            }
+
+            if(newPassword.value){
+                payload.password = newPassword.value
+            }
+            const response = await axios.patch('http://127.0.0.1:8000/api/profil/', payload)
+
+            profile.value = response.data
+
+            newPassword.value = ""
+            confirmPassword.value = ""
+        } catch(err){
+            console.error('Fehler: ', err)
+        }
+    }
+
+    onMounted(() => {
+        fetchProfile()
+    })
 </script>
 <template>
     <div id="outer-box">
-        <form id="formular">
+        <form id="formular" @submit.prevent="updateProfile">
             <div id="profile-selector" class="input-group">
                 <div id="profile-picture">
                     <img src="../assets/Face.jpeg" id="picture">
@@ -32,11 +83,11 @@
                 <div id="names">
                     <div class="name-field">
                         <label for="vorname">Vorname</label>
-                        <input type="text" placeholder="Vorname" id="vorname">
+                        <input type="text" placeholder="Vorname" id="vorname" v-model="profile.firstname">
                     </div>
                     <div class="name-field">
                         <label for="nachname">Nachname</label>
-                        <input type="text" placeholder="Nachname" id="nachname">
+                        <input type="text" placeholder="Nachname" id="nachname" v-model="profile.lastname">
                     </div>
                 </div>
                 <div class="email-field">
@@ -47,7 +98,7 @@
                         fill="currentColor">
                         <path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm320-280L160-640v400h640v-400L480-440Zm0-80 320-200H160l320 200ZM160-640v-80 480-400Z"/></svg>
                         Email</label>
-                    <input type="email" placeholder="julius@mail.de" id="mail">
+                    <input type="email" placeholder="julius@mail.de" id="mail" v-model="profile.mail">
                 </div>
             </div>
             <div id="password" class="input-group">
@@ -61,11 +112,11 @@
                 <div id="password-change">
                     <div class="name-field">
                         <label>Neues Passwort</label>
-                        <input type="password">
+                        <input type="password" v-model="newPassword">
                     </div>
                     <div class="name-field">
                         <label>Passwort bestätigen</label>
-                        <input type="password">
+                        <input type="password" v-model="confirmPassword">
                     </div>
                 </div>
 
@@ -87,9 +138,9 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
-        background-color: grey
+        background-color: #f5f7f8;
     }
     #formular{
         width: 90%;
@@ -97,12 +148,14 @@
         display: flex;
         flex-direction: column;
         gap: 2rem;
+        margin: auto 0;
     }
     img{
         border-radius: 50%;
         border: 0.3rem solid #0A8B7B;
         width: 7rem;
-        height: auto;
+        height: 7rem;
+        object-fit: cover;
     }
     #img-upload{
         display: none;
@@ -128,13 +181,25 @@
     }
     .input-group{
         background-color: #FAFAFA;
-        padding: 1.5rem;
+        padding: 2rem;
         border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
     #profile-selector{
         display: flex;
         align-items: center;
         gap: 1.5rem;
+    }
+    @media (max-width: 480px) {
+        #profile-selector {
+            flex-direction: column; /* Bild und Text UNTEREINANDER stapeln */
+            text-align: center; /* Text mittig ausrichten */
+            gap: 1.2rem;
+        }
+
+        #profile-text {
+            width: 100%;
+        }
     }
     #profile-picture{
         position: relative;
@@ -148,6 +213,14 @@
         display: flex;
         gap: 1rem;
         width: 100%;
+        align-items: flex-start;
+    }
+    @media (max-width: 480px) {
+        #names, #password-change {
+            flex-direction: column;
+            gap: 1.2rem;
+            align-items: stretch;
+        }
     }
     .name-field, .email-field{
         display: flex;
@@ -159,7 +232,7 @@
         width: 100%;
     }
     input{
-        padding: 0.5rem;
+        padding: 0.75rem;
         border-radius: 0.5rem;
         border: 1px solid black;
         box-sizing: border-box;
@@ -169,6 +242,9 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+    }
+    #password-change, #names, .email-field{
+        margin-top: 1rem;
     }
     #save{
         background-color:#009F8C;
