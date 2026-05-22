@@ -29,6 +29,16 @@
                 return
             }
         }
+
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[a-z])[A-Za-z\d@$!%*?&]{8,20}$/
+        if(!passwordRegex.test(newPassword.value)){
+            alert("Das Passwort erfüllt die Anforderungen nicht!\n\n" +
+                "- Mindestens 8 Zeichen lang\n" +
+                "- Mindestens ein Großbuchstabe\n" +
+                "- Mindestens eine Zahl\n" +
+                "- Mindestens ein Kleinbuchstaben");
+            return;
+        }
         try{
             const payload = {
                 ...profile.value
@@ -255,5 +265,9 @@
         justify-content: center;
         padding: 1rem;
         font-size: medium;
+    }
+    input:focus{
+        outline: none;
+        border-color: #0A8B7B;
     }
 </style>
