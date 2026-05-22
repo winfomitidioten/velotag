@@ -1,59 +1,72 @@
+<script setup>
+</script>
+
+<template>
+  <RouterView />
+</template>
+
+<style>
+/* WICHTIG: Kein "scoped" hier! Diese Regeln müssen für die ganze Seite gelten. */
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+</style>
+
+
+<!-- Code Historie - alter Beispiel-Code von Maxi, nur zum initialen Test?-->
+
+
 <!-- '<script setup>
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
 </script>
-
 <template>
   <header>
     <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
     <div class="wrapper">
       <HelloWorld msg="You did it!" />
     </div>
   </header>
-
   <main>
     <TheWelcome />
   </main>
 </template>
-
 <style scoped>
 header {
   line-height: 1.5;
 }
-
 .logo {
   display: block;
   margin: 0 auto 2rem;
 }
-
 @media (min-width: 1024px) {
   header {
     display: flex;
     place-items: center;
     padding-right: calc(var(--section-gap) / 2);
   }
-
   .logo {
     margin: 0 2rem 0 0;
   }
-
   header .wrapper {
     display: flex;
     place-items: flex-start;
     flex-wrap: wrap;
   }
 }
+  
 </style> -->
 
+<!-- 
 // Beispiel um die Verbindung zu testen
 <script setup>
 import { ref, onMounted } from 'vue'
 import apiClient from '@/api/client'
-
 const message = ref('Warte auf Antwort vom Server...')
 const status = ref('Unbekannt')
-
 onMounted(async () => {
   try {
     const response = await apiClient.get('/routes/test/')
@@ -67,7 +80,6 @@ onMounted(async () => {
   }
 })
 </script>
-
 <template>
   <div id="test-area">
     <h1>Verbindungstest: Django + Vue</h1>
@@ -77,7 +89,6 @@ onMounted(async () => {
     </div>
   </div>
 </template>
-
 <style>
 /* Einfaches CSS, damit man etwas sieht */
 #test-area {
@@ -95,3 +106,5 @@ onMounted(async () => {
   border-radius: 5px;
 }
 </style>
+-->
+
