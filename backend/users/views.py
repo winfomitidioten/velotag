@@ -15,7 +15,7 @@ class ProfileView(APIView):
     def get(self, request):
         user = User.objects.get(username="max.mustermann@stud.de")
         profile, created = UserProfile.objects.get_or_create(user=user)
-        serializer = UserProfileSerializer(user)
+        serializer = UserProfileSerializer(profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def patch(self, request):
@@ -26,7 +26,7 @@ class ProfileView(APIView):
         if new_password:
             user.set_password(new_password)
             user.save()
-        serializer = UserProfileSerializer(profile, data=request.data, file=request.FILES, partial=True)
+        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()

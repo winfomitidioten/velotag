@@ -5,11 +5,20 @@
     const profile = ref({
         firstname: '',
         lastname: '',
-        mail: ''
+        mail: '',
+        profilbild: null
     })
     const newPassword = ref('')
     const confirmPassword = ref('')
-    const loading = ref(true)
+    const loading = ref(false)
+    const selectedFile = ref(null)
+    const previewImage = ref(null)
+    const onFileChange = (event) => {
+        const file = event.target.files[0]
+        if(!file) return
+        selectedFile.value = file
+        previewImage.value = URL.createObjectURL(file)
+    }
     const fetchProfile = async () => {
         try{
             loading.value = true
@@ -28,31 +37,42 @@
                 alert("Die passwörter stimmen nicht über ein")
                 return
             }
-        }
+        
 
-        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[a-z])[A-Za-z\d@$!%*?&]{8,20}$/
-        if(!passwordRegex.test(newPassword.value)){
-            alert("Das Passwort erfüllt die Anforderungen nicht!\n\n" +
-                "- Mindestens 8 Zeichen lang\n" +
-                "- Mindestens ein Großbuchstabe\n" +
-                "- Mindestens eine Zahl\n" +
-                "- Mindestens ein Kleinbuchstaben");
-            return;
+            const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[a-z])[A-Za-z\d@$!%*?&]{8,20}$/
+            if(!passwordRegex.test(newPassword.value)){
+                alert("Das Passwort erfüllt die Anforderungen nicht!\n\n" +
+                    "- Mindestens 8 Zeichen lang\n" +
+                    "- Mindestens ein Großbuchstabe\n" +
+                    "- Mindestens eine Zahl\n" +
+                    "- Mindestens ein Kleinbuchstaben");
+                return;
+            }
         }
         try{
-            const payload = {
-                ...profile.value
-            }
+            const formData = new FormData()
+
+            formData.append('firstname', profile.value.firstname)
+            formData.append('lastname', profile.value.lastname)
+            formData.append('mail', profile.value.mail)
 
             if(newPassword.value){
-                payload.password = newPassword.value
+                formData.append('password', newPassword.value)
             }
-            const response = await axios.patch('http://127.0.0.1:8000/api/profil/', payload)
+            if(selectedFile.value){
+                formData.append('profilbild', selectedFile.value)
+            }
+            const response = await axios.patch('http://127.0.0.1:8000/api/profil/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
 
             profile.value = response.data
 
             newPassword.value = ""
             confirmPassword.value = ""
+            selectedFile.value = null
         } catch(err){
             console.error('Fehler: ', err)
         }
@@ -67,8 +87,8 @@
         <form id="formular" @submit.prevent="updateProfile">
             <div id="profile-selector" class="input-group">
                 <div id="profile-picture">
-                    <img src="../assets/Face.jpeg" id="picture">
-                    <input type="file" accept="image/*" id="img-upload">
+                    <img :src="previewImage || (profile.profilbild ? 'http://127.0.0.1:8000' + profile.profilbild : '/profile_pic.jpg')" id="picture">
+                    <input type="file" accept="image/*" id="img-upload" @change="onFileChange">
                     <label for="img-upload" id="img-upload-button">
                         <svg xmlns="http://www.w3.org/2000/svg" 
                         viewBox="0 -960 960 960" 
