@@ -2,8 +2,15 @@
 </script>
 
 <template>
-  <RouterView /> <!-- hier werden die Router-Seiten eingebnlendet -->
+  <RouterView />
 </template>
 
-<style scoped>
+<style>
+/* WICHTIG: Kein "scoped" hier! Diese Regeln müssen für die ganze Seite gelten. */
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
 </style>
