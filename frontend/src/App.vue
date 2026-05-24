@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 
 
 <!-- Code Historie - alter Beispiel-Code von Maxi, nur zum initialen Test?-->
@@ -70,10 +71,20 @@ onMounted(async () => {
 </template>
 <style>
 html, body {
+=======
+<template>
+  <RouterView />
+</template>
+
+<style>
+/* WICHTIG: Kein "scoped" hier! Diese Regeln müssen für die ganze Seite gelten. */
+html, body, #app {
+>>>>>>> origin/dev
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
+<<<<<<< HEAD
   background-color: #f5f7f8; /* Der sanfte Grauton für die ECHTE gesamte Seite */
   font-family: sans-serif;
   box-sizing: border-box;
@@ -88,3 +99,7 @@ html, body {
 </style>
 -->
 
+=======
+}
+</style>
+>>>>>>> origin/dev
