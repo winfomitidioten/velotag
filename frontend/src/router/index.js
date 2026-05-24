@@ -15,8 +15,8 @@ const routes = [
       path: '/profile',
       name: 'profile',
       component: ProfileView
-  }, // <-- Hier fehlte das Komma
-  { // <-- Hier fehlte die öffnende geschweifte Klammer
+  }, 
+  { 
     path: '/',
     redirect: '/login',
   },
@@ -26,5 +26,10 @@ const routes = [
     component: LoginView
   },
 ];
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: routes
+});
 
 export default router;
