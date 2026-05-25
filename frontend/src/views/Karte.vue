@@ -48,6 +48,7 @@ onMounted(() => {
 
 <template>
   <div id="map"></div>
+  <button class="btn btn-primary" @click="$router.push('/fahrten')">+</button>
 </template>
 
 <style scoped>
@@ -55,5 +56,19 @@ onMounted(() => {
 #map { 
   height: 100vh; 
   width: 100%;
+}
+/* Upload Button "+" */
+.btn.btn-primary {
+  position: absolute;
+  bottom: 20px;
+  right: 10px;
+  z-index: 1000; /* Damit der Button über der Karte liegt */
+  color: white;
+  font-size: 30px;
+  background-color: var(--color-primary);
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
+  border: none;
 }
 </style>
