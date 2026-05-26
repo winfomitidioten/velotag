@@ -3,6 +3,7 @@
 import { onMounted, ref } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
 import L from 'leaflet'
 import velotagLogo from '@/assets/velotag-logo.png'
+import GpxUploadModal from '@/components/GpxUploadModal.vue'
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
 
@@ -51,33 +52,30 @@ onMounted(() => {
 <template>
   <div id="map"></div>
   <button class="btn_popup" @click="showModal = true">+</button>
-    <div v-if="showModal" class="popup">
-      <div class="popup-content">
-        <h2>Fahrt hochladen</h2>
-        <p>.gpx Datei auswählen</p>
-        <div> 
-          <button class = "btn_strava_api">Mit Strava verbinden</button>
-        </div>
-        <div>
-          <button class="btn_upload_manual">Datei auswählen</button>
-        </div>
-        <button class="btn_close_popup" @click="showModal = false">x</button> <!-- mit @click wird die Funktion showModal = false aufgerufen, wenn der Button angeklickt wird, wodurch das Modal geschlossen wird -->
-      </div>
-    </div>
+
+  <GpxUploadModal v-if="showModal" @close="showModal = false" />
 </template>
 
 <style scoped>
-  /* Karte nimmt kompletten Bildschirm ein*/
-  #map { 
-    height: 100vh; 
+  /* Wrapper als Container für die Karte*/
+  .map-wrapper {
+    position: relative; 
+    height: 100vh;
     width: 100%;
   }
+
+  /* Karte füllt Container komplett aus*/
+  #map { 
+    height: 100%; 
+    width: 100%;
+  }
+
   /* Upload Button "+" */
   .btn_popup {
     position: absolute;
     bottom: 20px;
     right: 10px;
-    z-index: 1000; /* Damit der Button über der Karte liegt */
+    z-index: 9999; /* Button mit höchstem z-Index => garantiert immer sichtbar*/
     color: white;
     font-size: 30px;
     background-color: var(--color-primary);
@@ -85,48 +83,6 @@ onMounted(() => {
     width: 50px;
     border-radius: 50%;
     border: none;
+    cursor: pointer; /* Zeigt die Hand beim Hovern */
   }
-
-  /* PopUp Content*/
-  .popup-content {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    position: relative;
-  }
-
-  .btn_close_popup {
-  position: absolute;
-  top: -15px;   /* Positioniert den Button am oberen Rand */
-  right: -15px; /* Positioniert den Button am rechten Rand */
-  z-index: 3000;
-  color: white;
-  font-size: 24px;
-  background-color: var(--color-primary, #dc3545); /* Fallback-Farbe hinzugefügt */
-  height: 40px;
-  width: 40px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  }
-
-  /* Upload PopUp*/
-  .popup {
-    position: fixed;
-    bottom: 20px;
-    right: 10px;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Halbtransparenter Hintergrund */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1001; /* Damit das Popup über dem Button liegt */
-  }
-
 </style>
