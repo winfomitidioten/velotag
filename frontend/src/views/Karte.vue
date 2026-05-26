@@ -1,8 +1,10 @@
 <script setup>
 
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
 import L from 'leaflet'
 import velotagLogo from '@/assets/velotag-logo.png'
+
+const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
 
 onMounted(() => {
  
@@ -48,27 +50,63 @@ onMounted(() => {
 
 <template>
   <div id="map"></div>
-  <button class="btn btn-primary" @click="$router.push('/fahrten')">+</button>
+  <button class="btn btn-popup" @click="showModal = true">+</button>
+    <div v-if="showModal" class="popup">
+      <div class="popup-content">
+        <h2>Fahrt hochladen</h2>
+        <p>.gpx Datei auswählen</p>
+        <div>
+          <button class="btn btn_upload_manual">Datei auswählen</button>
+        </div>
+        <div> 
+          <button class = "btn btn_strava_api">Mit Strava verbinden</button>
+        </div>
+        <button @click="showModal = false">Schließen</button>
+      </div>
+    </div>
 </template>
 
 <style scoped>
-/* Karte nimmt kompletten Bildschirm ein*/
-#map { 
-  height: 100vh; 
-  width: 100%;
-}
-/* Upload Button "+" */
-.btn.btn-primary {
-  position: absolute;
-  bottom: 20px;
-  right: 10px;
-  z-index: 1000; /* Damit der Button über der Karte liegt */
-  color: white;
-  font-size: 30px;
-  background-color: var(--color-primary);
-  height: 50px;
-  width: 50px;
-  border-radius: 50%;
-  border: none;
-}
+  /* Karte nimmt kompletten Bildschirm ein*/
+  #map { 
+    height: 100vh; 
+    width: 100%;
+  }
+  /* Upload Button "+" */
+  .btn.btn-popup {
+    position: absolute;
+    bottom: 20px;
+    right: 10px;
+    z-index: 1000; /* Damit der Button über der Karte liegt */
+    color: white;
+    font-size: 30px;
+    background-color: var(--color-primary);
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    border: none;
+  }
+
+  /* Upload PopUp*/
+  .popup {
+    position: fixed;
+    bottom: 20px;
+    right: 10px;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Halbtransparenter Hintergrund */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001; /* Damit das Popup über dem Button liegt */
+  }
+
+  /* PopUp Content*/
+  .popup-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+
 </style>
