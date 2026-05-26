@@ -149,3 +149,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # In deiner settings.py ganz unten
 MEDIA_URL = '/'  
 MEDIA_ROOT = BASE_DIR  
+
+# Strava Werte aus der .env
+from decouple import config
+STRAVA_CLIENT_ID     = config('STRAVA_CLIENT_ID')
+STRAVA_CLIENT_SECRET = config('STRAVA_CLIENT_SECRET')
