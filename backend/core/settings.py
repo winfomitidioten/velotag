@@ -94,6 +94,15 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [     # CSRF (Cross-Site-Request-Forgery) ausschalten, da wir eine Token-basierte Authentifizierung benutzen
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
