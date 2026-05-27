@@ -1,5 +1,12 @@
 <script setup>
-defineEmits(['close']) //Emits ermöglicht es dem "Kind" Ereigniss an Eltern (Karte) zu senden, z.B. Close-Event, damit die Karte weiß, dass das Modal geschlossen werden soll
+  defineEmits(['close']) //Emits ermöglicht es dem "Kind" Ereigniss an Eltern (Karte) zu senden, z.B. Close-Event, damit die Karte weiß, dass das Modal geschlossen werden soll
+
+  import api from '@/api/api'
+  const connectStrava = async () => {
+    const response = await api.get('strava/connect/')
+    window.location.href = response.data.auth_url
+  }
+
 </script>
 
 <template>
@@ -8,7 +15,7 @@ defineEmits(['close']) //Emits ermöglicht es dem "Kind" Ereigniss an Eltern (Ka
       <h2>Fahrt hochladen</h2>
       <p>.gpx Datei auswählen</p>
       <div> 
-        <button class="btn_strava_api">Mit Strava verbinden</button>
+        <button @click="connectStrava" class="btn_strava_api">Mit Strava verbinden</button>
       </div>
       <div>
         <button class="btn_upload_manual">Datei auswählen</button>
