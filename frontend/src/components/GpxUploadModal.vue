@@ -1,7 +1,9 @@
 <script setup>
+  import api from '@/api/api'
+  import {Dropzone} from 'dropzone'
+
   defineEmits(['close']) //Emits ermöglicht es dem "Kind" Ereigniss an Eltern (Karte) zu senden, z.B. Close-Event, damit die Karte weiß, dass das Modal geschlossen werden soll
 
-  import api from '@/api/api'
   const connectStrava = async () => {
     const response = await api.get('strava/connect/')
     window.location.href = response.data.auth_url
@@ -17,15 +19,21 @@
       <div> 
         <button @click="connectStrava" class="btn_strava_api">Mit Strava verbinden</button>
       </div>
-      <div>
-        <button class="btn_upload_manual">Datei auswählen</button>
+      
+      <div id="myGpxDropzone" class="dropzone">
+        <div class="dz-message">
+          <span>Zieh deine GPX-Datei hierher oder klicke zum Auswählen</span>
+        </div>
       </div>
+
       <button class="btn_close_popup" @click="$emit('close')">x</button> 
     </div>
   </div>
 </template>
 
 <style scoped>
+  @import 'dropzone/dist/dropzone.css';
+
   /* PopUp Content*/
   .popup-content {
     background-color: white;
