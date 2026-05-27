@@ -38,6 +38,7 @@ onMounted(() => {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
+    
   }).addTo(map)
 
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
