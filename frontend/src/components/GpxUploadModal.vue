@@ -17,7 +17,9 @@
       <h2>Fahrt hochladen</h2>
       <p>.gpx Datei auswählen</p>
       <div> 
-        <button @click="connectStrava" class="btn_strava_api">Mit Strava verbinden</button>
+        <a @click="connectStrava"> 
+          <img src="@/assets/btn_strava_connect_with_orange.png" alt="Connect with Strava" />
+        </a>
       </div>
       
       <div id="myGpxDropzone" class="dropzone">
