@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue' //onmounted, da Karte erst nach dem Laden d
 import L from 'leaflet'
 import velotagLogo from '@/assets/velotag-logo.png'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
+import stravaLogo from '@/assets/api_logo_pwrdBy_strava_horiz_orange.png'
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
 
@@ -33,11 +34,11 @@ onMounted(() => {
     position: 'bottomleft' 
   }).addTo(map);
 
-
+  
  //Einbinden der OpenStreetMap-Kartenkacheln, damit die Karte angezeigt wird
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
+    attribution: `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | <img src="${stravaLogo}" height="10"/>` //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
   }).addTo(map)
 
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
