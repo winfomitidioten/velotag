@@ -89,11 +89,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-AUTHENTICATION_BACKENDS = [
-    'users.backend.EmailBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]
-
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [     # CSRF (Cross-Site-Request-Forgery) ausschalten, da wir eine Token-basierte Authentifizierung benutzen
         'rest_framework.authentication.TokenAuthentication',

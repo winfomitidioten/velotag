@@ -11,6 +11,7 @@ from rest_framework.authtoken.models import Token
 from .serializers import UserProfileSerializer
 from .models import UserProfile
 
+
 User = get_user_model()
 
 class ProfileView(APIView):
@@ -48,6 +49,8 @@ class CustomObtainAuthToken(ObtainAuthToken):
         return Response({'token': token.key})
     
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
     def post(self, request):
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
@@ -68,6 +71,7 @@ class RegisterView(APIView):
         
         try:
             user = User.objects.create_user(
+                username=email,
                 email=email,
                 password=password,
                 first_name=first_name,
