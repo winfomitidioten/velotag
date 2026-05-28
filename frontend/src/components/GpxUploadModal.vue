@@ -1,36 +1,17 @@
 <script setup>
   import api from '@/api/api'
-  import { ref } from 'vue' // NEU: ref importiert, da wir einen Zustand überwachen müssen
-  // GELÖSCHT: Der Import von 'dropzone' wurde entfernt, damit es beim Kollegen nicht abstürzt!
+  // NEU: Wir importieren unsere ausgelagerte Logik
+  import { useGPXVerarbeitung } from '@/composables/useGPXVerarbeitung'
 
   defineEmits(['close']) 
 
-  const isDragging = ref(false) // NEU: Reaktivität für den Drag-Zustand hinzugefügt
+  // NEU: Wir entpacken exakt die zwei Dinge, die unser HTML für die Box braucht
+  const { isDragging, onFileDrop } = useGPXVerarbeitung()
 
+  // Die Strava-Logik bleibt hier, da sie ein völlig anderer Geschäftsprozess ist
   const connectStrava = async () => {
     const response = await api.get('strava/connect/')
     window.location.href = response.data.auth_url
-  }
-
-  const onFileDrop = (event) => {
-    isDragging.value = false // Setzt den Zustand nach dem Drop wieder auf grau zurück
-    
-    // Holt sich die Datei aus dem Drag-Event
-    const files = event.dataTransfer.files;
-    
-    if (files.length > 0) {
-      const uploadedFile = files[0];
-      
-      // Ist es wirklich eine GPX-Datei?
-      if (uploadedFile.name.endsWith('.gpx')) {
-        console.log("GPX-Datei erkannt:", uploadedFile.name);
-
-        // Hier kommen API Sende Schritte hin, um die Datei an den Backend-Server zu senden
-
-      } else {
-        alert("Fehler: Bitte lade nur eine echte .gpx-Datei hoch!");
-      }
-    }
   }
 </script>
 
