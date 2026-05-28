@@ -4,6 +4,7 @@ import ProfileView from '../components/ProfileView.vue'
 
 import Karte from '../views/Karte.vue';
 import LoginView from '../components/LoginView.vue'; 
+import GroupView from '../components/GroupView.vue'
 
 const routes = [
   {
@@ -25,6 +26,11 @@ const routes = [
     name: 'login',
     component: LoginView
   },
+  {
+    path: '/group',
+    name: 'group',
+    component: GroupView
+  }
 ];
 
 const router = createRouter({
