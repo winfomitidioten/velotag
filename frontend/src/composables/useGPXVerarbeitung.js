@@ -5,6 +5,7 @@ export function useGPXVerarbeitung() {
 
   const isDragging = ref(false)
   const errorMessage = ref('')
+  const erfolgsMessage = ref('')
 
   // --- DIE ELEGANTE LÖSUNG: Der native Polyline-Encoder ---
   // Diese Helfer-Funktion komprimiert das Array, ohne externe Pakete zu brauchen
@@ -41,10 +42,12 @@ export function useGPXVerarbeitung() {
   const onFileDrop = (event) => {
     isDragging.value = false 
     errorMessage.value = '' // Setzt Fehlermeldungen bei neuem Versuch zurück
+    erfolgsMessage.value = '' // Setzt Erfolgsmeldungen bei neuem Versuch zurück  
     
-    const files = event.dataTransfer.files;
+    // Nimmt Dateien entweder vom Drag & Drop (dataTransfer) oder vom FileChooser (target)
+    const files = event.dataTransfer?.files || event.target?.files;
     
-    if (files.length > 0) {
+    if (files && files.length > 0) {
       const uploadedFile = files[0];
       
       if (uploadedFile.name.endsWith('.gpx')) {
@@ -102,7 +105,8 @@ export function useGPXVerarbeitung() {
             const response = await api.post('routes/create/', payload);
             
             console.log("Leuchtturm 7: ERFOLG! Antwort von Django:", response.data);
-            alert("Die Strecke wurde erfolgreich gespeichert!");
+            //alert("Die Strecke wurde erfolgreich gespeichert!");
+            erfolgsMessage.value = "Die Strecke wurde erfolgreich gespeichert!";
             
           } catch (error) {
             // Wenn IRGENDWAS zwischen Leuchtturm 1 und 7 schiefgeht, landet es HIER:
@@ -122,6 +126,7 @@ export function useGPXVerarbeitung() {
   return {
     isDragging,
     onFileDrop,
-    errorMessage
+    errorMessage,
+    erfolgsMessage
   }
 }
