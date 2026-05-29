@@ -2,6 +2,7 @@ from django.contrib import admin
 # from rest_framework.authtoken.views import obtain_auth_token
 from django.urls import path, include
 from users.views import ProfileView
+from groups.views import GroupView
 from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken, RegisterView
@@ -12,7 +13,8 @@ urlpatterns = [
     path('api/routes/', include('routes.urls')),
     path('api/profil/', ProfileView.as_view(), name='user-profile'),
     path('api/login/', CustomObtainAuthToken.as_view(), name='api_token_auth'),
-    path('api/register/', RegisterView.as_view(), name='register')    
+    path('api/groups/', GroupView.as_view(), name='my-groups'),
+    path('api/register/', RegisterView.as_view(), name='register') 
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

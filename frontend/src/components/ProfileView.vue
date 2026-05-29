@@ -1,6 +1,6 @@
 <script setup>
     import { ref, onMounted } from 'vue'
-    import axios from 'axios'
+    import api from '@/api/api';
 
     const profile = ref({
         firstname: '',
@@ -22,7 +22,7 @@
     const fetchProfile = async () => {
         try{
             loading.value = true
-            const response = await axios.get('http://127.0.0.1:8000/api/profil/')
+            const response = await api.get('profil/')
             profile.value = response.data
         } catch(err) {
             console.error('Fehler: ', err)
@@ -62,7 +62,7 @@
             if(selectedFile.value){
                 formData.append('profilbild', selectedFile.value)
             }
-            const response = await axios.patch('http://127.0.0.1:8000/api/profil/', formData, {
+            const response = await api.patch('profil/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
