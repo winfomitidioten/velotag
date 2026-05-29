@@ -107,7 +107,7 @@ const handleRegister = async () => {
         });
 
         localStorage.setItem('auth_token', response.data.token);
-        router.push('/karte');
+        router.push('/login');
     } catch (error) {
         if (error.response && error.response.data.error) {
             errorMessage.value = error.response.data.error;
