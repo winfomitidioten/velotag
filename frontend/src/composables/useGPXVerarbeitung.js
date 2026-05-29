@@ -4,6 +4,7 @@ import api from '@/api/api'
 export function useGPXVerarbeitung() {
 
   const isDragging = ref(false)
+  const errorMessage = ref('')
 
   // --- DIE ELEGANTE LÖSUNG: Der native Polyline-Encoder ---
   // Diese Helfer-Funktion komprimiert das Array, ohne externe Pakete zu brauchen
@@ -39,6 +40,7 @@ export function useGPXVerarbeitung() {
 
   const onFileDrop = (event) => {
     isDragging.value = false 
+    errorMessage.value = '' // Setzt Fehlermeldungen bei neuem Versuch zurück
     
     const files = event.dataTransfer.files;
     
@@ -105,19 +107,21 @@ export function useGPXVerarbeitung() {
           } catch (error) {
             // Wenn IRGENDWAS zwischen Leuchtturm 1 und 7 schiefgeht, landet es HIER:
             console.error("FATALER FEHLER IM ABLAUF:", error);
+            errorMessage.value = "Beim Verarbeiten der GPX-Datei ist ein Fehler aufgetreten.";
           }
         };
 
         reader.readAsText(uploadedFile);
 
       } else {
-        alert("Fehler: Bitte lade nur eine echte .gpx-Datei hoch!");
+        errorMessage.value = "Fehler: Bitte lade nur eine echte .gpx-Datei hoch!";
       }
     }
   }
 
   return {
     isDragging,
-    onFileDrop
+    onFileDrop,
+    errorMessage
   }
 }

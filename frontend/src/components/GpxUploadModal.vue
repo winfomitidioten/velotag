@@ -6,7 +6,7 @@
   defineEmits(['close']) 
 
   // NEU: Wir entpacken exakt die zwei Dinge, die unser HTML für die Box braucht
-  const { isDragging, onFileDrop } = useGPXVerarbeitung()
+  const { isDragging, onFileDrop, errorMessage } = useGPXVerarbeitung()
 
   // Die Strava-Logik bleibt hier, da sie ein völlig anderer Geschäftsprozess ist
   const connectStrava = async () => {
@@ -20,6 +20,11 @@
     <div class="popup-content">
       <h2>Fahrt hochladen</h2>
       <p>.gpx Datei auswählen</p>
+
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
       <div> 
         <a @click="connectStrava"> 
           <img src="@/assets/btn_strava_connect_with_orange.png" alt="Connect with Strava" />
@@ -52,6 +57,15 @@
     border-radius: 8px;
     text-align: center;
     position: relative;
+  }
+
+  .error-message {
+    background-color: #fee2e2;
+    color: #e53e3e;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
   }
 
   .btn_close_popup {
