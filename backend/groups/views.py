@@ -5,14 +5,16 @@ from django.db.models import Q
 from rest_framework.response import Response
 from .serializers import GroupSerializer
 from .models import Group
+from rest_framework.authentication import TokenAuthentication
 # Create your views here.
 
 class GroupView(APIView):
+    authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        groups = Groub.objects.filter(Q(admin = user) | Q(member=user)).distinct()
+        groups = Group.objects.filter(Q(admin = user) | Q(members=user)).distinct()
 
         serializer = GroupSerializer(groups, many=True, context={'request': request})
 

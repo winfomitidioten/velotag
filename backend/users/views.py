@@ -1,20 +1,21 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User, update_last_login
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
 
 from .serializers import UserProfileSerializer
 from .models import UserProfile
 
 class ProfileView(APIView):
-    permissions_classes = [AllowAny]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        user = User.objects.get(username="max.mustermann@stud.de")
+        user = request.user
         profile, created = UserProfile.objects.get_or_create(user=user)
         serializer = UserProfileSerializer(profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
