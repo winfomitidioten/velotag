@@ -1,8 +1,12 @@
 <script setup>
 
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
 import L from 'leaflet'
 import velotagLogo from '@/assets/velotag-logo.png'
+import GpxUploadModal from '@/components/GpxUploadModal.vue'
+import stravaLogo from '@/assets/api_logo_pwrdBy_strava_horiz_orange.png'
+
+const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
 
 onMounted(() => {
  
@@ -30,11 +34,11 @@ onMounted(() => {
     position: 'bottomleft' 
   }).addTo(map);
 
-
+  
  //Einbinden der OpenStreetMap-Kartenkacheln, damit die Karte angezeigt wird
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
+    attribution: `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | <img src="${stravaLogo}" height="10"/>` //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
   }).addTo(map)
 
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
@@ -48,12 +52,38 @@ onMounted(() => {
 
 <template>
   <div id="map"></div>
+  <button class="btn_popup" @click="showModal = true">+</button>
+
+  <GpxUploadModal v-if="showModal" @close="showModal = false" />
 </template>
 
 <style scoped>
-/* Karte nimmt kompletten Bildschirm ein*/
-#map { 
-  height: 100vh; 
-  width: 100%;
-}
+  /* Wrapper als Container für die Karte*/
+  .map-wrapper {
+    position: relative; 
+    height: 100vh;
+    width: 100%;
+  }
+
+  /* Karte füllt Container komplett aus*/
+  #map { 
+    height: 100%; 
+    width: 100%;
+  }
+
+  /* Upload Button "+" */
+  .btn_popup {
+    position: absolute;
+    bottom: 20px;
+    right: 10px;
+    z-index: 9999; /* Button mit höchstem z-Index => garantiert immer sichtbar*/
+    color: white;
+    font-size: 30px;
+    background-color: var(--color-primary);
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer; /* Zeigt die Hand beim Hovern */
+  }
 </style>

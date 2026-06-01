@@ -16,3 +16,12 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f'Profil von {self.user.username}'
+
+class StravaToken(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    access_token = models.CharField(max_length=255)
+    refresh_token = models.CharField(max_length=255)
+    expires_at = models.IntegerField() # Unix-Timestamp
+
+    def __str__(self):
+        return f"Strava Token für {self.user.username}"

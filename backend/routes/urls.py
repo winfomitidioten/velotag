@@ -1,6 +1,8 @@
+# routes/urls.py
 from django.urls import path
-from .views import connectionTest
+from .views import RouteCreateView
 
 urlpatterns = [
-    path('test/', connectionTest, name='connectionTest'),
+    # Bug Fix: Das 'api/routes/' wird schon von der core/urls.py davorgehängt
+    path('create/', RouteCreateView.as_view(), name='route-create'),
 ]
