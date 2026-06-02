@@ -2,7 +2,7 @@ from rest_framework.views import APIView, csrf_exempt
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .serializers import RouteSerializer, RouteDeserializer
+from .serializers import RouteSerializer
 from .models import Route
 
 from rest_framework.authentication import TokenAuthentication
@@ -45,7 +45,7 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
         routes = Route.objects.filter(user=request.user)
         
         # 2. Die Strecken mit dem Serializer in JSON umwandeln
-        serializer = RouteDeserializer(routes, many=True)
+        serializer = RouteSerializer(routes, many=True)
         
         # 3. Die JSON-Daten zurück an das Frontend schicken
         return Response(serializer.data, status=status.HTTP_200_OK)
