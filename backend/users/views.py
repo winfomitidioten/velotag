@@ -50,7 +50,7 @@ class CustomObtainAuthToken(ObtainAuthToken):
         return Response({'token': token.key})
     
 class RegisterView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [permissions.AllowAny]
     authentication_classes = []
     def post(self, request):
         first_name = request.data.get('first_name')

@@ -103,8 +103,8 @@ export function useGPXVerarbeitung() {
 
             // Der eigentliche API-Call
             const response = await api.post('routes/create/', payload);
-            
-            console.log("Leuchtturm 7: ERFOLG! Antwort von Django:", response.data);
+
+            console.log("Leuchtturm 7: ERFOLG! Antwort von Django:", response.data);            
             //alert("Die Strecke wurde erfolgreich gespeichert!");
             erfolgsMessage.value = "Die Strecke wurde erfolgreich gespeichert!";
             
