@@ -1,0 +1,32 @@
+# --- Backend (Django) ---
+backend/venv-windows/
+backend/.env
+backend/__pycache__/
+backend/*/__pycache__/
+backend/*/*/__pycache__/
+*.pyc
+backend/db.sqlite3
+
+# --- Frontend (Vue/Vite) ---
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.local
+frontend/coverage/
+frontend/.eslintcache
+frontend/*.timestamp-*-*.mjs
+
+# --- Editor & System ---
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
