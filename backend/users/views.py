@@ -21,7 +21,7 @@ class ProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def patch(self, request):
-        user = User.objects.get(username="max.mustermann@stud.de")
+        user = request.user
         profile, created = UserProfile.objects.get_or_create(user=user)
 
         new_password = request.data.get('password')
