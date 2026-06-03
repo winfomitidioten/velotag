@@ -21,8 +21,7 @@
               </div>
 
               <LoginView v-if="activeTab === 'login'" />
-              <RegisterView v-if="activeTab === 'register'" />
-              
+              <RegisterView v-if="activeTab === 'register'" @registered="activeTab = 'login'" />
         </div>
     </div>
 </template>

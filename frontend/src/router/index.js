@@ -22,21 +22,25 @@ const routes = [
   { 
     path: '/',
     redirect: '/login',
+    meta: { hideMenu: true }
   },
   {   
     path: '/login',
     name: 'login',
-    component: LoginRegister
+    component: LoginRegister,
+    meta: { hideMenu: true }
   },
   {
     path: '/register',
     name: 'register',
-    component: LoginRegister
+    component: LoginRegister,
+    meta: { hideMenu: true }
   },
   {
     path: '/group',
     name: 'group',
-    component: GroupView
+    component: GroupView,
+    meta: { requiresAuth: true}
   }
 ];
 

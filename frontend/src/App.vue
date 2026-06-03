@@ -1,8 +1,12 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
+import MenuBar from '@/components/MenuBar.vue'
+
+const route = useRoute();
 </script>
 
 <template>
+  <MenuBar v-if="!route.meta.hideMenu" />
   <RouterView />
 </template>
 
