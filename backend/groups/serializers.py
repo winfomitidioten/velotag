@@ -3,9 +3,18 @@ from .models import Group
 from users.models import User
 
 class GrouMemberSerializer(serializers.ModelSerializer):
+    profilbild = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'profilbild']
+
+    def get_profilbild(self, obj):
+        if hasattr(obj, 'profile') and obj.profile.profilbild:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile.profilbild.url)
+            return obj.profile.profilbild.url
+        return None
 class GroupSerializer(serializers.ModelSerializer):
 
     is_admin = serializers.SerializerMethodField()
@@ -19,5 +28,7 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'is_admin', 'member_count', 'members']
 
     def get_is_admin(self, obj):
-        user = self.context.get('request').user
-        return obj.admin == user
+        request = self.context.get('request')
+        if request and request.user:
+            return obj.admin == request.user
+        return False

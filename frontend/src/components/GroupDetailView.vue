@@ -68,7 +68,7 @@ onMounted(() => {
                         </div>
                         
                         <button v-if="group.is_admin" @click="showPopup = true" class="action-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#ffffff">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 20px" width="20px" fill="#ffffff">
                                 <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
                             </svg>
                             Einladen
@@ -79,10 +79,29 @@ onMounted(() => {
                         <h4>Mitglieder</h4>
                         <ul class="member-list">
                             <li v-for="member in group.members" :key="member.id" class="member-item">
-                                <div class="member-avatar">
-                                    {{ member.email.charAt(0).toUpperCase() }}
+                                
+                                <img 
+                                    v-if="member.profilbild" 
+                                    :src="member.profilbild" 
+                                    alt="Profilbild" 
+                                    class="member-avatar-img"
+                                />
+                                <div v-else class="member-avatar">
+                                    {{ (member.first_name || member.email).charAt(0).toUpperCase() }}
                                 </div>
-                                <span class="member-email">{{ member.email }}</span>
+                                
+                                <div class="member-info-text">
+                                    <span class="member-name">
+                                        <template v-if="member.first_name || member.last_name">
+                                            {{ member.first_name }} {{ member.last_name }}
+                                        </template>
+                                        <template v-else>
+                                            {{ member.username }}
+                                        </template>
+                                    </span>
+                                    <span class="member-email">{{ member.email }}</span>
+                                </div>
+
                             </li>
                         </ul>
                     </div>
@@ -180,7 +199,7 @@ onMounted(() => {
         display: flex;
         flex-direction: column;
         gap: 0.2rem;   
-        flex-grow: 1;       
+        flex-grow: 1;      
     }
     .group-info h3 {
         margin: 0;
@@ -246,7 +265,16 @@ onMounted(() => {
         border: 1px solid #e2e8f0;
     }
 
-    /* Hübsche Avatare passend zum Farbschema */
+    /* NEU: Bild-Avatar Styling */
+    .member-avatar-img {
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #3db897; /* Passt zum grünen Farbschema */
+    }
+
+    /* Hübsche Avatare passend zum Farbschema (Fallback) */
     .member-avatar {
         display: flex;
         justify-content: center;
@@ -258,11 +286,26 @@ onMounted(() => {
         font-weight: 600;
         font-size: 0.95rem;
         border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    /* NEU: Text-Wrapper für Namen + E-Mail */
+    .member-info-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    /* NEU: Name des Mitglieds */
+    .member-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #2c3e50;
     }
 
     .member-email {
-        font-size: 0.95rem;
-        color: #34495e;
+        font-size: 0.85rem; /* Etwas kleiner, da es jetzt unter dem Namen steht */
+        color: #7f8c8d;
     }
 
     /* Popups (100% identisch zur Übersicht) */
