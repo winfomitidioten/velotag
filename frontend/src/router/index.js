@@ -37,6 +37,11 @@ const routes = [
     path: '/group',
     name: 'group',
     component: GroupView
+  },
+  {
+    path: '/groups/:id',
+    name: 'group-detail',
+    component: GroupDetailView
   }
 ];
 
