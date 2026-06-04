@@ -49,6 +49,9 @@ onMounted(() => {
     map.invalidateSize()
   }, 100)
 
+  // Routen aus dem Backend abfragen
+  drawUserMap(map) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
+
 })
 </script>
 
