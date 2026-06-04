@@ -43,7 +43,7 @@ export async function drawUserMap(map) {//async
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
         const polyline = L.polyline(coordinates, {color: 'blue'}).addTo(map);
-        polyline.bindPopup(`<b>${route.strecken_name}</b><br>Erstellt am: ${new Date(route.created_at).toLocaleDateString()}`);
+        polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
     });
     
 }

@@ -53,6 +53,7 @@ onMounted(() => {
   drawUserMap(map) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
 
 })
+
 </script>
 
 <template>
