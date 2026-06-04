@@ -95,5 +95,35 @@ class GroupDetailView(APIView):
                 {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."}, 
                 status=status.HTTP_404_NOT_FOUND
             )  
-
-
+    def delete(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+            
+            if group.admin != request.user:
+                return Response(
+                    {"error": "Nur der Admin darf Mitglieder entfernen."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            user_mail = request.data.get('email')
+            if not user_mail:
+                return Response(
+                    {"error": "Eine Benutzermail wird benötigt."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            user_to_remove = User.objects.get(email=user_mail)
+            group.members.remove(user_to_remove)
+            serializer = GroupSerializer(group, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."},
+                status=status.HTTP_404_NOT_FOUND
+            )

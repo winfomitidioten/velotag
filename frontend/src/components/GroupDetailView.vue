@@ -38,6 +38,21 @@ const inviteMember = async () => {
     }
 }
 
+const deleteMember = async (email) => {
+    if (!confirm(`Möchtest du das Mitglied (${email}) wirklich aus der Gruppe entfernen?`)) return;
+
+    try{
+        const response = await api.delete(`groups/${groupId}/`, {
+            data: { email: email }
+        });
+        
+        group.value = response.data;
+    } catch (error) {
+        console.error("Fehler beim Löschen des Mitglieds:", error);
+        alert(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.");
+    }
+}
+
 onMounted(() => {
     fetchGroup();
 })
@@ -68,7 +83,7 @@ onMounted(() => {
                         </div>
                         
                         <button v-if="group.is_admin" @click="showPopup = true" class="action-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 20px" width="20px" fill="#ffffff">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#ffffff">
                                 <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
                             </svg>
                             Einladen
@@ -98,8 +113,19 @@ onMounted(() => {
                                         <template v-else>
                                             {{ member.username }}
                                         </template>
+                                        
+                                        <span v-if="member.email === group.admin_email" class="admin-badge">Admin</span>
                                     </span>
                                     <span class="member-email">{{ member.email }}</span>
+                                </div>
+
+                                <div v-if="group.is_admin && member.email !== group.admin_email" class="delete-member" @click="deleteMember(member.email)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" 
+                                    height="22px" 
+                                    viewBox="0 -960 960 960" 
+                                    width="22px">
+                                    <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+                                    </svg>
                                 </div>
 
                             </li>
@@ -123,7 +149,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-    /* Basis-Layout & Background */
     .page-container {
         min-height: 100vh;
         background-color: #f8f9fa;
@@ -156,7 +181,6 @@ onMounted(() => {
         box-sizing: border-box;
     }
 
-    /* Die Gruppe als zentrale Card im gleichen Style */
     .group-card {
         display: flex;
         flex-direction: column;    
@@ -212,7 +236,6 @@ onMounted(() => {
         color: #7f8c8d;           
     }
 
-    /* Der Button im exakten Stil des '+ Neue Gruppe' Buttons */
     .action-btn {
         background-color: #3db897;
         color: white;
@@ -231,7 +254,6 @@ onMounted(() => {
         background-color: #2da081;
     }
 
-    /* Bereich für die Mitgliederliste */
     .card-stats-area {
         display: flex;
         flex-direction: column;
@@ -265,16 +287,14 @@ onMounted(() => {
         border: 1px solid #e2e8f0;
     }
 
-    /* NEU: Bild-Avatar Styling */
     .member-avatar-img {
         width: 2.2rem;
         height: 2.2rem;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid #3db897; /* Passt zum grünen Farbschema */
+        border: 2px solid #3db897; 
     }
 
-    /* Hübsche Avatare passend zum Farbschema (Fallback) */
     .member-avatar {
         display: flex;
         justify-content: center;
@@ -289,26 +309,67 @@ onMounted(() => {
         flex-shrink: 0;
     }
 
-    /* NEU: Text-Wrapper für Namen + E-Mail */
     .member-info-text {
         display: flex;
         flex-direction: column;
         gap: 0.1rem;
     }
 
-    /* NEU: Name des Mitglieds */
     .member-name {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         font-size: 0.95rem;
         font-weight: 600;
         color: #2c3e50;
     }
 
     .member-email {
-        font-size: 0.85rem; /* Etwas kleiner, da es jetzt unter dem Namen steht */
+        font-size: 0.85rem;
         color: #7f8c8d;
     }
 
-    /* Popups (100% identisch zur Übersicht) */
+    .admin-badge {
+        font-size: 0.75rem;
+        background-color: #e8f7f3;
+        color: #3db897;
+        padding: 0.1rem 0.4rem;
+        border-radius: 0.4rem;
+        font-weight: 500;
+    }
+
+    /* OPTIMIERT: Schickes, reaktives Design für das Lösch-X */
+    .delete-member {
+        margin-left: auto; /* Zwingt das Element ganz nach rechts */
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: 50%;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    
+    /* Farbe des SVG-Icons steuern */
+    .delete-member svg {
+        fill: #94a3b8; /* Dezentes, edles Grau im Normalzustand */
+        transition: fill 0.2s ease;
+    }
+
+    /* Verhalten beim Drüberfahren (Hover) */
+    .delete-member:hover {
+        background-color: #fee2e2; /* Sanfter roter Hintergrundkreis */
+    }
+    
+    .delete-member:hover svg {
+        fill: #ef4444; /* Knalliges Rot für das X auf Hover */
+    }
+
+    .delete-member:active {
+        transform: scale(0.9); /* Klick-Animation */
+    }
+
     #popup-overlay {
         position: fixed;
         top: 0;

@@ -22,10 +22,11 @@ class GroupSerializer(serializers.ModelSerializer):
 
     members = GrouMemberSerializer(many=True, read_only=True)
 
+    admin_email = serializers.EmailField(source='admin.email', read_only=True)
 
     class Meta:
         model = Group
-        fields = ['id', 'name', 'is_admin', 'member_count', 'members']
+        fields = ['id', 'name', 'is_admin', 'member_count', 'members', 'admin_email']
 
     def get_is_admin(self, obj):
         request = self.context.get('request')
