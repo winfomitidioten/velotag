@@ -38,5 +38,27 @@ class GroupView(APIView):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+class GroupDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+
+            if group.admin != request.user and not group.members.filter(id=request.user.id).exists():
+                return Response(
+                    {"error": "Du hast keine Berechtigung, diese Gruppe anzuzeigen."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            serializer = GroupSerializer(group, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 

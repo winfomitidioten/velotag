@@ -1,6 +1,7 @@
 <script setup>
 import { useRoute } from 'vue-router'
 import { ref, onMounted } from 'vue'
+import api from '@/api/api';
 
 
 const route = useRoute()
@@ -11,8 +12,8 @@ const loading = ref(false)
 const fetchGroup = async () => {
     try{
         loading.value = true;
-        const response = api.await('groups/${groupID}/');
-        group.value = reponse.data;
+        const response = await api.get(`groups/${groupId}/`);
+        group.value = response.data;
     } catch(err) {
         console.error('Fehler: ', err)
     } finally {
@@ -26,8 +27,8 @@ onMounted(() => {
 </script>
 <template>
     <div class="page-container">
-        <header>
-            <h3>Test</h3>
+        <header v-if="group">
+            <h3>{{ group.name }}</h3>
         </header>
         <main class="page-contet">
 
