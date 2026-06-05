@@ -3,6 +3,7 @@
   import api from '@/api/api'
   // NEU: Wir importieren unsere ausgelagerte Logik
   import { useGPXVerarbeitung } from '@/composables/useGPXVerarbeitung'
+  import GroupSelectionUploadModal from '@/components/GroupSelectionUploadModal.vue'
 
   defineEmits(['close']) 
 
@@ -47,6 +48,8 @@
         </a>
       </div>
       
+      <GroupSelectionUploadModal :showModal="true" />
+    
       <div 
         class="dropzone-box"
         :class="{ 'active': isDragging }"
