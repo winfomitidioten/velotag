@@ -5,6 +5,7 @@ import ProfileView from '../components/ProfileView.vue'
 import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../components/GroupView.vue'
+import GroupDetailView from '../components/GroupDetailView.vue'
 
 const routes = [
   {
@@ -41,6 +42,12 @@ const routes = [
     name: 'group',
     component: GroupView,
     meta: { requiresAuth: true}
+    component: GroupView
+  },
+  {
+    path: '/group/:id',
+    name: 'group-detail',
+    component: GroupDetailView
   }
 ];
 

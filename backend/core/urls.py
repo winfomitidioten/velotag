@@ -2,7 +2,7 @@ from django.contrib import admin
 # from rest_framework.authtoken.views import obtain_auth_token
 from django.urls import path, include
 from users.views import ProfileView
-from groups.views import GroupView
+from groups.views import GroupView, GroupDetailView
 from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken
@@ -20,7 +20,8 @@ urlpatterns = [
     path('api/strava/callback/', strava_callback),
     path('api/strava/activities/', get_activities),
     path('api/groups/', GroupView.as_view(), name='my-groups'),
-    path('api/register/', RegisterView.as_view(), name='register') 
+    path('api/register/', RegisterView.as_view(), name='register'),
+    path('api/groups/<int:pk>/', GroupDetailView.as_view(), name='group-detail')
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
