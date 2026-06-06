@@ -1,8 +1,18 @@
 <script setup>
 import { RouterView, useRoute } from 'vue-router'
+import { onMounted } from 'vue'
 import MenuBar from '@/components/MenuBar.vue'
+import { useUserStore } from '@/store/userStore'
 
 const route = useRoute();
+const userStore = useUserStore();
+
+onMounted(async () => {
+  if (localStorage.getItem('auth_token')) {
+    await userStore.fetchProfile();
+  }
+});
+
 </script>
 
 <template>
