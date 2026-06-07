@@ -42,12 +42,12 @@ const routes = [
     name: 'group',
     component: GroupView,
     meta: { requiresAuth: true, showBack: true },
-    component: GroupView
   },
   {
     path: '/group/:id',
     name: 'group-detail',
-    component: GroupDetailView
+    component: GroupDetailView,
+    meta: {requiresAuth: true, showBack: true }
   }
 ];
 

@@ -76,7 +76,7 @@
         <li class="nav-divider"></li>
         <li>
           <!-- TODO: Logout-Logik (Store leeren, Session beenden) einbauen -->
-          <RouterLink to="#" @click="closeMenu" class="nav-item">
+          <button @click="handleLogout" class="nav-item nav-item--button">
             <span class="icon-wrap icon-red">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -85,7 +85,7 @@
               </svg>
             </span>
             <span class="nav-label">Log-Out</span>
-          </RouterLink>
+          </button>
         </li>
       </ul>
     </nav>
@@ -107,6 +107,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
 
 const isOpen = ref(false);
@@ -121,6 +122,16 @@ const userProfileImage = computed(() => userStore.profileImage || '');
 // TODO: Durch echte Statistiken aus Store/API ersetzen
 const rideCount = ref();
 const totalKm = ref();
+
+// Logout
+const router = useRouter();
+
+const handleLogout = async () => {
+  localStorage.removeItem('auth_token');
+  userStore.clearUser();
+  closeMenu();
+  await router.push('/login');
+};
 
 const toggleMenu = () => { isOpen.value = !isOpen.value; };
 const closeMenu = () => { isOpen.value = false; };
@@ -298,6 +309,13 @@ nav ul {
 }
 .nav-item.router-link-active {
   color: var(--color-primary);
+}
+.nav-item--button {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
 }
 .nav-label {
   flex: 1;

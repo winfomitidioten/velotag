@@ -16,8 +16,15 @@ export const useUserStore = defineStore('user', () => {
         lastname.value = response.data.lastname;
         mail.value = response.data.mail;
         const pic = response.data.profilbild;
-        profileImage.value = pic ? `http://127.0.0.1:8000${pic}` : '';
+        profileImage.value = pic ?? '';
     };
 
-    return { firstname, lastname, mail, initials, profileImage, fetchProfile };
+    function clearUser() {
+        firstname.value = '';
+        lastname.value = '';
+        mail.value = '';
+        profileImage.value = '';
+    }
+
+    return { firstname, lastname, mail, initials, profileImage, fetchProfile, clearUser };
 });
