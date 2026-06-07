@@ -18,7 +18,7 @@ const routes = [
       path: '/profile',
       name: 'profile',
       component: ProfileView,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, showBack: true }
   }, 
   { 
     path: '/',
@@ -41,7 +41,7 @@ const routes = [
     path: '/group',
     name: 'group',
     component: GroupView,
-    meta: { requiresAuth: true}
+    meta: { requiresAuth: true, showBack: true },
     component: GroupView
   },
   {

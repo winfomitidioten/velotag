@@ -1,10 +1,12 @@
 <script setup>
-import { RouterView, useRoute } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import MenuBar from '@/components/MenuBar.vue'
 import { useUserStore } from '@/store/userStore'
 
+
 const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 
 onMounted(async () => {
@@ -18,6 +20,11 @@ onMounted(async () => {
 <template>
   <MenuBar v-if="!route.meta.hideMenu" />
   <RouterView />
+  <button v-if="route.meta.showBack" class="back-button" @click="router.back()" aria-label="Zurück zur Vorherigen Seite">
+    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+      <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/>
+    </svg>
+  </button>
 </template>
 
 <style>
@@ -32,9 +39,30 @@ html, body, #app {
   font-family: sans-serif;
   box-sizing: border-box;
 }
-
 #app {
   display: flex;
   flex-direction: column;
+}
+.back-button {
+  position: fixed;
+  top: 1rem;
+  left: calc(1rem + 44px + 0.75rem);
+  z-index: 1010;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  color: var(--color-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.back-button:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 </style>

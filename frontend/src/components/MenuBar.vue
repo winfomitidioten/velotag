@@ -1,5 +1,9 @@
 <template>
-  <button class="menu-button" @click="toggleMenu" aria-label="Menü öffnen">☰</button>
+  <button class="menu-button" @click="toggleMenu" aria-label="Menü öffnen">
+    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3">
+      <path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/>
+    </svg>
+  </button>
 
   <transition name="fade">
     <div v-if="isOpen" class="overlay" @click="closeMenu"></div>
@@ -9,12 +13,19 @@
     <!-- Header: Logo & Close -->
     <div class="sidebar-header">
       <img src="@/assets/logo.png" alt="velotag logo" class="logo" />
-      <button class="close-button" @click="closeMenu" aria-label="Menü schließen">✕</button>
+      <button class="close-button" @click="closeMenu" aria-label="Menü schließen">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000">
+          <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+        </svg>
+      </button>
     </div>
 
     <!-- Profil-Karte -->
     <div class="profile-card">
-      <div class="avatar">{{ userInitials }}</div>
+      <div class="avatar">
+        <img v-if="userProfileImage" :src="userProfileImage" alt="Profilbild" class="avatar-img"/>
+        <span v-else>{{ userInitials }}</span>
+      </div>
       <div class="user-info">
         <span class="user-name">{{ userName}}</span>
         <span class="user-email">{{ userEmail }}</span>
@@ -105,6 +116,7 @@ const userStore = useUserStore();
 const userName = computed(() => `${userStore.firstname} ${userStore.lastname}`.trim() || 'Kein Name');
 const userEmail = computed(() => userStore.mail || '');
 const userInitials = computed(() => userStore.initials || '?');
+const userProfileImage = computed(() => userStore.profileImage || '');
 
 // TODO: Durch echte Statistiken aus Store/API ersetzen
 const rideCount = ref();
@@ -230,6 +242,12 @@ const closeMenu = () => { isOpen.value = false; };
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 .user-info {
   display: flex;

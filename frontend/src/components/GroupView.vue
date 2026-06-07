@@ -118,7 +118,7 @@
         font-size: 1.25rem;
         font-weight: 500;
         margin: 0;
-        padding-left: 70px;
+        padding-left: 100px;
         color: #2c3e50;
     }
     header button {
