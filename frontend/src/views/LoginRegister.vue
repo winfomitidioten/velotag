@@ -20,8 +20,11 @@
                 >Registrierung</button>
               </div>
 
+              <RegisterView v-if="activeTab === 'register'" @registered="onRegistered" />
+              <p v-if="registeredMessage && activeTab === 'login'" class="success-message">
+                {{ registeredMessage }}
+              </p>
               <LoginView v-if="activeTab === 'login'" />
-              <RegisterView v-if="activeTab === 'register'" @registered="activeTab = 'login'" />
         </div>
     </div>
 </template>
@@ -32,6 +35,12 @@ import LoginView from '@/components/LoginView.vue';
 import RegisterView from '@/components/RegisterView.vue';
 
 const activeTab = ref('login'); // steuert welcher Tab aktiv ist  
+
+const registeredMessage = ref('');
+const onRegistered = () => {
+    registeredMessage.value = 'Ihre Registrierung war erfolgreich. Bitte melden Sie sich nun an.';
+    activeTab.value = 'login';
+}
 </script>
 
 
@@ -113,6 +122,16 @@ const activeTab = ref('login'); // steuert welcher Tab aktiv ist
     background: var(--color-primary);   /* Grün wenn aktiv */
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(61, 184, 151, 0.3);
+}
+.success-message {
+    background: rgba(61, 184, 151, 0.1);
+    color: var(--color-primary);
+    border: 1px solid rgba(61, 184, 151, 0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 1rem;
 }
 </style>
 
