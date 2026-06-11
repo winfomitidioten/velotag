@@ -6,6 +6,7 @@ import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../components/GroupView.vue'
 import GroupDetailView from '../components/GroupDetailView.vue'
+import ComingSoon from '@/components/ComingSoon.vue';
 
 const routes = [
   {
@@ -41,13 +42,25 @@ const routes = [
     path: '/group',
     name: 'group',
     component: GroupView,
-    meta: { requiresAuth: true, showBack: true },
+    meta: { requiresAuth: true, showBack: true }
   },
   {
     path: '/group/:id',
     name: 'group-detail',
     component: GroupDetailView,
-    meta: {requiresAuth: true, showBack: true }
+    meta: { requiresAuth: true, showBack: true, backTo: '/group' }
+  },
+  {
+    path: '/rides',
+    name: 'rides',
+    component: ComingSoon,
+    meta:  { requiresAuth: true, showBack: true }
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: ComingSoon,
+    meta: { requiresAuth: true, showBack: true }
   }
 ];
 

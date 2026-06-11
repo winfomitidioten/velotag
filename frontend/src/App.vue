@@ -9,6 +9,10 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 
+const goBack = () => {
+  router.push(route.meta.backTo ?? '/karte');
+};
+
 onMounted(async () => {
   if (localStorage.getItem('auth_token')) {
     await userStore.fetchProfile();
@@ -20,7 +24,7 @@ onMounted(async () => {
 <template>
   <MenuBar v-if="!route.meta.hideMenu" />
   <RouterView />
-  <button v-if="route.meta.showBack" class="back-button" @click="router.back()" aria-label="Zurück zur Vorherigen Seite">
+  <button v-if="route.meta.showBack" class="back-button" @click="goBack" aria-label="Zurück zur Vorherigen Seite">
     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
       <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/>
     </svg>

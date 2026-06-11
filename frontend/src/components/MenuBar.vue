@@ -12,7 +12,9 @@
   <aside class="sidebar" :class="{ 'is-open': isOpen }">
     <!-- Header: Logo & Close -->
     <div class="sidebar-header">
-      <img src="@/assets/logo.png" alt="velotag logo" class="logo" />
+      <RouterLink to="/karte" @click="closeMenu" class="logo">
+        <img src="@/assets/logo.png" alt="velotag logo" class="logo" />
+      </RouterLink>
       <button class="close-button" @click="closeMenu" aria-label="Menü schließen">
         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000">
           <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
@@ -22,28 +24,31 @@
 
     <!-- Profil-Karte -->
     <div class="profile-card">
-      <div class="avatar">
-        <img v-if="userProfileImage" :src="userProfileImage" alt="Profilbild" class="avatar-img"/>
-        <span v-else>{{ userInitials }}</span>
-      </div>
-      <div class="user-info">
-        <span class="user-name">{{ userName}}</span>
-        <span class="user-email">{{ userEmail }}</span>
-      </div>
+      <RouterLink to="/profile" @click="closeMenu" class="nav-item">
+        <div class="avatar">
+          <img v-if="userProfileImage" :src="userProfileImage" alt="Profilbild" class="avatar-img"/>
+          <span v-else>{{ userInitials }}</span>
+        </div>
+        <div class="user-info">
+          <span class="user-name">{{ userName}}</span>
+          <span class="user-email">{{ userEmail }}</span>
+        </div>
+      </RouterLink>
     </div>
 
     <!-- Navigation -->
     <nav>
       <ul>
         <li>
-          <RouterLink to="/profile" @click="closeMenu" class="nav-item">
+          <!-- TODO: Fahrten hier einfügen, wenn es bereit ist -->
+          <RouterLink to="/rides" @click="closeMenu" class="nav-item">
             <span class="icon-wrap icon-green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#3db897">
+                <path d="M196-160q-82.33 0-139.17-57.17Q0-274.33 0-356.67 0-439 57.52-495.83q57.53-56.84 139.15-56.84 73 0 126.16 45.67Q376-461.33 388-392h42.67L352-613.33h-72V-680h192v66.67h-49.33l22 60.66h212L590-733.33H485.33V-800H586q24.67 0 42.5 12t26.17 34.67l73.33 200h36q81.34 0 138.67 56.99Q960-439.35 960-358.5q0 81.83-56.84 140.17Q846.32-160 764-160q-71.73 0-126.03-47t-67.3-118.33H388q-12 71-65.67 118.16Q268.67-160 196-160Zm0-66.67q45.67 0 79.17-28.16 33.5-28.17 45.5-70.5H204V-392h116.67q-12-42-45.84-68-33.83-26-78.16-26-54.34 0-92.17 37.5t-37.83 91.83q0 54.17 37.5 92.09 37.5 37.91 91.83 37.91ZM502-392h69.33q4.34-23 14.84-48.33 10.5-25.34 28.5-45.67H468l34 94Zm262 165.33q54.33 0 91.83-37.91 37.5-37.92 37.5-92.09 0-54.33-37.5-91.83T764-486h-12l39.33 110.67-62.66 22-41.34-110q-26 17-39.33 45.33-13.33 28.33-13.33 61.33 0 54.17 37.5 92.09 37.5 37.91 91.83 37.91Zm-570-130Zm570 0Z"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
             </span>
-            <span class="nav-label">Profil</span>
+            <span class="nav-label">Fahrten</span>
           </RouterLink>
         </li>
         <li class="nav-divider"></li>
@@ -63,7 +68,7 @@
         <li class="nav-divider"></li>
         <li>
           <!-- TODO: Route einfügen wenn Einstellungen-Seite bereit ist -->
-          <RouterLink to="#" @click="closeMenu" class="nav-item">
+          <RouterLink to="/settings" @click="closeMenu" class="nav-item">
             <span class="icon-wrap icon-blue">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
