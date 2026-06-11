@@ -6,6 +6,7 @@ import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../components/GroupView.vue'
 import GroupDetailView from '../components/GroupDetailView.vue'
+import GroupInviteView from '../components/GroupInviteView.vue'
 
 const routes = [
   {
@@ -43,6 +44,11 @@ const routes = [
     path: '/group/:id',
     name: 'group-detail',
     component: GroupDetailView
+  },
+  {
+    path: '/group/invites',
+    name: 'group-invites',
+    component: GroupInviteView
   }
 ];
 
