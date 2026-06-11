@@ -10,7 +10,9 @@ const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Üb
 
 onMounted(() => {
  
-  const map = L.map('map').setView([50.0963, 8.2195], 11)//const, da Karte nicht verändert wird, nur aktualisiert
+  const map = L.map('map', {
+    zoomControl: false
+  }).setView([50.0963, 8.2195], 11)//const, da Karte nicht verändert wird, nur aktualisiert
 
   const WatermarkControl = L.Control.extend({
     onAdd: function(map) {
@@ -32,6 +34,10 @@ onMounted(() => {
     metric: true, 
     imperial: false, 
     position: 'bottomleft' 
+  }).addTo(map);
+
+  L.control.zoom({
+    position: 'bottomleft'
   }).addTo(map);
 
   
