@@ -93,7 +93,7 @@ class GroupDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-class GroupInvites(APIView):
+class GroupInviteAdmin(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     def post(self, request, pk):
@@ -136,4 +136,52 @@ class GroupInvites(APIView):
             return Response(
                 {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."}, 
                 status=status.HTTP_404_NOT_FOUND
-            )  
+            )
+        
+class UserInvitationsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+            user = request.user
+            groups = Group.objects.filter(Q(membership__user=user, membership__status='Pending')).distinct()
+            serializer = GroupSerializer(groups, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        group_id = request.data.get('group_id')
+        action = request.data.get('action')
+
+        if not group_id or not action:
+            return Response(
+                {"error": "group_id und action werden benötigt"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if action not in ['accept', 'decline']:
+            return Response(
+                {"error": "Ungültige Aktion. Nur accept und decline erlaubt."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            membership = Membership.objects.get(user=request.user, group_id=group_id, status='Pending')
+
+            if action == 'accept':
+                membership.status = 'Joined'
+                membership.save()
+                return Response(
+                    {"message": "Einladung erfolgreich angenommen"},
+                    status=status.HTTP_200_OK
+                )
+            elif action == 'decline':
+                membership.delete()
+                return Response(
+                    {"message": "Einladung erfolgreich abgelehnt"},
+                    status=status.HTTP_200_OK
+                )
+        except Membership.DoesNotExist:
+            return Response(
+                {"error": "Keine offene Einladung für diese Gruppe gefunden"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
