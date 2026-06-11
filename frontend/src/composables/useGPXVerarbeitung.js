@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import api from '@/api/api'
+import L from 'leaflet'
 
 export function useGPXVerarbeitung() {
 
@@ -60,10 +61,14 @@ export function useGPXVerarbeitung() {
           
           // Wir packen JETZT ALLES in den try-catch Block!
           try {
+            const activityType = xmlDoc.querySelector('type');
+
+            
+
             const gpxContent = e.target.result; 
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(gpxContent, "text/xml");
-            console.log("Leuchtturm 2: XML wurde geparst.");
+            console.log("XML wurde geparst.");
 
             const coordinates = [];
             const pulsStream = [];
@@ -71,7 +76,7 @@ export function useGPXVerarbeitung() {
             const wattStream = [];
 
             const trackPoints = xmlDoc.querySelectorAll('trkpt');
-            console.log(`Leuchtturm 3: ${trackPoints.length} Trackpunkte gefunden.`);
+            console.log(`${trackPoints.length} Trackpunkte gefunden.`);
 
             trackPoints.forEach(pt => {
               const lat = parseFloat(pt.getAttribute('lat'));
@@ -87,10 +92,10 @@ export function useGPXVerarbeitung() {
               const powerNode = pt.querySelector('power') || pt.getElementsByTagNameNS('*', 'power')[0];
               wattStream.push(powerNode ? parseInt(powerNode.textContent) : null);
             });
-            console.log("Leuchtturm 4: Schleife beendet, extrahiere Geodaten...");
+            console.log("Schleife beendet, extrahiere Geodaten...");
 
             const polylineMapString = encodePolyline(coordinates);
-            console.log("Leuchtturm 5: Polyline komprimiert.");
+            console.log("Polyline komprimiert.");
 
             const payload = {
               strecken_name: uploadedFile.name.replace('.gpx', ''), 
@@ -99,19 +104,22 @@ export function useGPXVerarbeitung() {
               zeit_stream: zeitStream,
               watt_stream: wattStream
             };
-            console.log("Leuchtturm 6: Paket geschnürt. Schicke an Django...", payload);
+            console.log("Paket geschnürt. Schicke an Django...", payload);
 
             // Der eigentliche API-Call
             const response = await api.post('routes/create/', payload);
-            
-            console.log("Leuchtturm 7: ERFOLG! Antwort von Django:", response.data);
+
+            console.log("ERFOLG! Antwort von Django:", response.data);            
             //alert("Die Strecke wurde erfolgreich gespeichert!");
             erfolgsMessage.value = "Die Strecke wurde erfolgreich gespeichert!";
+            window.location.reload(); // Seite neu laden, damit die neue Route auf der Karte erscheint
+            
+
             
           } catch (error) {
             // Wenn IRGENDWAS zwischen Leuchtturm 1 und 7 schiefgeht, landet es HIER:
             console.error("FATALER FEHLER IM ABLAUF:", error);
-            errorMessage.value = "Beim Verarbeiten der GPX-Datei ist ein Fehler aufgetreten.";
+            errorMessage.value = "Beim Verarbeiten der GPX-Datei ist ein Fehler aufgetreten. Bitte lade nur Radfahraktivitäten hoch!!";
           }
         };
 
