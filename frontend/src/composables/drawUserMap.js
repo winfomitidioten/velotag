@@ -53,7 +53,7 @@ export async function drawUserMap(map) {//async
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
         const polyline = L.polyline(coordinates, 
-            {color: 'blue',     // Grundfarbe
+            {color: 'red',     // Grundfarbe
              weight: 4,            // Breite
              opacity: 0.05,        // Logik der HeatMap: Addiert sich auf
              lineJoin: 'round',    // Weiche Kurven

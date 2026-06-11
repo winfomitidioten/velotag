@@ -36,12 +36,24 @@ onMounted(() => {
   }).addTo(map);
 
   
- //Einbinden der OpenStreetMap-Kartenkacheln, damit die Karte angezeigt wird
+ /*Einbinden der OpenStreetMap-Kartenkacheln, damit die Karte angezeigt wird
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { //https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png // https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png //'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
     maxZoom: 19,
     color: 'black',
     attribution: `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © CARTO | <img src="${stravaLogo}" height="10"/>` //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
   }).addTo(map)
+  */
+ // 1. Der Satelliten-Hintergrund (Esri World Imagery)
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19,
+  attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+}).addTo(map);
+
+// 2. Die Straßen und Labels darüber legen (CartoDB Only Labels/Lines)
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+}).addTo(map);
 
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
 // daher muss die Karte hier manuell aktualisiert werden, damit sie korrekt angezeigt wird
