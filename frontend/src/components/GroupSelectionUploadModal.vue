@@ -1,6 +1,37 @@
-<script>
+<script setup>
+  import { ref, onMounted, watch } from 'vue'
+  import api from '@/api/api'
+
 //hier die Logik zur Gruppenabfrage an die DB für den eingelogten User, damit die Gruppen in der Dropdown-Liste angezeigt werden können
 
+const emit = defineEmits(['update:selectedGroup'])
+
+const groups = ref([])
+const loading = ref(false)
+// Definieren der Variable für das v-model im Template (als Array für das 'multiple' Select)
+const selectedGroup = ref([])
+
+// Überwacht die Variable auf Änderungen und loggt den neuen Wert in die Konsole
+watch(selectedGroup, (newValue) => {
+  console.log("Ausgewählte Gruppe(n):", newValue)
+  emit('update:selectedGroup', newValue)
+})
+
+const fetchGroups = async () => {
+        try {
+            loading.value = true;
+            const response = await api.get('groups/');
+            groups.value = response.data;
+        } catch(err) {
+            console.error('Fehler: ', err)
+        } finally {
+            loading.value = false;
+        }
+    }
+
+onMounted(() => {
+        fetchGroups()
+    })
 </script>
 
 <template>
@@ -11,9 +42,9 @@
       </div>
 
       <form>
-        <select v-model="selectedGroup" class="group-dropdown">
-          <option value="">Keine Gruppe</option>
-          <option v-for="group in groups" :key="group.id" :value="group.id">  <!--v-for statt normaler schleife, damit Vue die Optionen automatisch aktualisieren kann, wenn sich die Gruppenliste ändert-->
+        <select v-model="selectedGroup" class="group-dropdown" multiple>
+          <option disabled value="">Bitte wählen</option>
+          <option v-for="group in groups" :key="group.id" :value="group.id">  <!-- Hier binden wir jetzt die ID statt des Namens -->
             {{ group.name }}
           </option>
         </select>

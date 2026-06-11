@@ -20,7 +20,7 @@ onMounted(() => {
       img.style.width = '80px';
       return img;
     },
-    onRemove: function(map) {
+    onRemove: function(map) { 
       // Nichts zu tun
     }
   });
@@ -37,7 +37,7 @@ onMounted(() => {
 
   
  //Einbinden der OpenStreetMap-Kartenkacheln, damit die Karte angezeigt wird
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { //https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png // https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { //https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png // https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png //'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
     maxZoom: 19,
     color: 'black',
     attribution: `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © CARTO | <img src="${stravaLogo}" height="10"/>` //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten

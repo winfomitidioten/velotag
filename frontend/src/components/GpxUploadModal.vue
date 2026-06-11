@@ -7,8 +7,8 @@
 
   defineEmits(['close']) 
 
-  // NEU: Wir entpacken exakt die zwei Dinge, die unser HTML für die Box braucht
-  const { isDragging, onFileDrop, errorMessage, erfolgsMessage } = useGPXVerarbeitung()
+  // NEU: Wir entpacken nun auch selectedGroupIds, um die ausgewählte Gruppe zu speichern
+  const { isDragging, onFileDrop, errorMessage, erfolgsMessage, selectedGroupIds } = useGPXVerarbeitung()
 
   const fileInput = ref(null)
 
@@ -48,7 +48,7 @@
         </a>
       </div>
       
-      <GroupSelectionUploadModal :showModal="true" />
+      <GroupSelectionUploadModal @update:selectedGroup="selectedGroupIds = $event" />
     
       <div 
         class="dropzone-box"

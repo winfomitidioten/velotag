@@ -8,7 +8,7 @@ class Route (models.Model):
     group_id = models.JSONField(blank=True, null=True, help_text="Optional: ID der Gruppe, der die Strecke zugeordnet ist")
     polyline_map = models.TextField(blank=False, null=False, default="", help_text="Google Komprimierungsalgorithmus für Koordinaten")
     puls_stream = models.JSONField(blank=True, null=True, help_text="Array: Pulswerte")
-    zeit_stream = models.JSONField(blank=False, null=False, help_text="Array: Zeitstempel für Geschwindigkeitslogik")
+    zeit_stream = models.JSONField(blank=False, null=False, default=list, help_text="Array: Zeitstempel für Geschwindigkeitslogik")
     watt_stream = models.JSONField(blank=True, null=True, help_text="Array: Wattwerte")
 
     created_at = models.DateTimeField(auto_now_add=True)
