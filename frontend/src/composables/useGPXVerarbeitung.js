@@ -61,14 +61,21 @@ export function useGPXVerarbeitung() {
           
           // Wir packen JETZT ALLES in den try-catch Block!
           try {
-            const activityType = xmlDoc.querySelector('type');
-
-            
-
+    
             const gpxContent = e.target.result; 
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(gpxContent, "text/xml");
             console.log("XML wurde geparst.");
+
+            const activityType = xmlDoc.querySelector('type');
+
+            if (activityType) {
+                const typeText = activityType.textContent.toLowerCase();
+                if (!typeText.includes('cycling') && !typeText.includes('biking')) {
+                  throw new Error("Falscher Aktivitätstyp: " + typeText); 
+                  // Das throw wirft uns direkt in deinen catch-Block unten!
+                }
+              }
 
             const coordinates = [];
             const pulsStream = [];
