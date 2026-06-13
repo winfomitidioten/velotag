@@ -1,6 +1,12 @@
 <script setup>
-    import { ref, onMounted } from 'vue'
+    import { ref, onMounted } from 'vue';
+    import { useUserStore } from '@/store/userStore';
     import api from '@/api/api';
+
+    const userStore = useUserStore();
+
+    const saving = ref(false);
+    const saved = ref(false);
 
     const profile = ref({
         firstname: '',
@@ -51,6 +57,8 @@
             }
         }
         try {
+            saving.value = true;
+            saved.value = false;
             const formData = new FormData()
 
             if (profile.value.firstname !== undefined) formData.append('user.first_name', profile.value.firstname)
@@ -67,14 +75,18 @@
             const response = await api.patch('profil/', formData)
 
             profile.value = response.data
+            await userStore.fetchProfile();
 
             newPassword.value = ""
             confirmPassword.value = ""
             selectedFile.value = null
-            alert("Änderungen erfolgreich gespeichert!")
+            saved.value = true;
+            setTimeout(() => saved.value = false, 2500);
         } catch(err){
             console.error('Fehler beim Speichern: ', err.response?.data || err)
             alert("Fehler beim Speichern. Bitte überprüfe deine Eingaben.");
+        } finally {
+            saving.value = false;
         }
     }
 
@@ -153,15 +165,26 @@
                     </div>
                 </div>
             </div>
-            
-            <button type="submit" id="save">
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                    height="24px" 
-                    viewBox="0 -960 960 960" 
-                    width="24px" 
-                    fill="#FFFFFF">
-                    <path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/>
-                </svg>Änderungen speichern
+            <button type="submit" id="save" :disabled="saving">
+                <template v-if="saving">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" stroke-dasharray="40" stroke-dashoffset="10"
+                            style="animation: spin 0,8s linear infinte; transform-origin: center"/>
+                    </svg>
+                    Wird gespeichert...
+                </template>
+                <template v-else-if="saved">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                        <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/>
+                    </svg>
+                    Gespeichert!
+                </template>
+                <template v-else>
+                    <svg xmlns="https://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                        <path d="M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM565-275q35-35 35-85t-35-85q-35-35-85-35t-85 35q-35 35-35 85t35 85q35 35 85 35t85-35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z"/>
+                    </svg>
+                    Änderungen speichern
+                </template>
             </button>
         </form>
     </div>
@@ -288,13 +311,32 @@
         border-radius: 1rem;
         display: flex;
         justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
         padding: 1rem;
+        margin-bottom: 2rem;
         font-size: medium;
         cursor: pointer;
-        transition: background-color 0.2s ease;
+        transition: all 0.2s ease;
     }
-    #save:hover {
-        background-color: #2da182;
+    #save:hover:not(:disabled) {
+        background-color: #007d6d;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 159, 140, 0.35);
+    }
+    #save:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+    #save:disabled {
+        opacity: 0.75;
+        cursor: not-allowed;
+    }
+    #save.save-state {
+        background-color: #2da081;
+    }
+    @keyframes spin {
+        to { stroke-dashoffset: -40; }
     }
     input:focus {
         outline: none;

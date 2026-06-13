@@ -165,11 +165,13 @@ onMounted(() => {
         box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
         box-sizing: border-box;
         padding: 1.2rem 2rem;
+        min-height: 4.8rem;
     }
     header h3 {
         font-size: 1.25rem;
         font-weight: 500;
         margin: 0;
+        padding-left: 95px;
         color: #2c3e50;
     }
 
@@ -227,7 +229,7 @@ onMounted(() => {
     }
     .group-info h3 {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: 1.5rem;
         font-weight: 600;
         color: #2c3e50;
     }
