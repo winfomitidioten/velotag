@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Group
+from .models import Group, Membership
 from users.models import User
 
 class GrouMemberSerializer(serializers.ModelSerializer):
@@ -18,11 +18,10 @@ class GrouMemberSerializer(serializers.ModelSerializer):
 class GroupSerializer(serializers.ModelSerializer):
 
     is_admin = serializers.SerializerMethodField()
-    member_count = serializers.IntegerField(source='members.count', read_only=True)
-
-    members = GrouMemberSerializer(many=True, read_only=True)
-
     admin_email = serializers.EmailField(source='admin.email', read_only=True)
+
+    member_count = serializers.SerializerMethodField()
+    members = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -33,3 +32,14 @@ class GroupSerializer(serializers.ModelSerializer):
         if request and request.user:
             return obj.admin == request.user
         return False
+    def get_members(self, obj):
+        joined_users = User.objects.filter(
+            membership__group=obj,
+            membership__status='Joined'
+        )
+        return GrouMemberSerializer(joined_users, many=True, context=self.context).data
+    def get_member_count(self, obj):
+        return User.objects.filter(
+            membership__group=obj,
+            membership__status='Joined'
+        ).count()

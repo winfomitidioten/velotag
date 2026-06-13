@@ -6,6 +6,7 @@ import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../components/GroupView.vue'
 import GroupDetailView from '../components/GroupDetailView.vue'
+import GroupInviteView from '../components/GroupInviteView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
 
 const routes = [
@@ -49,6 +50,11 @@ const routes = [
     name: 'group-detail',
     component: GroupDetailView,
     meta: { requiresAuth: true, showBack: true, backTo: '/group' }
+  },
+  {
+    path: '/group/invites',
+    name: 'group-invites',
+    component: GroupInviteView
   },
   {
     path: '/rides',
