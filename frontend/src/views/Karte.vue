@@ -5,12 +5,15 @@ import L from 'leaflet'
 import velotagLogo from '@/assets/velotag-logo.png'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
 import stravaLogo from '@/assets/api_logo_pwrdBy_strava_horiz_orange.png'
+import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
 
 onMounted(() => {
  
-  const map = L.map('map').setView([50.0963, 8.2195], 11)//const, da Karte nicht verändert wird, nur aktualisiert
+  const map = L.map('map', {
+    zoomControl: false
+  }).setView([50.0963, 8.2195], 11)//const, da Karte nicht verändert wird, nur aktualisiert
 
   const WatermarkControl = L.Control.extend({
     onAdd: function(map) {
@@ -34,11 +37,16 @@ onMounted(() => {
     position: 'bottomleft' 
   }).addTo(map);
 
+  L.control.zoom({
+    position: 'bottomleft'
+  }).addTo(map);
+
   
  //Einbinden der OpenStreetMap-Kartenkacheln, damit die Karte angezeigt wird
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { //https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png // https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png
     maxZoom: 19,
-    attribution: `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | <img src="${stravaLogo}" height="10"/>` //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
+    color: 'black',
+    attribution: `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © CARTO | <img src="${stravaLogo}" height="10"/>` //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
   }).addTo(map)
 
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
@@ -47,7 +55,11 @@ onMounted(() => {
     map.invalidateSize()
   }, 100)
 
+  // Routen aus dem Backend abfragen
+  drawUserMap(map) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
+
 })
+
 </script>
 
 <template>

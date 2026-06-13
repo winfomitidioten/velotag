@@ -60,6 +60,7 @@ const password = ref('');
 const passwordRepeat = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
+const emit = defineEmits(['registered']);
 
 const validateEmail = (emailStr) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
@@ -107,7 +108,7 @@ const handleRegister = async () => {
         });
 
         localStorage.setItem('auth_token', response.data.token);
-        router.push('/login');
+        emit('registered');
     } catch (error) {
         if (error.response && error.response.data.error) {
             errorMessage.value = error.response.data.error;

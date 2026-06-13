@@ -4,8 +4,9 @@ from rest_framework import status, permissions
 from django.db.models import Q
 from rest_framework.response import Response
 from .serializers import GroupSerializer
-from .models import Group
+from .models import Group, Membership
 from rest_framework.authentication import TokenAuthentication
+from users.models import User
 # Create your views here.
 
 class GroupView(APIView):
@@ -14,7 +15,7 @@ class GroupView(APIView):
 
     def get(self, request):
         user = request.user
-        groups = Group.objects.filter(Q(admin = user) | Q(members=user)).distinct()
+        groups = Group.objects.filter(Q(membership__user=user, membership__status='Joined')).distinct()
 
         serializer = GroupSerializer(groups, many=True, context={'request': request})
 
@@ -32,11 +33,155 @@ class GroupView(APIView):
             name = group_name,
             admin = request.user
         )
-
-        new_group.members.add(request.user)
+        Membership.objects.create(user=request.user, group=new_group, status='Joined')
         serializer = GroupSerializer(new_group, context={'request': request})
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+class GroupDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+            if not Membership.objects.filter(user=request.user, group=group, status='Joined').exists():
+                return Response(
+                    {"error": "Du hast keine Berechtigung, diese Gruppe anzuzeigen."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            serializer = GroupSerializer(group, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+    def delete(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+            
+            if group.admin != request.user:
+                return Response(
+                    {"error": "Nur der Admin darf Mitglieder entfernen."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            user_mail = request.data.get('email')
+            if not user_mail:
+                return Response(
+                    {"error": "Eine Benutzermail wird benötigt."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            user_to_remove = User.objects.get(email=user_mail)
+            Membership.objects.filter(user=user_to_remove, group=group).delete()
+            serializer = GroupSerializer(group, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+class GroupInviteAdmin(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+            if group.admin != request.user:
+                return Response(
+                    {"error": "Nur der Admin darf Mitglieder hinzufügen."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            new_member_mail = request.data.get('email')
+            if not new_member_mail:
+                return Response(
+                    {"error": "Eine Benutzermail wird benötigt."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            user_to_add = User.objects.get(email=new_member_mail)
+            membership = Membership.objects.filter(user=user_to_add, group=group).first()
+            if membership:
+                if membership.status == 'Pending':
+                    return Response(
+                        {"error": "Dieser Nutzer wurde bereits eingeladen, hat aber noch nicht angenommen"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                if membership.status == 'Joined':
+                    return Response(
+                        {"error": "Dieser Nutzer ist bereits aktives Mitglied der Gruppe"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            Membership.objects.create(user=user_to_add, group=group)
+            serializer = GroupSerializer(group, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+class UserInvitationsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+            user = request.user
+            groups = Group.objects.filter(Q(membership__user=user, membership__status='Pending')).distinct()
+            serializer = GroupSerializer(groups, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        group_id = request.data.get('group_id')
+        action = request.data.get('action')
+
+        if not group_id or not action:
+            return Response(
+                {"error": "group_id und action werden benötigt"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if action not in ['accept', 'decline']:
+            return Response(
+                {"error": "Ungültige Aktion. Nur accept und decline erlaubt."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            membership = Membership.objects.get(user=request.user, group_id=group_id, status='Pending')
+
+            if action == 'accept':
+                membership.status = 'Joined'
+                membership.save()
+                return Response(
+                    {"message": "Einladung erfolgreich angenommen"},
+                    status=status.HTTP_200_OK
+                )
+            elif action == 'decline':
+                membership.delete()
+                return Response(
+                    {"message": "Einladung erfolgreich abgelehnt"},
+                    status=status.HTTP_200_OK
+                )
+        except Membership.DoesNotExist:
+            return Response(
+                {"error": "Keine offene Einladung für diese Gruppe gefunden"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
