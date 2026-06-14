@@ -43,7 +43,13 @@ const routes = [
     path: '/group/:id',
     name: 'group-detail',
     component: GroupDetailView
-  }
+  },
+  {
+  path: '/strecken',
+  name: 'strecken',
+  component: () => import('../views/StreckenView.vue'),
+  meta: { requiresAuth: true }
+}
 ];
 
 const router = createRouter({

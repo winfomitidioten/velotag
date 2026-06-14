@@ -3,10 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .serializers import RouteSerializer
+from .serializers import RouteListSerializer
 # NEU: Diese Zeile fehlt, damit Python weiß, was TokenAuthentication ist!
 from rest_framework.authentication import TokenAuthentication
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from .models import Route
 
 @method_decorator(csrf_exempt, name='dispatch')
 
@@ -30,3 +32,12 @@ class RouteCreateView(APIView):
             
         # 4. Falls das Frontend Quatsch schickt (z.B. falsche Datentypen), Fehler zurückgeben
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class RouteListView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        routes = Route.objects.filter(user=request.user)  # Nur Routen des eingeloggten Users
+        serializer = RouteListSerializer(routes, many=True)  # Liste → many=True
+        return Response(serializer.data, status=status.HTTP_200_OK)
