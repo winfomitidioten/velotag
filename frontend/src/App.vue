@@ -3,6 +3,8 @@ import { RouterView, useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import MenuBar from '@/components/MenuBar.vue'
 import { useUserStore } from '@/store/userStore'
+import { Capacitor } from '@capacitor/core'
+import apiClient from '@/api/client'
 
 
 const route = useRoute();
@@ -14,6 +16,9 @@ const goBack = () => {
 };
 
 onMounted(async () => {
+  if (Capacitor.isNativePlatform()) {
+    apiClient.defaults.baseURL = 'http://167.233.33.166/api';
+  }
   if (localStorage.getItem('auth_token')) {
     await userStore.fetchProfile();
   }
