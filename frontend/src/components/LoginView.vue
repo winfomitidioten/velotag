@@ -60,7 +60,7 @@ const handleLogin = async () => {
         });
         localStorage.setItem('auth_token', response.data.token);
         await userStore.fetchProfile();
-        router.push('/karte');
+        router.push('/map');
     } catch (error) {
         if (error.response) {
             const data = error.response.data;

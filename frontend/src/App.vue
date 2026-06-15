@@ -12,7 +12,7 @@ const router = useRouter();
 const userStore = useUserStore();
 
 const goBack = () => {
-  router.push(route.meta.backTo ?? '/karte');
+  router.push(route.meta.backTo ?? '/map');
 };
 
 onMounted(async () => {
