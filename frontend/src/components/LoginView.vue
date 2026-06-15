@@ -51,6 +51,7 @@ const errorMessage = ref('');
 const handleLogin = async () => {
     loading.value = true;
     errorMessage.value = '';
+    localStorage.removeItem('auth_token');
 
     try {
         const response = await api.post('login/', {
