@@ -34,7 +34,7 @@ const decodePolyline = (encoded) => {
 };
 
 export async function drawUserMap(map) {//async 
-    const response = await api.get('routes/read/')
+    const response = await api.get('routes/map/')
     const routes = response.data
     console.log("Routen aus Django:", routes)//Testausgabe, um API Call zu überprüfen
 

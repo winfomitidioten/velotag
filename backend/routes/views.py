@@ -35,7 +35,17 @@ class RouteCreateView(APIView): #Zweck: Diese View empfängt die POST-Anfrage vo
         # 4. Falls das Frontend Quatsch schickt (z.B. falsche Datentypen), Fehler zurückgeben
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+# Für das Zeichnen der Fahrt
+class RouteMapView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        routes = Route.objects.filter(user=request.user)
+        serializer = RouteSerializer(routes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+#Für die Fahrten Anzeige
 class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom Frontend,
     #holt alle Strecken des eingeloggten Users aus der DB, serialisiert sie und schickt sie zurück
 
