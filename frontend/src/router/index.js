@@ -6,6 +6,8 @@ import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../components/GroupView.vue'
 import GroupDetailView from '../components/GroupDetailView.vue'
+import GroupInviteView from '../components/GroupInviteView.vue'
+import ComingSoon from '@/components/ComingSoon.vue';
 
 const routes = [
   {
@@ -18,38 +20,54 @@ const routes = [
       path: '/profile',
       name: 'profile',
       component: ProfileView,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, showBack: true }
   }, 
   { 
     path: '/',
     redirect: '/login',
+    meta: { hideMenu: true }
   },
   {   
     path: '/login',
     name: 'login',
-    component: LoginRegister
+    component: LoginRegister,
+    meta: { hideMenu: true }
   },
   {
     path: '/register',
     name: 'register',
-    component: LoginRegister
+    component: LoginRegister,
+    meta: { hideMenu: true }
   },
   {
     path: '/group',
     name: 'group',
-    component: GroupView
+    component: GroupView,
+    meta: { requiresAuth: true, showBack: true }
   },
   {
     path: '/group/:id',
     name: 'group-detail',
-    component: GroupDetailView
+    component: GroupDetailView,
+    meta: { requiresAuth: true, showBack: true, backTo: '/group' }
   },
   {
-  path: '/strecken',
-  name: 'strecken',
-  component: () => import('../views/StreckenView.vue'),
-  meta: { requiresAuth: true }
-}
+    path: '/group/invites',
+    name: 'group-invites',
+    component: GroupInviteView
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: ComingSoon,
+    meta: { requiresAuth: true, showBack: true }
+  },
+  {
+    path: '/rides',
+    name: 'rides',
+    component: () => import('../views/StreckenView.vue'),
+    meta: { requiresAuth: true, showBack: true }
+  }
 ];
 
 const router = createRouter({

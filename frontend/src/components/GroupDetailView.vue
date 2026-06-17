@@ -25,7 +25,7 @@ const fetchGroup = async () => {
 const inviteMember = async () => {
     if (!newMemberMail.value.trim()) return;
     try {
-        const response = await api.post(`groups/${groupId}/`, {
+        const response = await api.post(`groups/${groupId}/invite/`, {
             email: newMemberMail.value
         });
     
@@ -165,11 +165,13 @@ onMounted(() => {
         box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
         box-sizing: border-box;
         padding: 1.2rem 2rem;
+        min-height: 4.8rem;
     }
     header h3 {
         font-size: 1.25rem;
         font-weight: 500;
         margin: 0;
+        padding-left: 95px;
         color: #2c3e50;
     }
 
@@ -227,7 +229,7 @@ onMounted(() => {
     }
     .group-info h3 {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: 1.5rem;
         font-weight: 600;
         color: #2c3e50;
     }
@@ -338,9 +340,8 @@ onMounted(() => {
         font-weight: 500;
     }
 
-    /* OPTIMIERT: Schickes, reaktives Design für das Lösch-X */
     .delete-member {
-        margin-left: auto; /* Zwingt das Element ganz nach rechts */
+        margin-left: auto;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -351,23 +352,23 @@ onMounted(() => {
         transition: background-color 0.2s ease, transform 0.1s ease;
     }
     
-    /* Farbe des SVG-Icons steuern */
+   
     .delete-member svg {
-        fill: #94a3b8; /* Dezentes, edles Grau im Normalzustand */
+        fill: #94a3b8; 
         transition: fill 0.2s ease;
     }
 
-    /* Verhalten beim Drüberfahren (Hover) */
+   
     .delete-member:hover {
-        background-color: #fee2e2; /* Sanfter roter Hintergrundkreis */
+        background-color: #fee2e2; 
     }
     
     .delete-member:hover svg {
-        fill: #ef4444; /* Knalliges Rot für das X auf Hover */
+        fill: #ef4444; 
     }
 
     .delete-member:active {
-        transform: scale(0.9); /* Klick-Animation */
+        transform: scale(0.9); 
     }
 
     #popup-overlay {

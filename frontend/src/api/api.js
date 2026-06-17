@@ -9,7 +9,7 @@ api.interceptors.request.use((config) => {
     const token = localStorage.getItem('auth_token');
     
     // NEU: Wir prüfen, ob Axios hier überhaupt vorbeikommt!
-    console.log("🕵️‍♂️ AXIOS INTERCEPTOR LÄUFT! Gefundener Token:", token);
+    console.log("AXIOS INTERCEPTOR LÄUFT! Gefundener Token:", token);
     
     if (token) {
         // Moderne, bombensichere Schreibweise für Axios-Header

@@ -111,6 +111,7 @@ header h3 {
   font-size: 1.25rem;
   font-weight: 500;
   color: var(--color-text);
+  padding-left: 95px;
 }
 
 .count-badge {
