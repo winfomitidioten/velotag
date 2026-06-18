@@ -69,6 +69,12 @@ onMounted(() => {
                 <h3>{{ group.name }}</h3>
             </header>
             
+            <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                    <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
+                </svg>
+            </button>
+
             <main class="page-content">
                 <div class="group-card">
                     <div class="card-main-content">
@@ -82,11 +88,11 @@ onMounted(() => {
                             <span>{{ group.member_count }} Mitglieder</span>
                         </div>
                         
-                        <button v-if="group.is_admin" @click="showPopup = true" class="action-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#ffffff">
+                        <button v-if="group.is_admin" @click="showPopup = true" class="action-btn desktop-invite-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
                                 <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
                             </svg>
-                            Einladen
+                            <span>Einladen</span>
                         </button>
                     </div>
 
@@ -151,7 +157,7 @@ onMounted(() => {
 <style scoped>
     .page-container {
         min-height: 100vh;
-        background-color: #f8f9fa;
+        background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
     }
@@ -161,25 +167,61 @@ onMounted(() => {
         justify-content: space-between;
         align-items: center;
         width: 100%;
-        background-color: #ffffff;
+        background-color: var(--color-bg-card);
         box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
         box-sizing: border-box;
-        padding: 1.2rem 2rem;
+        padding: 1rem 1.5rem;
         min-height: 4.8rem;
     }
     header h3 {
-        font-size: 1.25rem;
-        font-weight: 500;
+        font-size: 1.2rem;
+        font-weight: 600;
         margin: 0;
-        padding-left: 95px;
-        color: #2c3e50;
+        padding-left: 130px; /* Perfekter Mobil-Abstand zur Navigation */
+        color: var(--color-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* --- REINER MOBILE BUTTON (FAB) --- */
+    .mobile-fab-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 1.5rem;
+        z-index: 90;
+        background-color: var(--color-primary);
+        color: white;
+        border: none;
+        cursor: pointer;
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 50%;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
+        transition: all 0.2s ease;
+    }
+    .mobile-fab-btn:active {
+        transform: scale(0.95);
+    }
+    .mobile-fab-btn svg {
+        width: 1.6rem;
+        height: 1.6rem;
+    }
+
+    /* --- REINER DESKTOP BUTTON --- */
+    .desktop-invite-btn {
+        display: none; /* Mobil ausblenden */
     }
 
     .page-content {
         flex: 1;
         display: flex;
         justify-content: center;
-        padding: 3rem 2rem;
+        padding: 1rem;
         box-sizing: border-box;
     }
 
@@ -187,15 +229,16 @@ onMounted(() => {
         display: flex;
         flex-direction: column;    
         justify-content: flex-start;
-        gap: 1.8rem;                
-        background-color: #ffffff; 
-        padding: 2rem;     
-        border-radius: 0.8rem;     
-        box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.02);
+        gap: 1.5rem;                
+        background-color: var(--color-bg-card); 
+        padding: 1.25rem;     
+        border-radius: var(--radius-md);     
+        box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.03);
         box-sizing: border-box;
         width: 100%;
         max-width: 45rem;  
         border: 2px solid transparent;
+        align-self: start;
     }
 
     .card-main-content {
@@ -209,64 +252,46 @@ onMounted(() => {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 3.2rem;          
-        height: 3.2rem;
-        background-color: #e8f7f3; 
-        border-radius: 0.6rem;     
+        width: 3rem;          
+        height: 3rem;
+        background-color: #e8f7f3; /* Beibehalten für leichten Akzentton */
+        border-radius: var(--radius-md);     
         flex-shrink: 0;            
     }
     .group-icon-box svg {
-        width: 1.6rem;
-        height: 1.6rem;
-        fill: #3db897;
+        width: 1.5rem;
+        height: 1.5rem;
+        fill: var(--color-primary);
     }
     
     .group-info {
         display: flex;
         flex-direction: column;
-        gap: 0.2rem;   
+        gap: 0.1rem;   
         flex-grow: 1;      
     }
     .group-info h3 {
         margin: 0;
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--color-text);
     }
     .group-info span {
-        font-size: 0.9rem;
-        color: #7f8c8d;           
-    }
-
-    .action-btn {
-        background-color: #3db897;
-        color: white;
-        border: none;
-        cursor: pointer;
-        border-radius: 0.6rem;
-        padding: 0.6em 1.4em;
-        font-size: 0.9rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s ease;
-    }
-    .action-btn:hover {
-        background-color: #2da081;
+        font-size: 0.85rem;
+        color: var(--color-text-muted);           
     }
 
     .card-stats-area {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.8rem;
     }
     .card-stats-area h4 {
         margin: 0;
-        font-size: 1.05rem;
+        font-size: 1rem;
         font-weight: 600;
-        color: #2c3e50;
-        border-bottom: 2px solid #f1f5f9;
+        color: var(--color-text);
+        border-bottom: 2px solid var(--color-bg-page);
         padding-bottom: 0.5rem;
     }
 
@@ -276,17 +301,17 @@ onMounted(() => {
         margin: 0;
         display: flex;
         flex-direction: column;
-        gap: 0.6rem;
+        gap: 0.5rem;
     }
 
     .member-item {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        padding: 0.6rem 0.8rem;
-        background-color: #f8fafc;
-        border-radius: 0.6rem;
-        border: 1px solid #e2e8f0;
+        gap: 0.75rem;
+        padding: 0.6rem;
+        background-color: var(--color-bg-page);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border);
     }
 
     .member-avatar-img {
@@ -294,7 +319,7 @@ onMounted(() => {
         height: 2.2rem;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid #3db897; 
+        border: 2px solid var(--color-primary); 
     }
 
     .member-avatar {
@@ -304,7 +329,7 @@ onMounted(() => {
         width: 2.2rem;
         height: 2.2rem;
         background-color: #e8f7f3;
-        color: #3db897;
+        color: var(--color-primary);
         font-weight: 600;
         font-size: 0.95rem;
         border-radius: 50%;
@@ -315,28 +340,32 @@ onMounted(() => {
         display: flex;
         flex-direction: column;
         gap: 0.1rem;
+        min-width: 0; /* Verhindert Text-Overflow-Probleme auf winzigen Displays */
     }
 
     .member-name {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        font-size: 0.95rem;
+        gap: 0.4rem;
+        font-size: 0.9rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--color-text);
     }
 
     .member-email {
-        font-size: 0.85rem;
-        color: #7f8c8d;
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .admin-badge {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         background-color: #e8f7f3;
-        color: #3db897;
+        color: var(--color-primary);
         padding: 0.1rem 0.4rem;
-        border-radius: 0.4rem;
+        border-radius: var(--radius-sm);
         font-weight: 500;
     }
 
@@ -346,27 +375,22 @@ onMounted(() => {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2.2rem;
-        height: 2.2rem;
+        width: 2rem;
+        height: 2rem;
         border-radius: 50%;
         transition: background-color 0.2s ease, transform 0.1s ease;
+        flex-shrink: 0;
     }
-    
-   
     .delete-member svg {
         fill: #94a3b8; 
         transition: fill 0.2s ease;
     }
-
-   
     .delete-member:hover {
         background-color: #fee2e2; 
     }
-    
     .delete-member:hover svg {
         fill: #ef4444; 
     }
-
     .delete-member:active {
         transform: scale(0.9); 
     }
@@ -383,39 +407,42 @@ onMounted(() => {
         align-items: center;
         z-index: 999;
         backdrop-filter: blur(4px); 
+        padding: 1rem;
+        box-sizing: border-box;
     }
 
     #popup-content {
-        background: #ffffff;
-        padding: 2.5rem;
-        border-radius: 1.2rem;
+        background: var(--color-bg-card);
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
         width: 100%;
         max-width: 28rem;
         box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1);
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.25rem;
         box-sizing: border-box;
     }
     #popup-content h3 {
         margin: 0;
-        font-size: 1.4rem;
+        font-size: 1.25rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--color-text);
     }
     #popup-content input[type="email"] {
         width: 100%;
-        padding: 0.8rem 1rem;
+        padding: 0.85rem 1rem;
         font-size: 1rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 0.6rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
         outline: none;
-        color: #2c3e50;
+        color: var(--color-text);
         transition: all 0.2s ease;
         box-sizing: border-box;
+        background-color: var(--color-bg-page);
     }
     #popup-content input[type="email"]:focus {
-        border-color: #3db897;
+        border-color: var(--color-primary);
         box-shadow: 0 0 0 3px rgba(61, 184, 151, 0.15);
     }
     #popup-actions {
@@ -426,11 +453,12 @@ onMounted(() => {
     #popup-actions button {
         border: none;
         cursor: pointer;
-        border-radius: 0.6rem;
-        padding: 0.7em 1.5em;
+        border-radius: var(--radius-md);
+        padding: 0.85rem 1.5rem;
         font-size: 0.95rem;
         font-weight: 600;
         transition: all 0.2s ease;
+        flex: 1;
     }
     #cancle-btn {
         background-color: #f1f5f9;
@@ -438,19 +466,13 @@ onMounted(() => {
     }
     #cancle-btn:hover {
         background-color: #e2e8f0;
-        color: #475569;
     }
     #create-btn {
-        background-color: #3db897;
+        background-color: var(--color-primary);
         color: white;
-        box-shadow: 0 0.2rem 0.8rem rgba(61, 184, 151, 0.2);
     }
     #create-btn:hover {
-        background-color: #2da081;
-        box-shadow: 0 0.4rem 1.2rem rgba(61, 184, 151, 0.3);
-    }
-    #create-btn:active {
-        transform: scale(0.98);
+        background-color: var(--color-primary-dark);
     }
 
     .loading-state {
@@ -458,7 +480,69 @@ onMounted(() => {
         justify-content: center;
         align-items: center;
         min-height: 100vh;
-        color: #64748b;
+        color: var(--color-text-muted);
         font-weight: 500;
+    }
+
+    /* --- TABLET / DESKTOP OPTIMIERUNGEN --- */
+    @media (min-width: 480px) {
+        header {
+            padding: 1.2rem 2rem;
+        }
+        header h3 {
+            font-size: 1.25rem;
+            padding-left: 95px; /* Gewohnter Standard-Desktop-Abstand */
+        }
+        .page-content {
+            padding: 3rem 2rem;
+        }
+        .group-card {
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            gap: 1.8rem;
+        }
+        .group-info h3 {
+            font-size: 1.5rem;
+        }
+        .group-info span {
+            font-size: 0.9rem;
+        }
+        .card-stats-area h4 {
+            font-size: 1.05rem;
+        }
+        .member-item {
+            padding: 0.6rem 0.8rem;
+        }
+        #popup-content {
+            padding: 2.5rem;
+            gap: 1.5rem;
+        }
+        #popup-actions button {
+            flex: none;
+        }
+
+        /* Mobil-Button verstecken */
+        .mobile-fab-btn {
+            display: none;
+        }
+
+        /* Desktop-Button einblenden */
+        .desktop-invite-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            padding: 0.6em 1.4em;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .desktop-invite-btn:hover {
+            background-color: var(--color-primary-dark);
+        }
     }
 </style>
