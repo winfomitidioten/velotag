@@ -146,7 +146,7 @@ const closeMenu = () => { isOpen.value = false; };
 /* Hamburger Button */
 .menu-button {
   position: fixed;
-  top: 1rem;
+  top: calc(var(--safe-top) + 1rem);
   left: 1rem;
   z-index: 1010;
   display: flex;
@@ -206,7 +206,7 @@ const closeMenu = () => { isOpen.value = false; };
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 1.25rem 0.75rem;
+  padding: calc(var(--safe-top) + 1.25rem) 1.25rem 0.75rem;
   flex-shrink: 0;
 }
 .logo {

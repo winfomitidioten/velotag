@@ -28,7 +28,7 @@ onMounted(() => {
   });
 
   // Logo oben rechts auf die Karte setzen
-  new WatermarkControl({ position: 'topright' }).addTo(map);
+  //new WatermarkControl({ position: 'topright' }).addTo(map);
 
   
   L.control.scale({
@@ -52,8 +52,14 @@ onMounted(() => {
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
 // daher muss die Karte hier manuell aktualisiert werden, damit sie korrekt angezeigt wird
   setTimeout(() => {
+    if (map) {
+      map.invalidateSize()
+    }
+  }, 250)
+  
+  window.addEventListener('resize', () => {
     map.invalidateSize()
-  }, 100)
+  })
 
   // Routen aus dem Backend abfragen
   drawUserMap(map) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
@@ -78,9 +84,10 @@ onMounted(() => {
   }
 
   /* Karte füllt Container komplett aus*/
-  #map { 
-    height: 100%; 
+  #map {
+    height: 100dvh;
     width: 100%;
+    height: calc(100vh - env(safe-area-inset-bottom));
   }
 
   /* Upload Button "+" */
