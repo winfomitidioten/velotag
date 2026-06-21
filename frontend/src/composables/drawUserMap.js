@@ -1,14 +1,7 @@
 import { ref } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
-import { 
-    point, 
-    lineString, 
-    featureCollection, 
-    hexGrid, 
-    buffer, 
-    booleanIntersects 
-} from '@turf/turf';
+import { activeLayerId } from '@/composables/useMap.js'
 
 // Dekodiert den komprimierten String zurück in ein [Lat, Lng] Array
 const decodePolyline = (encoded) => {
@@ -44,7 +37,8 @@ const decodePolyline = (encoded) => {
 export async function drawUserMap(map) {//async 
     const response = await api.get('routes/read/')
     const routes = response.data
-    console.log("Routen aus Django:", routes)//Testausgabe, um API Call zu überprüfen
+    const numberOfRoutes = routes.length
+    console.log("Routen aus Django:", routes)//Testausgabe, um API Call zu überprüfenw
     const featureGroup = L.featureGroup().addTo(map)
 
 
@@ -52,10 +46,16 @@ export async function drawUserMap(map) {//async
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
+        var colourLine = 'red';
+
+        if(activeLayerId.value === 'hybrid') {
+            colourLine = 'blue';
+        }
         const polyline = L.polyline(coordinates, 
-            {color: 'red',     // Grundfarbe
+            {color: colourLine,     // Grundfarbe
              weight: 4,            // Breite
-             opacity: 0.05,        // Logik der HeatMap: Addiert sich auf
+             opacity: Math.max(0.03, 1 / numberOfRoutes),//Logik der Heatmap: Addiert sich auf 
+             // + relativ anhand der Routenanzahl vom Profil
              lineJoin: 'round',    // Weiche Kurven
              lineCap: 'round'//,     // Abgerundete Enden}
         }).addTo(map);//color: 'blue'

@@ -1,17 +1,26 @@
 <script setup>
 
-import { onMounted, ref } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
-import L from 'leaflet'
+import { onMounted, ref, computed } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
 import velotagLogo from '@/assets/velotag-logo.png'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
-import stravaLogo from '@/assets/api_logo_pwrdBy_strava_horiz_orange.png'
 import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
+import LayersSelectionModal from '@/components/layersSelectionModal.vue'
+import { useMap } from '@/composables/useMap.js'
+import L from 'leaflet'
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
+const showLayers = ref(false);
+
+const { initializeMap, availableLayers, activeLayerId } = useMap();
+
+const activeLayerPreview = computed(() => {
+  const active = availableLayers.find(l => l.id === activeLayerId.value);
+  return active ? active.preview : availableLayers[0].preview;
+});
 
 onMounted(() => {
  
-  const map = L.map('map').setView([50.0963, 8.2195], 11)//const, da Karte nicht verändert wird, nur aktualisiert
+  const map = initializeMap('map');
 
   const WatermarkControl = L.Control.extend({
     onAdd: function(map) {
@@ -27,33 +36,6 @@ onMounted(() => {
 
   // Logo oben rechts auf die Karte setzen
   new WatermarkControl({ position: 'topright' }).addTo(map);
-
-  
-  L.control.scale({
-    metric: true, 
-    imperial: false, 
-    position: 'bottomleft' 
-  }).addTo(map);
-
-  
- /*Einbinden der OpenStreetMap-Kartenkacheln, damit die Karte angezeigt wird
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { //https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png // https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png //'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-    maxZoom: 19,
-    color: 'black',
-    attribution: `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © CARTO | <img src="${stravaLogo}" height="10"/>` //Rechtlicher Hinweis auf Nutzung der OpenStreetMap-Daten
-  }).addTo(map)
-  */
- // 1. Der Satelliten-Hintergrund (Esri World Imagery)
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  maxZoom: 19,
-  attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-}).addTo(map);
-
-// 2. Die Straßen und Labels darüber legen (CartoDB Only Labels/Lines)
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19,
-  attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
-}).addTo(map);
 
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
 // daher muss die Karte hier manuell aktualisiert werden, damit sie korrekt angezeigt wird
@@ -73,6 +55,13 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.p
   <button class="btn_popup" @click="showModal = true">+</button>
 
   <GpxUploadModal v-if="showModal" @close="showModal = false" />
+
+  <button class="btn_ebenen_preview" @click="showLayers = true" title="Ebenen auswählen">
+    <img :src="activeLayerPreview" alt="Ebenen auswählen" />
+  </button>
+
+  <LayersSelectionModal v-if="showLayers" @close="showLayers = false"/>
+
 </template>
 
 <style scoped>
@@ -103,5 +92,27 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.p
     border-radius: 50%;
     border: none;
     cursor: pointer; /* Zeigt die Hand beim Hovern */
+  }
+
+  .btn_ebenen_preview {
+    position: absolute;
+    bottom: 30px;
+    left: 10px;
+    z-index: 9999;
+    padding: 0;
+    height: 50px;
+    width: 50px;
+    border-radius: 8px; /* Moderner Look mit abgerundeten Ecken */
+    border: 2px solid var(--color-primary); /* Velotag-Grüner Rahmen um das Bild */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3); 
+    cursor: pointer;
+    overflow: hidden;
+    background-color: white;
+  }
+  .btn_ebenen_preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 </style>
