@@ -33,7 +33,7 @@ const availableLayers = [
 // Globaler Zustand für die Karte, der von allen Komponenten geteilt wird
 const mapInstance = shallowRef(null);
 const currentTileLayer = shallowRef(null);
-const activeLayerId = ref(availableLayers[0].id); // Standardmäßig der erste Layer
+export const activeLayerId = ref(availableLayers[0].id); // Standardmäßig der erste Layer
 
 // Diese Funktion stellt sicher, dass der Zustand über die ganze App hinweg geteilt wird.
 export function useMap() {

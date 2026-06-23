@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
@@ -46,11 +46,9 @@ export async function drawUserMap(map) {//async
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
-        var colourLine = 'red';
+        // Initiale Farbe beim ersten Laden ermitteln
+        let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
-        if(activeLayerId.value === 'hybrid') {
-            colourLine = 'blue';
-        }
         const polyline = L.polyline(coordinates, 
             {color: colourLine,     // Grundfarbe
              weight: 4,            // Breite
@@ -61,5 +59,16 @@ export async function drawUserMap(map) {//async
         }).addTo(map);//color: 'blue'
         featureGroup.addLayer(polyline);
         polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
+    });
+
+    watch(activeLayerId, (newLayerId) => {
+        // Neue Farbe basierend auf der neuen ID ermitteln
+        const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
+        
+        // Durch alle gezeichneten Linien in der FeatureGroup iterieren 
+        // und die Leaflet-Methode setStyle() aufrufen
+        featureGroup.eachLayer((layer) => {
+            layer.setStyle({ color: newColor });
+        });
     });
 }
