@@ -43,7 +43,9 @@ export function useMap() {
             return mapInstance.value;
         }
 
-        const map = L.map(elementId).setView([50.0963, 8.2195], 11);
+        const map = L.map(elementId, {
+            zoomControl: false // <--- Hier schalten wir die Buttons aus
+            }).setView([50.0963, 8.2195], 11);
         mapInstance.value = map;
         
         // Setze den initialen Layer
