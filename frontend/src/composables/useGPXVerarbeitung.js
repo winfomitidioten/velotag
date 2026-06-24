@@ -61,6 +61,7 @@ export function useGPXVerarbeitung() {
           console.log("Leuchtturm 1: FileReader hat die Datei geöffnet.");
           
           try {
+    
             const gpxContent = e.target.result; 
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(gpxContent, "text/xml");

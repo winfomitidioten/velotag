@@ -7,6 +7,7 @@ from rest_framework import status, permissions
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .serializers import UserProfileSerializer
 from .models import UserProfile
@@ -17,28 +18,47 @@ User = get_user_model()
 class ProfileView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
         user = request.user
         profile, created = UserProfile.objects.get_or_create(user=user)
-        serializer = UserProfileSerializer(profile)
+        serializer = UserProfileSerializer(profile, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def patch(self, request):
-        user = User.objects.get(username="max.mustermann@stud.de")
+        user = request.user
         profile, created = UserProfile.objects.get_or_create(user=user)
+        firstname = request.data.get('user.first_name')
+        lastname = request.data.get('user.last_name')
+        mail = request.data.get('user.email')
+        password = request.data.get('password')
+        profilbild = request.data.get('profilbild')
 
-        new_password = request.data.get('password')
-        if new_password:
-            user.set_password(new_password)
-            user.save()
-        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        if firstname is not None:
+            user.first_name = firstname
+        if lastname is not None:
+            user.last_name = lastname
+        if mail is not None:
+            user.email = mail
+        if password:
+            user.set_password(password)
+        user.save()
+        
+        if firstname is not None:
+            profile.firstname = firstname
+        if lastname is not None:
+            profile.lastname = lastname
+        if mail is not None:
+            profile.mail = mail
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if profilbild and not isinstance(profilbild, str):
+            profile.profilbild = profilbild
+        
+        profile.save()
 
+        serializer = UserProfileSerializer(profile, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
@@ -92,3 +112,11 @@ class RegisterView(APIView):
             return Response(
                 {'error': f'Ein interner Fehler ist aufgetreten: {str(e)}\n Bitte wenden Sie sich an den Support oder versuchen Sie es später noch einmal.'}
             )
+
+class LogoutView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        request.user.auth_token.delete();
+        return Response(status=204);

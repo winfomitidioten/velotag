@@ -37,9 +37,11 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/store/userStore';
 import api from '@/api/api';
 
 const router = useRouter();
+const userStore = useUserStore();
 
 const email = ref('');
 const password = ref('');
@@ -56,6 +58,7 @@ const handleLogin = async () => {
             password: password.value,
         });
         localStorage.setItem('auth_token', response.data.token);
+        await userStore.fetchProfile();
         router.push('/karte');
     } catch (error) {
         if (error.response) {
