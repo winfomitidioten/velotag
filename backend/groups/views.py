@@ -183,5 +183,44 @@ class UserInvitationsView(APIView):
                 {"error": "Keine offene Einladung für diese Gruppe gefunden"},
                 status=status.HTTP_404_NOT_FOUND
             )
+class GroupLeaveView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Diese Gruppe exisitiert nicht"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        if request.user not in group.members.all():
+            return Response(
+                {"error": "Dieser Nutzer ist kein Migtlied der Gruppe"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if group.admin == request.user:
+            next_active_membership = Membership.objects.filter(
+                group=group,
+                status='Joined'
+            ).exclude(user=request.user).first()
+
+            if next_active_membership:
+                group.admin = next_active_membership.user
+                group.save()
+            else:
+                group.delete()
+                return Response(
+                    {"message": "Gruppe wurde gelöscht da es keine anderen aktiven Mitglieder gibt"},
+                    status=status.HTTP_200_OK
+                )
+        group.members.remove()
+        return Response(
+            {"message": "Du hast die Gruppe erfolgreich verlassen"},
+            status=status.HTTP_200_OK
+        )
+
+
 
 
