@@ -206,7 +206,7 @@ class GroupLeaveView(APIView):
                     {"message": "Gruppe wurde gelöscht da es keine anderen aktiven Mitglieder gibt"},
                     status=status.HTTP_200_OK
                 )
-        group.members.remove()
+        Membership.objects.filter(user=request.user, group=group).delete()
         return Response(
             {"message": "Du hast die Gruppe erfolgreich verlassen"},
             status=status.HTTP_200_OK

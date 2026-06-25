@@ -1,9 +1,10 @@
 <script setup>
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import api from '@/api/api';
 
 const route = useRoute()
+const router = useRouter()
 const groupId = route.params.id
 const group = ref(null)
 const loading = ref(false)
@@ -42,7 +43,7 @@ const deleteMember = async (email) => {
     if (!confirm(`Möchtest du das Mitglied (${email}) wirklich aus der Gruppe entfernen?`)) return;
 
     try{
-        const response = await api.delete(`groups/${groupId}/`, {
+        const response = await api.delete(`groups/${groupId}/kick`, {
             data: { email: email }
         });
         
@@ -50,6 +51,20 @@ const deleteMember = async (email) => {
     } catch (error) {
         console.error("Fehler beim Löschen des Mitglieds:", error);
         alert(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.");
+    }
+}
+
+const deleteGroup = async () =>{
+    if(!confirm("Möchtest du diese Gruppe wirklich dauerhaft löschen?")) return;
+    try{
+        const response = await api.delete(`groups/${groupId}/`);
+        alert("Gruppe wurde erfolgreich gelöscht");
+
+        router.push("/group")
+        
+    } catch (error) {
+        console.error("Fehler beim löschen der Gruppe:", error);
+        alert(error.response?.data?.error || "Es gab ein Problem beim Löschen der Gruppe.");
     }
 }
 
@@ -67,6 +82,15 @@ onMounted(() => {
         <template v-else-if="group">
             <header>
                 <h3>{{ group.name }}</h3>
+                <button class="desktop-create-btn" @click="deleteGroup">
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                    height="24px" 
+                    viewBox="0 -960 960 960" width="24px" 
+                    fill="currentColor">
+                    <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
+                    </svg>
+                    <span>Gruppe Löschen</span>
+                </button>
             </header>
             
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
