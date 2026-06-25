@@ -24,7 +24,7 @@ urlpatterns = [
     path('api/logout/', LogoutView.as_view()),
     path('api/groups/<int:pk>/invite/', GroupInviteAdmin.as_view(), name='group-invite-admin'),
     path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
-    path('api/groups/<int:pk>/', GroupLeaveView.as_view(), name="group-leave"),
+    path('api/groups/<int:pk>/leave', GroupLeaveView.as_view(), name="group-leave"),
     path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick")
 ]
 
