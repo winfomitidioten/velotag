@@ -59,39 +59,30 @@ class GroupDetailView(APIView):
                 {"error": "Gruppe wurde nicht gefunden."}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        
     def delete(self, request, pk):
         try:
             group = Group.objects.get(pk=pk)
-            
-            if group.admin != request.user:
+            if not Membership.objects.filter(user=request.user, group=group, status='Joined').exists():
                 return Response(
-                    {"error": "Nur der Admin darf Mitglieder entfernen."}, 
+                    {"error": "Du hast keine Berechtigung, diese Gruppe anzuzeigen."}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
-                
-            user_mail = request.data.get('email')
-            if not user_mail:
+            if request.user != group.admin:
                 return Response(
-                    {"error": "Eine Benutzermail wird benötigt."}, 
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "Du hast keine Berechtigungen diese Gruppe zu löschen"},
+                    status=status.HTTP_403_FORBIDDEN
                 )
-                
-            user_to_remove = User.objects.get(email=user_mail)
-            Membership.objects.filter(user=user_to_remove, group=group).delete()
-            serializer = GroupSerializer(group, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-            
+            group.delete()
+            return Response(
+                {"message": "Gruppe wurde erfolgreich gelöscht"},
+                status=status.HTTP_200_OK
+            )
         except Group.DoesNotExist:
             return Response(
                 {"error": "Gruppe wurde nicht gefunden."}, 
                 status=status.HTTP_404_NOT_FOUND
-            )
-        except User.DoesNotExist:
-            return Response(
-                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            )            
+        
 
 class GroupInviteAdmin(APIView):
     authentication_classes = [TokenAuthentication]
@@ -221,6 +212,38 @@ class GroupLeaveView(APIView):
             status=status.HTTP_200_OK
         )
 
-
-
-
+class GroupKickView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    def delete(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+            
+            if group.admin != request.user:
+                return Response(
+                    {"error": "Nur der Admin darf Mitglieder entfernen."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+                
+            user_mail = request.data.get('email')
+            if not user_mail:
+                return Response(
+                    {"error": "Eine Benutzermail wird benötigt."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            user_to_remove = User.objects.get(email=user_mail)
+            Membership.objects.filter(user=user_to_remove, group=group).delete()
+            serializer = GroupSerializer(group, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."},
+                status=status.HTTP_404_NOT_FOUND
+            )
