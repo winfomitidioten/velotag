@@ -62,11 +62,18 @@ const routes = [
     name: 'rides',
     component: ComingSoon,
     meta:  { requiresAuth: true, showBack: true }
+    meta: {requiresAuth: true, showBack: true}
   },
   {
     path: '/settings',
     name: 'settings',
     component: ComingSoon,
+    meta: { requiresAuth: true, showBack: true }
+  },
+  {
+    path: '/rides',
+    name: 'rides',
+    component: () => import('../views/StreckenView.vue'),
     meta: { requiresAuth: true, showBack: true }
   }
 ];

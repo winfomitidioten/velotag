@@ -3,11 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .serializers import RouteSerializer
+from .serializers import RouteListSerializer
 from .models import Route
 
 from rest_framework.authentication import TokenAuthentication
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from .models import Route
 
 @method_decorator(csrf_exempt, name='dispatch')
 
@@ -33,7 +35,17 @@ class RouteCreateView(APIView): #Zweck: Diese View empfängt die POST-Anfrage vo
         # 4. Falls das Frontend Quatsch schickt (z.B. falsche Datentypen), Fehler zurückgeben
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+# Für das Zeichnen der Fahrt
+class RouteMapView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        routes = Route.objects.filter(user=request.user)
+        serializer = RouteSerializer(routes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+#Für die Fahrten Anzeige
 class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom Frontend,
     #holt alle Strecken des eingeloggten Users aus der DB, serialisiert sie und schickt sie zurück
 
@@ -45,7 +57,16 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
         routes = Route.objects.filter(user=request.user)
         
         # 2. Die Strecken mit dem Serializer in JSON umwandeln
-        serializer = RouteSerializer(routes, many=True)
+        serializer = RouteListSerializer(routes, many=True)
         
         # 3. Die JSON-Daten zurück an das Frontend schicken
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+# class RouteListView(APIView):
+#     authentication_classes = [TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self,request):
+#         routes = Route.objects.filter(user=request.user)  # Nur Routen des eingeloggten Users
+#         serializer = RouteListSerializer(routes, many=True)  # Liste → many=True
+#         return Response(serializer.data, status=status.HTTP_200_OK)

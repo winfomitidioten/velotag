@@ -46,18 +46,14 @@ onMounted(() => {
             </header>
             
             <main class="page-content">
-                <div class="main-card">
-                    <div class="card-title-area">
-                        <h4>Offene Einladungen</h4>
-                    </div>
+                <div v-if="invites.length === 0" class="empty-state">
+                    <p>Du hast aktuell keine offenen Einladungen.</p>
+                </div>
 
-                    <div v-if="invites.length === 0" class="empty-state">
-                        <p>Du hast aktuell keine offenen Einladungen.</p>
-                    </div>
-
-                    <ul v-else class="invite-list">
-                        <li v-for="invite in invites" :key="invite.id" class="invite-item">
-                            
+                <ul v-else class="invite-grid">
+                    <li v-for="invite in invites" :key="invite.id" class="invite-tile">
+                        
+                        <div class="invite-container">
                             <div class="invite-icon-box">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px">
                                     <path d="M40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm720 0v-120q0-44-24.5-84.5T666-434q51 6 96 20.5t84 35.5q36 20 55 44.5t19 53.5v120H760ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47Zm466 0q-47 47-113 47-11 0-28-2.5t-28-5.5q27-32 41.5-71t14.5-81q0-42-14.5-81T544-792q14-5 28-6.5t28-1.5q66 0 113 47t47 113q0 66-47 113ZM120-240h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-240Zm0-400Z"/>
@@ -68,19 +64,19 @@ onMounted(() => {
                                 <span class="invite-label">Einladung zur Gruppe</span>
                                 <span class="group-name">{{ invite.name }}</span>
                             </div>
+                        </div>
 
-                            <div class="invite-actions">
-                                <button @click="answerInvite(invite.id, 'accept')" class="btn-accept">
-                                    Annehmen
-                                </button>
-                                <button @click="answerInvite(invite.id, 'decline')" class="btn-decline">
-                                    Ablehnen
-                                </button>
-                            </div>
+                        <div class="invite-actions">
+                            <button @click="answerInvite(invite.id, 'accept')" class="btn-accept">
+                                Annehmen
+                            </button>
+                            <button @click="answerInvite(invite.id, 'decline')" class="btn-decline">
+                                Ablehnen
+                            </button>
+                        </div>
 
-                        </li>
-                    </ul>
-                </div>
+                    </li>
+                </ul>
             </main>
         </template>
     </div>
@@ -90,7 +86,7 @@ onMounted(() => {
     /* Grundlayout & Container */
     .page-container {
         min-height: 100vh;
-        background-color: #f8f9fa;
+        background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
     }
@@ -100,69 +96,71 @@ onMounted(() => {
         justify-content: space-between;
         align-items: center;
         width: 100%;
-        background-color: #ffffff;
+        background-color: var(--color-bg-card);
         box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
         box-sizing: border-box;
-        padding: 1.2rem 2rem;
+        padding: 1rem 1.5rem;
+        min-height: 4.8rem;
     }
     header h3 {
-        font-size: 1.25rem;
-        font-weight: 500;
+        font-size: 1.2rem;
+        font-weight: 600;
         margin: 0;
-        color: #2c3e50;
+        padding-left: 130px; /* Synchroner Abstand für die mobile Sidebar */
+        color: var(--color-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .page-content {
         flex: 1;
-        display: flex;
-        justify-content: center;
-        padding: 3rem 2rem;
-        box-sizing: border-box;
-    }
-
-    /* Strukturierte Hauptkarte (analog zu GroupDetail) */
-    .main-card {
-        display: flex;
-        flex-direction: column;    
-        justify-content: flex-start;
-        gap: 1.8rem;                
-        background-color: #ffffff; 
-        padding: 2rem;     
-        border-radius: 0.8rem;     
-        box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.02);
-        box-sizing: border-box;
         width: 100%;
-        max-width: 45rem;  
-        border: 2px solid transparent;
+        max-width: 45rem; /* Gleiche maximale Breite wie zuvor für ein sauberes Center-Layout */
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+        box-sizing: border-box;
     }
 
-    .card-title-area h4 {
-        margin: 0;
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: #2c3e50;
-        border-bottom: 2px solid #f1f5f9;
-        padding-bottom: 0.5rem;
-    }
-
-    /* Listen- und Element-Styling */
-    .invite-list {
+    /* Kachellisten-Layout */
+    .invite-grid {
         list-style: none;
         padding: 0;
         margin: 0;
         display: flex;
         flex-direction: column;
-        gap: 0.8rem;
+        gap: 1rem;
     }
 
-    .invite-item {
+    /* KACHELN (Wie deine Gruppenübersicht) */
+    .invite-tile {
+        display: flex;
+        flex-direction: column; /* Mobil untereinander brechen */
+        gap: 1rem;
+        padding: 1.25rem;
+        
+        /* Karten-Look: Heller Hintergrund direkt auf dunklerer Page */
+        background-color: var(--color-bg-card);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border);
+        
+        /* Plastischer Schatteneffekt */
+        box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.03);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Hover-Effekt für die Kacheln */
+    .invite-tile:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+    }
+
+    .invite-container {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        padding: 0.8rem 1rem;
-        background-color: #f8fafc;
-        border-radius: 0.6rem;
-        border: 1px solid #e2e8f0;
+        gap: 0.85rem;
+        min-width: 0;
     }
 
     /* Icon Styling */
@@ -172,14 +170,14 @@ onMounted(() => {
         align-items: center;
         width: 2.8rem;          
         height: 2.8rem;
-        background-color: #e8f7f3; 
-        border-radius: 0.6rem;     
+        background-color: #e8f7f3; /* Dezenter Mint-Hintergrund fürs Icon */
+        border-radius: var(--radius-md);     
         flex-shrink: 0;            
     }
     .invite-icon-box svg {
         width: 1.4rem;
         height: 1.4rem;
-        fill: #3db897;
+        fill: var(--color-primary);
     }
 
     /* Textblöcke */
@@ -187,52 +185,59 @@ onMounted(() => {
         display: flex;
         flex-direction: column;
         gap: 0.1rem;
+        min-width: 0;
     }
     .invite-label {
-        font-size: 0.85rem;
-        color: #7f8c8d;
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
     }
     .group-name {
         font-size: 1.05rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--color-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    /* Buttons & Actions ganz rechts ausrichten */
+    /* Buttons & Actions */
     .invite-actions {
-        margin-left: auto;
         display: flex;
-        gap: 0.6rem;
+        gap: 0.5rem;
+        width: 100%;
     }
 
     .invite-actions button {
+        flex: 1;
         border: none;
         cursor: pointer;
-        border-radius: 0.5rem;
-        padding: 0.5em 1.2em;
+        border-radius: var(--radius-md);
+        padding: 0.7rem 1.2rem;
         font-size: 0.85rem;
         font-weight: 600;
         transition: all 0.2s ease;
     }
 
-    /* Annehmen-Button (Dein typisches Mintgrün) */
+    /* Annehmen-Button */
     .btn-accept {
-        background-color: #3db897;
+        background-color: var(--color-primary);
         color: white;
-        box-shadow: 0 0.1rem 0.4rem rgba(61, 184, 151, 0.15);
+        box-shadow: 0 2px 4px rgba(61, 184, 151, 0.15);
     }
     .btn-accept:hover {
-        background-color: #2da081;
+        background-color: var(--color-primary-dark);
     }
 
-    /* Ablehnen-Button (Passt sich dezent an, wird rot bei Hover) */
+    /* Ablehnen-Button */
     .btn-decline {
-        background-color: #f1f5f9;
-        color: #64748b;
+        background-color: var(--color-bg-page);
+        color: var(--color-text-muted);
+        border: 1px solid var(--color-border) !important;
     }
     .btn-decline:hover {
         background-color: #fee2e2;
         color: #ef4444;
+        border-color: #fca5a5 !important;
     }
 
     .invite-actions button:active {
@@ -242,8 +247,8 @@ onMounted(() => {
     /* Zustands-Designs (Empty & Loading) */
     .empty-state {
         text-align: center;
-        padding: 2rem 0;
-        color: #7f8c8d;
+        padding: 3rem 0;
+        color: var(--color-text-muted);
         font-size: 0.95rem;
     }
 
@@ -252,7 +257,38 @@ onMounted(() => {
         justify-content: center;
         align-items: center;
         min-height: 100vh;
-        color: #64748b;
+        color: var(--color-text-muted);
         font-weight: 500;
+    }
+
+    /* --- TABLET / DESKTOP OPTIMIERUNGEN --- */
+    @media (min-width: 580px) {
+        header {
+            padding: 1.2rem 2rem;
+        }
+        header h3 {
+            font-size: 1.25rem;
+            padding-left: 95px; /* Synchroner Desktop-Abstand */
+        }
+        .page-content {
+            padding: 2rem 0rem; /* Mehr Luft nach oben/unten im Desktop-Grid */
+        }
+        .invite-tile {
+            flex-direction: row; /* Inhalte sauber nebeneinander legen */
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.5rem;
+            border-radius: var(--radius-lg);
+        }
+        .invite-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 0.6rem;
+            width: auto;
+        }
+        .invite-actions button {
+            flex: none;
+            padding: 0.55em 1.5em;
+        }
     }
 </style>
