@@ -18,14 +18,6 @@ const setAppHeight = () => {
   document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
 };
 
-// const forceViewportRecalc = () => {
-//   const viewport = document.querySelector('meta[name="viewport"]');
-//   if (!viewport) return;
-//   const original = viewport.getAttribute('content');
-//   viewport.setAttribute('content', original + ',maximum-scale=1');
-//   setTimeout(() => viewport.setAttribute('content', original), 50);
-// };
-
 onMounted(async () => {
   if (Capacitor.isNativePlatform()) {
     await StatusBar.setOverlaysWebView({ overlay: true });
@@ -77,7 +69,7 @@ html, body, #app {
 }
 .back-button {
   position: fixed;
-  top: calc(var(--safe-top) + 1rem);
+  top: calc(var(--safe-top) + 0.5rem);
   left: calc(1rem + 44px + 0.75rem);
   z-index: 1010;
   width: 44px;

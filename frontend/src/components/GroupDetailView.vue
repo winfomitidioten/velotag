@@ -2,6 +2,7 @@
 import { useRoute } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import api from '@/api/api';
+import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute()
 const groupId = route.params.id
@@ -65,9 +66,7 @@ onMounted(() => {
         </div>
 
         <template v-else-if="group">
-            <header>
-                <h3>{{ group.name }}</h3>
-            </header>
+            <PageHeader :title="group.name" />
             
             <main class="page-content">
                 <div class="group-card">
@@ -149,30 +148,17 @@ onMounted(() => {
 </template>
 
 <style scoped>
+    @media (max-width: 480px) {
+    .field-row {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
     .page-container {
         min-height: 100vh;
         background-color: #f8f9fa;
         display: flex;
         flex-direction: column;
-    }
-
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        background-color: #ffffff;
-        box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
-        box-sizing: border-box;
-        padding: 1.2rem 2rem;
-        min-height: 4.8rem;
-    }
-    header h3 {
-        font-size: 1.25rem;
-        font-weight: 500;
-        margin: 0;
-        padding-left: 95px;
-        color: #2c3e50;
     }
 
     .page-content {

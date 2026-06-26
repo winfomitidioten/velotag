@@ -68,10 +68,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import api from '../api/api';
-
-const router = useRouter();
 
 const firstName = ref('');
 const lastName = ref('');
@@ -142,18 +139,19 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-@media (max-width: 480px) {
-    .field-row {
-        flex-direction: column;
-        gap: 0;
-    }
-}
 .field-row {
     display: flex;
     gap: 12px;
 }
 .field-row .field {
     flex: 1;
+    min-width: 0;
+}
+@media (max-width: 520px) {
+    .field-row {
+        flex-direction: column;
+        gap: 0;
+    }
 }
 .field { margin-bottom: 1.1rem; }
 .field label { display: block; font-size: 13px; font-weight: 500; color: #555; margin-bottom: 6px; }
