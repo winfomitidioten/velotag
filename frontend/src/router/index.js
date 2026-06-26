@@ -54,19 +54,21 @@ const routes = [
   {
     path: '/group/invites',
     name: 'group-invites',
-    component: GroupInviteView
-  },
-  {
-    path: '/rides',
-    name: 'rides',
-    component: ComingSoon,
-    meta:  { requiresAuth: true, showBack: true, title: 'Fahrten' }
+    component: GroupInviteView,
+    meta: {requiresAuth: true, showBack: true}
   },
   {
     path: '/settings',
     name: 'settings',
     component: ComingSoon,
     meta: { requiresAuth: true, showBack: true, title: 'Einstellungen' }
+    meta: { requiresAuth: true, showBack: true }
+  },
+  {
+    path: '/rides',
+    name: 'rides',
+    component: () => import('../views/StreckenView.vue'),
+    meta: { requiresAuth: true, showBack: true }
   }
 ];
 

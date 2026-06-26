@@ -7,6 +7,7 @@ export function useGPXVerarbeitung() {
   const isDragging = ref(false)
   const errorMessage = ref('')
   const erfolgsMessage = ref('')
+  const selectedGroupIds = ref([]) // NEU: Speichert die IDs direkt im Composable
 
   // --- DIE ELEGANTE LÖSUNG: Der native Polyline-Encoder ---
   // Diese Helfer-Funktion komprimiert das Array, ohne externe Pakete zu brauchen
@@ -40,7 +41,7 @@ export function useGPXVerarbeitung() {
   }
   // ---------------------------------------------------------
 
-  const onFileDrop = (event) => {
+  const onFileDrop = (event) => { // Parameter für die Gruppe entfernt, wir nehmen direkt die ref
     isDragging.value = false 
     errorMessage.value = '' // Setzt Fehlermeldungen bei neuem Versuch zurück
     erfolgsMessage.value = '' // Setzt Erfolgsmeldungen bei neuem Versuch zurück  
@@ -59,23 +60,17 @@ export function useGPXVerarbeitung() {
         reader.onload = async (e) => {
           console.log("Leuchtturm 1: FileReader hat die Datei geöffnet.");
           
-          // Wir packen JETZT ALLES in den try-catch Block!
           try {
     
             const gpxContent = e.target.result; 
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(gpxContent, "text/xml");
             console.log("XML wurde geparst.");
-
             const activityType = xmlDoc.querySelector('type');
-
-            if (activityType) {
-                const typeText = activityType.textContent.toLowerCase();
-                if (!typeText.includes('cycling') && !typeText.includes('biking')) {
-                  throw new Error("Falscher Aktivitätstyp: " + typeText); 
-                  // Das throw wirft uns direkt in deinen catch-Block unten!
-                }
-              }
+            // Wirft den Fehler, wenn das Tag fehlt ODER der Inhalt NICHT "cycling" ist
+            if (!activityType || activityType.textContent !== "cycling") {
+              throw new Error("Die hochgeladene GPX-Datei enthält keine Radfahraktivität!");
+            }
 
             const coordinates = [];
             const pulsStream = [];
@@ -106,6 +101,7 @@ export function useGPXVerarbeitung() {
 
             const payload = {
               strecken_name: uploadedFile.name.replace('.gpx', ''), 
+              group_id: selectedGroupIds.value, // Die aktuell ausgewählten IDs aus der ref ziehen
               polyline_map: polylineMapString,
               puls_stream: pulsStream,
               zeit_stream: zeitStream,
@@ -142,6 +138,7 @@ export function useGPXVerarbeitung() {
     isDragging,
     onFileDrop,
     errorMessage,
-    erfolgsMessage
+    erfolgsMessage,
+    selectedGroupIds // NEU: exportieren, damit das Modal die Variable befüllen kann
   }
 }
