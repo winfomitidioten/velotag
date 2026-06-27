@@ -54,7 +54,8 @@ const routes = [
   {
     path: '/group/invites',
     name: 'group-invites',
-    component: GroupInviteView
+    component: GroupInviteView,
+    meta: {requiresAuth: true, showBack: true}
   },
   {
     path: '/settings',

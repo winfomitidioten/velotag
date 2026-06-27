@@ -79,7 +79,19 @@
             <h3>Meine Gruppen</h3>
             
             <button @click="showPopup = true"> + Neue Gruppe</button>
+            <button class="desktop-create-btn" @click="showPopup = true">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                    <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+                </svg>
+                <span>Neue Gruppe</span>
+            </button>
         </header>
+
+        <button class="mobile-fab-btn" @click="showPopup = true">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+            </svg>
+        </button>
 
         <main class="page-content">
             <!--
@@ -155,7 +167,7 @@
 <style scoped>
     .page-container {
         min-height: 100vh;
-        background-color: #f8f9fa;
+        background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
     }
@@ -165,31 +177,60 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
-        background-color: #ffffff;
+        background-color: var(--color-bg-card);
         box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
         box-sizing: border-box;
-        padding: 1.2rem 2rem;
+        padding: 1rem 1.5rem;
         min-height: 4.8rem;
     }
+    
     header h3 {
-        font-size: 1.25rem;
-        font-weight: 500;
+        font-size: 1.2rem;
+        font-weight: 600;
         margin: 0;
-        padding-left: 95px;
+        /* Schiebt den Text mobil weiter nach rechts wegen der Menübar */
+        padding-left: 130px; 
+        color: var(--color-text);
     }
-    header button {
-        background-color: #3db897;
+    
+    /* --- MOBILE BUTTON (FLOATING ACTION BUTTON) --- */
+    .mobile-fab-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 1.5rem;
+        z-index: 90;
+        background-color: var(--color-primary);
         color: white;
         border: none;
         cursor: pointer;
-        border-radius: 0.6rem;
-        padding: 0.6em 1.4em;
-        font-size: 0.9rem;
-        font-weight: 600;
+        
+        /* Macht den Button mobil kreisrund */
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 50%;
+        padding: 0;
+        
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
         transition: all 0.2s ease;
     }
-    header button:hover {
-        background-color: #2da081;
+
+    .mobile-fab-btn:active {
+        transform: scale(0.95);
+    }
+
+    /* Das SVG-Icon innerhalb des mobilen Kreises formatieren */
+    .mobile-fab-btn svg {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
+
+    /* --- DESKTOP BUTTON --- */
+    .desktop-create-btn {
+        /* Standardmäßig auf mobilen Geräten komplett ausblenden */
+        display: none; 
     }
 
     .page-content {
@@ -198,13 +239,15 @@
         flex-direction: column;
         align-items: center; /* WICHTIG: Zentriert alles horizontal */
         padding: 2rem;       /* Etwas kompakter */
+        justify-content: center;
+        padding: 1rem;
         box-sizing: border-box;
     }
     
     #group-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); 
-        gap: 1.5rem;             
+        grid-template-columns: 1fr; 
+        gap: 1rem;             
         width: 100%;
         max-width: 58rem;  
         align-content: start;
@@ -215,10 +258,10 @@
         flex-direction: column;     
         justify-content: flex-start;
         gap: 1.2rem;                
-        background-color: #ffffff; 
-        padding: 1.5rem 1.5rem;     
-        border-radius: 0.8rem;     
-        box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.02);
+        background-color: var(--color-bg-card); 
+        padding: 1.25rem;     
+        border-radius: var(--radius-md);     
+        box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.03);
         box-sizing: border-box;
         cursor: pointer;                                 
         border: 2px solid transparent;       
@@ -226,15 +269,14 @@
     }
     
     .group-card:hover {
-        border-color: #3db897;               
+        border-color: var(--color-primary);              
         box-shadow: 0 0.6rem 1.8rem rgba(61, 184, 151, 0.08); 
     }
     
     .group-card:hover .forward-icon svg {
-        fill: #3db897;
+        fill: var(--color-primary);
     }
 
-    /* Der obere Bereich verteilt seine Elemente jetzt über die volle Breite */
     .card-main-content {
         display: flex;
         align-items: center;
@@ -246,42 +288,41 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 3.2rem;          
-        height: 3.2rem;
+        width: 3rem;          
+        height: 3rem;
         background-color: #e8f7f3; 
-        border-radius: 0.6rem;     
+        border-radius: var(--radius-md);     
         flex-shrink: 0;            
     }
     .group-icon-box svg {
-        width: 1.6rem;
-        height: 1.6rem;
-        fill: #3db897;
+        width: 1.5rem;
+        height: 1.5rem;
+        fill: var(--color-primary);
     }
     
     .group-info {
         display: flex;
         flex-direction: column;
-        gap: 0.2rem;          
+        gap: 0.1rem;          
     }
     .group-info h3 {
         margin: 0;
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--color-text);
     }
     .group-info span {
-        font-size: 0.9rem;
-        color: #7f8c8d;           
+        font-size: 0.85rem;
+        color: var(--color-text-muted);           
     }
 
     .card-stats-area {
         display: flex;
         gap: 1rem;
         font-size: 0.85rem;
-        color: #64748b;
+        color: var(--color-text-muted);
     }
 
-    /* Der Pfeil wird über margin-left: auto ganz nach rechts geschoben */
     .forward-icon {
         margin-left: auto;
         display: flex;
@@ -305,39 +346,42 @@
         align-items: center;
         z-index: 999;
         backdrop-filter: blur(4px); 
+        padding: 1rem;
+        box-sizing: border-box;
     }
 
     #popup-content {
-        background: #ffffff;
-        padding: 2.5rem;
-        border-radius: 1.2rem;
+        background: var(--color-bg-card);
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
         width: 100%;
         max-width: 28rem;
         box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1);
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.25rem;
         box-sizing: border-box;
     }
     #popup-content h3 {
         margin: 0;
-        font-size: 1.4rem;
+        font-size: 1.25rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--color-text);
     }
     #popup-content input[type="text"] {
         width: 100%;
-        padding: 0.8rem 1rem;
+        padding: 0.85rem 1rem;
         font-size: 1rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 0.6rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
         outline: none;
-        color: #2c3e50;
+        color: var(--color-text);
         transition: all 0.2s ease;
         box-sizing: border-box;
+        background-color: var(--color-bg-page);
     }
     #popup-content input[type="text"]:focus {
-        border-color: #3db897;
+        border-color: var(--color-primary);
         box-shadow: 0 0 0 3px rgba(61, 184, 151, 0.15);
     }
     #popup-actions {
@@ -348,11 +392,12 @@
     #popup-actions button {
         border: none;
         cursor: pointer;
-        border-radius: 0.6rem;
-        padding: 0.7em 1.5em;
+        border-radius: var(--radius-md);
+        padding: 0.85rem 1.5rem;
         font-size: 0.95rem;
         font-weight: 600;
         transition: all 0.2s ease;
+        flex: 1;
     }
     #cancle-btn {
         background-color: #f1f5f9;
@@ -360,19 +405,80 @@
     }
     #cancle-btn:hover {
         background-color: #e2e8f0;
-        color: #475569;
     }
     #create-btn {
-        background-color: #3db897;
+        background-color: var(--color-primary);
         color: white;
-        box-shadow: 0 0.2rem 0.8rem rgba(61, 184, 151, 0.2);
     }
     #create-btn:hover {
-        background-color: #2da081;
-        box-shadow: 0 0.4rem 1.2rem rgba(61, 184, 151, 0.3);
+        background-color: var(--color-primary-dark);
     }
-    #create-btn:active {
-        transform: scale(0.98);
+
+    /* --- TABLET / DESKTOP OPTIMIERUNGEN --- */
+    @media (min-width: 480px) {
+        header {
+            padding: 1.2rem 2rem;
+        }
+
+        header h3 {
+            font-size: 1.25rem;
+            /* Auf Desktop reicht das ursprüngliche Standard-Padding */
+            padding-left: 95px; 
+        }
+
+        /* Schwebenden Mobile-Button auf Desktop unsichtbar machen */
+        .mobile-fab-btn {
+            display: none;
+        }
+
+        /* Desktop-Button im Header oben rechts einblenden und stylen */
+        .desktop-create-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            padding: 0.6em 1.4em;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: none;
+        }
+
+        .desktop-create-btn:hover {
+            background-color: var(--color-primary-dark);
+        }
+
+        .desktop-create-btn svg {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+
+        #group-grid {
+            grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); 
+            gap: 1.5rem;             
+        }
+
+        .group-card {
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+        }
+
+        .page-content {
+            padding: 3rem 2rem;
+        }
+
+        #popup-content {
+            padding: 2.5rem;
+            gap: 1.5rem;
+        }
+
+        #popup-actions button {
+            flex: none;
+        }
     }
 
     .favorite-selector {
