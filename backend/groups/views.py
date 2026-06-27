@@ -183,5 +183,70 @@ class UserInvitationsView(APIView):
                 {"error": "Keine offene Einladung für diese Gruppe gefunden"},
                 status=status.HTTP_404_NOT_FOUND
             )
+class GroupFavoriteView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
+    def post(self, request, pk):
+        try:
+            # Prüfen, ob die Gruppe existiert
+            group = Group.objects.get(pk=pk)
+            
+            # Prüfen, ob der User wirklich ein aktives Mitglied der Gruppe ist
+            membership = Membership.objects.get(user=request.user, group=group, status='Joined')
 
+            # 1. Bisherigen Favoriten des Users entfernen (wegen des UniqueConstraints)
+            Membership.objects.filter(user=request.user, is_favorite=True).update(is_favorite=False)
+
+            # 2. Neue Gruppe als Favorit speichern
+            membership.is_favorite = True
+            membership.save()
+
+            return Response({"message": "Favorit erfolgreich aktualisiert."}, status=status.HTTP_200_OK)
+
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Membership.DoesNotExist:
+            return Response(
+                {"error": "Du bist kein aktives Mitglied dieser Gruppe."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+class RemoveFavoriteView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        # Setzt einfach alle Favoriten des Users auf False
+        Membership.objects.filter(user=request.user, is_favorite=True).update(is_favorite=False)
+        return Response({"message": "Favorit erfolgreich entfernt."}, status=status.HTTP_200_OK)
+
+class GetGroupFavoriteView(APIView):
+    # Authentifizierung sicherstellen (wie bei deinen anderen Views)
+    authentication_classes = [TokenAuthentication] 
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # 1. In der Membership-Tabelle nach der Zeile suchen, wo dieser User 
+        # is_favorite=True gesetzt hat und (optional, aber gut) auch "Joined" ist.
+        favorite_membership = Membership.objects.filter(
+            user=request.user, 
+            is_favorite=True,
+            status='Joined'
+        ).first()
+
+        # 2. Wenn ein Favorit gefunden wurde, die group_id zurückgeben
+        if favorite_membership:
+            return Response(
+                {"favorite_group_id": favorite_membership.group_id}, 
+                status=status.HTTP_200_OK
+            )
+        
+        # 3. Wenn kein Favorit existiert, senden wir null zurück
+        return Response(
+            {"favorite_group_id": None}, 
+            status=status.HTTP_200_OK
+        )

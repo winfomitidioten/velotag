@@ -34,12 +34,44 @@ const decodePolyline = (encoded) => {
     return coordinates;
 };
 
-export async function drawUserMap(map) {//async 
-    const response = await api.get('routes/map/')
-    const routes = response.data
-    const numberOfRoutes = routes.length
-    console.log("Routen aus Django:", routes)//Testausgabe, um API Call zu überprüfenw
-    const featureGroup = L.featureGroup().addTo(map)
+let currentFeatureGroup = null;
+let unwatchColor = null;
+
+export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
+    if (currentFeatureGroup) {
+        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
+    }
+    if (unwatchColor) {//Watcher für Layer-Farbänderungen 
+        unwatchColor();//sonst zu viele watcher => performanceprobleme
+    }
+    let routes = []; 
+    // ---> GEÄNDERTE ZUWEISUNG:
+    currentFeatureGroup = L.featureGroup().addTo(map);
+    let numberOfRoutes = 0;
+
+    if(isGroupViewStatus === false) {//Solo Ansicht
+        const response = await api.get('routes/map/');
+        routes = response.data; // Kiste mit Solo-Routen befüllen
+        numberOfRoutes = routes.length;
+        console.log("Routen aus Django (Solo):", routes);
+    }
+
+    else if(isGroupViewStatus === true) {
+        if (!groupId) {
+            console.error("Gruppenansicht aktiv, aber keine group_id übergeben!");
+            return;
+        }
+
+        const response = await api.get('routes/map/', {
+            params: {
+                group_id: groupId
+            }
+        });
+        routes = response.data; // Kiste mit Solo-Routen befüllen
+        numberOfRoutes = routes.length;
+        console.log(`Routen aus Django (Gruppe ${groupId}):`, routes);
+    }
+
 
 
 
@@ -57,7 +89,7 @@ export async function drawUserMap(map) {//async
              lineJoin: 'round',    // Weiche Kurven
              lineCap: 'round'//,     // Abgerundete Enden}
         }).addTo(map);//color: 'blue'
-        featureGroup.addLayer(polyline);
+        currentFeatureGroup.addLayer(polyline);
         polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
     });
 
@@ -67,7 +99,7 @@ export async function drawUserMap(map) {//async
         
         // Durch alle gezeichneten Linien in der FeatureGroup iterieren 
         // und die Leaflet-Methode setStyle() aufrufen
-        featureGroup.eachLayer((layer) => {
+        currentFeatureGroup.eachLayer((layer) => {
             layer.setStyle({ color: newColor });
         });
     });
