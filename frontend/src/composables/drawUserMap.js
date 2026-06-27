@@ -37,19 +37,46 @@ const decodePolyline = (encoded) => {
 let currentFeatureGroup = null
 let colorWatchStarted = false
 
-export async function drawUserMap(map) {//async
-    const response = await api.get('routes/map/')
-    const routes = response.data
-    const numberOfRoutes = routes.length
-    console.log("Routen aus Django:", routes)//Testausgabe, um API Call zu überprüfenw
+let currentFeatureGroup = null;
+let unwatchColor = null;
 
-    // Bei erneutem Aufruf (z.B. nach einem Strava-Import) alte Routen erst entfernen,
-    // sonst werden sie doppelt gezeichnet
+export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
     if (currentFeatureGroup) {
-        map.removeLayer(currentFeatureGroup)
+        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
     }
-    const featureGroup = L.featureGroup().addTo(map)
-    currentFeatureGroup = featureGroup
+    if (unwatchColor) {//Watcher für Layer-Farbänderungen 
+        unwatchColor();//sonst zu viele watcher => performanceprobleme
+    }
+    let routes = []; 
+    // ---> GEÄNDERTE ZUWEISUNG:
+    currentFeatureGroup = L.featureGroup().addTo(map);
+    let numberOfRoutes = 0;
+
+    if(isGroupViewStatus === false) {//Solo Ansicht
+        const response = await api.get('routes/map/');
+        routes = response.data; // Kiste mit Solo-Routen befüllen
+        numberOfRoutes = routes.length;
+        console.log("Routen aus Django (Solo):", routes);
+    }
+
+    else if(isGroupViewStatus === true) {
+        if (!groupId) {
+            console.error("Gruppenansicht aktiv, aber keine group_id übergeben!");
+            return;
+        }
+
+        const response = await api.get('routes/map/', {
+            params: {
+                group_id: groupId
+            }
+        });
+        routes = response.data; // Kiste mit Solo-Routen befüllen
+        numberOfRoutes = routes.length;
+        console.log(`Routen aus Django (Gruppe ${groupId}):`, routes);
+    }
+
+
+
 
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
@@ -65,22 +92,18 @@ export async function drawUserMap(map) {//async
              lineJoin: 'round',    // Weiche Kurven
              lineCap: 'round'//,     // Abgerundete Enden}
         }).addTo(map);//color: 'blue'
-        featureGroup.addLayer(polyline);
+        currentFeatureGroup.addLayer(polyline);
         polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
     });
 
-    // Nur einmal registrieren, sonst sammeln sich bei wiederholtem drawUserMap()-Aufruf
-    // (z.B. nach einem Strava-Import) mehrere Watcher an
-    if (!colorWatchStarted) {
-        colorWatchStarted = true
-        watch(activeLayerId, (newLayerId) => {
-            // Neue Farbe basierend auf der neuen ID ermitteln
-            const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
-
-            // Immer auf der aktuellen FeatureGroup arbeiten, nicht auf der von der ersten Zeichnung
-            currentFeatureGroup?.eachLayer((layer) => {
-                layer.setStyle({ color: newColor });
-            });
+    watch(activeLayerId, (newLayerId) => {
+        // Neue Farbe basierend auf der neuen ID ermitteln
+        const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
+        
+        // Durch alle gezeichneten Linien in der FeatureGroup iterieren 
+        // und die Leaflet-Methode setStyle() aufrufen
+        currentFeatureGroup.eachLayer((layer) => {
+            layer.setStyle({ color: newColor });
         });
-    }
+    });
 }

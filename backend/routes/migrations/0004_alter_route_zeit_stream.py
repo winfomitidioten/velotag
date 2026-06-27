@@ -16,3 +16,6 @@ class Migration(migrations.Migration):
             field=models.JSONField(default=list, help_text='Array: Zeitstempel für Geschwindigkeitslogik'),
         ),
     ]
+
+
+

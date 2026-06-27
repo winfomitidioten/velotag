@@ -36,15 +36,37 @@ class RouteCreateView(APIView): #Zweck: Diese View empfängt die POST-Anfrage vo
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 # Für das Zeichnen der Fahrt
+# Für das Zeichnen der Fahrt
+# Für das Zeichnen der Fahrt
 class RouteMapView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-
+    
     def get(self, request):
-        routes = Route.objects.filter(user=request.user)
+        group_id = request.GET.get('group_id')
+
+        if group_id:
+            try:
+                group_id_int = int(group_id)
+                
+                # WORKAROUND FÜR SQLITE: 
+                # 1. Alle Routen aus der Datenbank holen
+                all_routes = Route.objects.all()
+                
+                # 2. In Python filtern: Behalte die Route nur, wenn group_id existiert 
+                # UND unsere gesuchte Zahl in dieser Liste steckt.
+                routes = [
+                    route for route in all_routes 
+                    if route.group_id and group_id_int in route.group_id
+                ]
+                
+            except ValueError:
+                return Response({"error": "Ungültige Gruppen-ID"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            routes = Route.objects.filter(user=request.user)
+            
         serializer = RouteSerializer(routes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 #Für die Fahrten Anzeige
 class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom Frontend,
     #holt alle Strecken des eingeloggten Users aus der DB, serialisiert sie und schickt sie zurück
