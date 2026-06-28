@@ -1,9 +1,10 @@
 <script setup>
-import { RouterView, useRoute, useRouter } from 'vue-router'
-import { onMounted } from 'vue'
-import MenuBar from '@/components/MenuBar.vue'
-import { useUserStore } from '@/store/userStore'
-
+import { RouterView, useRoute, useRouter } from 'vue-router';
+import { onMounted } from 'vue';
+import MenuBar from '@/components/MenuBar.vue';
+import { useUserStore } from '@/store/userStore';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 
 const route = useRoute();
 const router = useRouter();
@@ -13,9 +14,28 @@ const goBack = () => {
   router.push(route.meta.backTo ?? '/karte');
 };
 
+const setAppHeight = () => {
+  document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+};
+
 onMounted(async () => {
-  if (localStorage.getItem('auth_token')) {
-    await userStore.fetchProfile();
+  if (Capacitor.isNativePlatform()) {
+    await StatusBar.setOverlaysWebView({ overlay: true });
+    await StatusBar.setStyle({ style: Style.Dark });
+  }
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  // forceViewportRecalc();
+  const token = localStorage.getItem('auth_token');
+  if (token && token !== 'undefined') {
+    try {
+      await userStore.fetchProfile();
+    } catch {
+      localStorage.removeItem('auth_token');
+      router.push('/login');
+    }
+  } else {
+    localStorage.removeItem('auth_token');
   }
 });
 
@@ -49,7 +69,7 @@ html, body, #app {
 }
 .back-button {
   position: fixed;
-  top: 1rem;
+  top: calc(var(--safe-top) + 0.5rem);
   left: calc(1rem + 44px + 0.75rem);
   z-index: 1010;
   width: 44px;

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api/api';
+import PageHeader from '@/components/PageHeader.vue';
 
 const loading = ref(false);
 const invites = ref([]);
@@ -41,9 +42,7 @@ onMounted(() => {
         </div>
 
         <template v-else>
-            <header>
-                <h3>Gruppen Einladungen</h3>
-            </header>
+            <PageHeader title="Gruppen Einladungen" />
             
             <main class="page-content">
                 <div v-if="invites.length === 0" class="empty-state">

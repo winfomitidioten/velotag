@@ -2,6 +2,7 @@
     import { ref, onMounted } from 'vue'
     import api from '@/api/api';
     import { useRouter } from 'vue-router'
+    import PageHeader from '@/components/PageHeader.vue';
 
     const groups = ref([])
     const loading = ref(false)
@@ -44,6 +45,9 @@
 
 <template>
     <div class="page-container">
+        <PageHeader title="Meine Gruppen">
+            <button class="header-btn" @click="showPopup = true">+ Neue Gruppe</button>
+        </PageHeader>
         <header>
             <h3>Meine Gruppen</h3>
             <button class="desktop-create-btn" @click="showPopup = true">
@@ -115,6 +119,8 @@
         flex-direction: column;
     }
 
+    .header-btn {
+        background-color: #3db897;
     header {
         display: flex;
         justify-content: space-between;
@@ -159,6 +165,8 @@
         box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
         transition: all 0.2s ease;
     }
+    .header-btn:hover {
+        background-color: #2da081;
 
     .mobile-fab-btn:active {
         transform: scale(0.95);
