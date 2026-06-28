@@ -2,6 +2,7 @@
 import { useRoute } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import api from '@/api/api';
+import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute()
 const groupId = route.params.id
@@ -65,9 +66,7 @@ onMounted(() => {
         </div>
 
         <template v-else-if="group">
-            <header>
-                <h3>{{ group.name }}</h3>
-            </header>
+            <PageHeader :title="group.name" />
             
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
@@ -155,6 +154,12 @@ onMounted(() => {
 </template>
 
 <style scoped>
+    @media (max-width: 480px) {
+    .field-row {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
     .page-container {
         min-height: 100vh;
         background-color: var(--color-bg-page);

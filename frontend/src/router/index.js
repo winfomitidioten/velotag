@@ -68,6 +68,7 @@ const routes = [
     path: '/settings',
     name: 'settings',
     component: ComingSoon,
+    meta: { requiresAuth: true, showBack: true, title: 'Einstellungen' }
     meta: { requiresAuth: true, showBack: true }
   },
   {
@@ -83,7 +84,7 @@ const router = createRouter({
   routes: routes
 });
 
-router.beforeEach((to, from) => {
+router.beforeEach((to) => {
   const token = localStorage.getItem('auth_token');
 
   if (to.matched.some(record => record.meta.requiresAuth)) {

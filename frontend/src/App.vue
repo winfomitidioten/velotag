@@ -15,12 +15,32 @@ const goBack = () => {
   router.push(route.meta.backTo ?? '/map');
 };
 
+const setAppHeight = () => {
+  document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+};
+
 onMounted(async () => {
   if (Capacitor.isNativePlatform()) {
     apiClient.defaults.baseURL = 'http://167.233.33.166/api';
   }
   if (localStorage.getItem('auth_token')) {
     await userStore.fetchProfile();
+    await StatusBar.setOverlaysWebView({ overlay: true });
+    await StatusBar.setStyle({ style: Style.Dark });
+  }
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  // forceViewportRecalc();
+  const token = localStorage.getItem('auth_token');
+  if (token && token !== 'undefined') {
+    try {
+      await userStore.fetchProfile();
+    } catch {
+      localStorage.removeItem('auth_token');
+      router.push('/login');
+    }
+  } else {
+    localStorage.removeItem('auth_token');
   }
 });
 
@@ -54,7 +74,7 @@ html, body, #app {
 }
 .back-button {
   position: fixed;
-  top: 1rem;
+  top: calc(var(--safe-top) + 0.5rem);
   left: calc(1rem + 44px + 0.75rem);
   z-index: 1010;
   width: 44px;

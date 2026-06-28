@@ -78,34 +78,12 @@
             <span class="nav-label">Einstellungen</span>
           </RouterLink>
         </li>
-        <li class="nav-divider"></li>
-        <li>
-          <!-- TODO: Logout-Logik (Store leeren, Session beenden) einbauen -->
-          <button @click="handleLogout" class="nav-item nav-item--button">
-            <span class="icon-wrap icon-red">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-            </span>
-            <span class="nav-label">Log-Out</span>
-          </button>
-        </li>
       </ul>
     </nav>
 
-    <!-- Footer Stats -->
-    <!-- TODO: rideCount und totalKm später noch einfügen -->
+    <!-- Footer: Log-Out -->
     <div class="sidebar-footer">
-      <div class="stat">
-        <span class="stat-value">{{ rideCount }}</span>
-        <span class="stat-label">Rides</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">{{ totalKm }}</span>
-        <span class="stat-label">km</span>
-      </div>
+      <button @click="handleLogout" class="logout-btn">Abmelden</button>
     </div>
   </aside>
 </template>
@@ -123,10 +101,6 @@ const userName = computed(() => `${userStore.firstname} ${userStore.lastname}`.t
 const userEmail = computed(() => userStore.mail || '');
 const userInitials = computed(() => userStore.initials || '?');
 const userProfileImage = computed(() => userStore.profileImage || '');
-
-// TODO: Durch echte Statistiken aus Store/API ersetzen
-const rideCount = ref();
-const totalKm = ref();
 
 // Logout
 const router = useRouter();
@@ -146,7 +120,7 @@ const closeMenu = () => { isOpen.value = false; };
 /* Hamburger Button */
 .menu-button {
   position: fixed;
-  top: 1rem;
+  top: calc(var(--safe-top) + 0.5rem);
   left: 1rem;
   z-index: 1010;
   display: flex;
@@ -206,7 +180,7 @@ const closeMenu = () => { isOpen.value = false; };
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 1.25rem 0.75rem;
+  padding: calc(var(--safe-top) + 0.75rem) 1.25rem 0.75rem;
   flex-shrink: 0;
 }
 .logo {
@@ -358,28 +332,28 @@ nav ul {
   margin: 0 0.5rem;
 }
 
-/* Footer Stats */
+/* Footer Log-Out */
 .sidebar-footer {
-  display: flex;
   border-top: 1px solid #f0f2f5;
-  padding: 1.1rem 1rem;
+  padding: 1rem 1.25rem;
   flex-shrink: 0;
 }
-.stat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.stat-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  line-height: 1;
-}
-.stat-label {
-  font-size: 0.75rem;
+.logout-btn {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  background: none;
+  border: 1.5px solid #dde1e7;
+  border-radius: 8px;
   color: #888;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.logout-btn:hover {
+  color: #ef4444;
+  border-color: #ef4444;
 }
 </style>
