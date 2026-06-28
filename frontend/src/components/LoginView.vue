@@ -59,6 +59,7 @@ const errorMessage = ref('');
 const handleLogin = async () => {
     loading.value = true;
     errorMessage.value = '';
+    localStorage.removeItem('auth_token');
 
     try {
         const response = await api.post('login/', {
@@ -67,7 +68,7 @@ const handleLogin = async () => {
         });
         localStorage.setItem('auth_token', response.data.token);
         await userStore.fetchProfile();
-        router.push('/karte');
+        router.push('/map');
     } catch (error) {
         if (error.response) {
             const data = error.response.data;

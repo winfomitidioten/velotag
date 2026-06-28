@@ -1,17 +1,18 @@
 <script setup>
-import { RouterView, useRoute, useRouter } from 'vue-router';
-import { onMounted } from 'vue';
-import MenuBar from '@/components/MenuBar.vue';
-import { useUserStore } from '@/store/userStore';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { Capacitor } from '@capacitor/core';
+import { RouterView, useRoute, useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import MenuBar from '@/components/MenuBar.vue'
+import { useUserStore } from '@/store/userStore'
+import { Capacitor } from '@capacitor/core'
+import apiClient from '@/api/client'
+
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 
 const goBack = () => {
-  router.push(route.meta.backTo ?? '/karte');
+  router.push(route.meta.backTo ?? '/map');
 };
 
 const setAppHeight = () => {
@@ -20,6 +21,10 @@ const setAppHeight = () => {
 
 onMounted(async () => {
   if (Capacitor.isNativePlatform()) {
+    apiClient.defaults.baseURL = 'http://167.233.33.166/api';
+  }
+  if (localStorage.getItem('auth_token')) {
+    await userStore.fetchProfile();
     await StatusBar.setOverlaysWebView({ overlay: true });
     await StatusBar.setStyle({ style: Style.Dark });
   }

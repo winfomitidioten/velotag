@@ -11,8 +11,8 @@ import ComingSoon from '@/components/ComingSoon.vue';
 
 const routes = [
   {
-    path: '/karte',
-    name: 'karte',
+    path: '/map',
+    name: 'map',
     component: Karte,
     meta: { requiresAuth: true }
   },
@@ -55,6 +55,13 @@ const routes = [
     path: '/group/invites',
     name: 'group-invites',
     component: GroupInviteView,
+    meta: { requiresAuth: true, showBack: true }
+  },
+  {
+    path: '/rides',
+    name: 'rides',
+    component: ComingSoon,
+    meta:  { requiresAuth: true, showBack: true }
     meta: {requiresAuth: true, showBack: true}
   },
   {
