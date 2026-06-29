@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-    //baseURL: 'http://127.0.0.1:8000/api/', Maxis vorheriger Code
-    baseURL: '/api/', // Dank Proxy in vite.config.js, wird das automatisch an den Django-Server weitergeleitet
+    baseURL: import.meta.env.DEV
+        ? '/api/'
+        : 'http://167.233.33.166/api/',
 });
 
 api.interceptors.request.use((config) => {
@@ -11,12 +12,21 @@ api.interceptors.request.use((config) => {
     // NEU: Wir prüfen, ob Axios hier überhaupt vorbeikommt!
     console.log("AXIOS INTERCEPTOR LÄUFT! Gefundener Token:", token);
     
-    if (token) {
-        // Moderne, bombensichere Schreibweise für Axios-Header
+    if (token && token !== 'undefined') {
         config.headers.set('Authorization', `Token ${token}`);
     }
     return config;
 });
+
+api.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('auth_token');
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default api; // Konfiguration wird in deinem gesamten Projekt verfügbar gemacht
 

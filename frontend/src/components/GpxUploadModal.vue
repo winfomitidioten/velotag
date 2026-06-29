@@ -1,13 +1,13 @@
 <script setup>
   import { ref } from 'vue'
   import api from '@/api/api'
-  // NEU: Wir importieren unsere ausgelagerte Logik
   import { useGPXVerarbeitung } from '@/composables/useGPXVerarbeitung'
+  import GroupSelectionUploadModal from '@/components/GroupSelectionUploadModal.vue'
 
   defineEmits(['close']) 
 
-  // NEU: Wir entpacken exakt die zwei Dinge, die unser HTML für die Box braucht
-  const { isDragging, onFileDrop, errorMessage, erfolgsMessage } = useGPXVerarbeitung()
+  // NEU: Wir entpacken nun auch selectedGroupIds, um die ausgewählte Gruppe zu speichern
+  const { isDragging, onFileDrop, errorMessage, erfolgsMessage, selectedGroupIds } = useGPXVerarbeitung()
 
   const fileInput = ref(null)
 
@@ -47,6 +47,8 @@
         </a>
       </div>
       
+      <GroupSelectionUploadModal @update:selectedGroup="selectedGroupIds = $event" />
+    
       <div 
         class="dropzone-box"
         :class="{ 'active': isDragging }"
@@ -68,7 +70,11 @@
         />
       </div>
 
-      <button class="btn_close_popup" @click="$emit('close')">x</button> 
+      <button @click="$emit('close')" class="popup-close-button" aria-label="Schließen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+          <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+        </svg>
+      </button>
     </div>
   </div>
 </template>
@@ -101,23 +107,33 @@
     font-size: 14px;
   }
 
-  .btn_close_popup {
-    position: absolute; 
-    top: -15px;   
-    right: -15px; 
-    z-index: 3000;
-    color: white;
-    font-size: 24px;
-    background-color: var(--color-primary); 
-    height: 40px;
-    width: 40px;
-    border-radius: 50%;
+  .popup-close-button {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background-color: var(--color-primary, #3db897);
     border: none;
-    cursor: pointer;
+    width: 32px;
+    height: 32px;
     display: flex;
-    justify-content: center;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    justify-content: center;
+    cursor: pointer;
+    color: white; /* Weiß für guten Kontrast zum grünen Hintergrund */
+    border-radius: 50%;
+    transition: background-color 0.15s;
+    z-index: 3000;
+  }
+
+  /* Hover-Effekt in einem dunkleren Grün */
+  .popup-close-button:hover {
+    background-color: var(--color-primary-dark, #35a684);
+    color: white;
+  }
+
+  .popup-close-button svg {
+    width: 24px;
+    height: 24px;
   }
 
   /* Upload PopUp*/

@@ -2,7 +2,7 @@ from django.contrib import admin
 # from rest_framework.authtoken.views import obtain_auth_token
 from django.urls import path, include
 from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken
-from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView
+from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView
 from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken
@@ -23,7 +23,9 @@ urlpatterns = [
     path('api/groups/<int:pk>/', GroupDetailView.as_view(), name='group-detail'),
     path('api/logout/', LogoutView.as_view()),
     path('api/groups/<int:pk>/invite/', GroupInviteAdmin.as_view(), name='group-invite-admin'),
-    path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations')
+    path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
+    path('api/groups/<int:pk>/leave', GroupLeaveView.as_view(), name="group-leave"),
+    path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick")
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
