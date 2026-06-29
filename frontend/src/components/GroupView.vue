@@ -121,6 +121,7 @@
 
     .header-btn {
         background-color: #3db897;
+    }
     header {
         display: flex;
         justify-content: space-between;
@@ -168,6 +169,7 @@
     .header-btn:hover {
         background-color: #2da081;
 
+    }
     .mobile-fab-btn:active {
         transform: scale(0.95);
     }
