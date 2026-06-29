@@ -1,11 +1,13 @@
 <script setup>
-import { useRoute } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute()
-const groupId = route.params.id
+const router = useRouter()
+
+const groupId = computed(() => route.params.id)
 const group = ref(null)
 const loading = ref(false)
 const showPopup = ref(false)
@@ -14,7 +16,7 @@ const newMemberMail = ref("")
 const fetchGroup = async () => {
     try {
         loading.value = true;
-        const response = await api.get(`groups/${groupId}/`);
+        const response = await api.get(`groups/${groupId.value}/`);
         group.value = response.data;
     } catch(err) {
         console.error('Fehler beim Laden der Gruppe: ', err)
@@ -26,7 +28,7 @@ const fetchGroup = async () => {
 const inviteMember = async () => {
     if (!newMemberMail.value.trim()) return;
     try {
-        const response = await api.post(`groups/${groupId}/invite/`, {
+        const response = await api.post(`groups/${groupId.value}/invite/`, {
             email: newMemberMail.value
         });
     
@@ -43,7 +45,7 @@ const deleteMember = async (email) => {
     if (!confirm(`Möchtest du das Mitglied (${email}) wirklich aus der Gruppe entfernen?`)) return;
 
     try{
-        const response = await api.delete(`groups/${groupId}/`, {
+        const response = await api.delete(`groups/${groupId.value}/kick`, {
             data: { email: email }
         });
         
@@ -53,6 +55,34 @@ const deleteMember = async (email) => {
         alert(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.");
     }
 }
+
+const deleteGroup = async () =>{
+    if(!confirm("Möchtest du diese Gruppe wirklich dauerhaft löschen?")) return;
+    try{
+        await api.delete(`groups/${groupId.value}/`);
+        alert("Gruppe wurde erfolgreich gelöscht");
+        router.push("/group");
+    } catch (error) {
+        console.error("Fehler beim Löschen der Gruppe:", error);
+        alert(error.response?.data?.error || "Es gab ein Problem beim Löschen der Gruppe.");
+    }
+}
+
+const leaveGroup = async () =>{
+    if(!confirm("Möchtest du diese Gruppe wirklich verlassen?")) return;
+    try{
+        await api.post(`groups/${groupId.value}/leave`);
+        alert("Gruppe wurde erfolgreich verlassen");
+        router.push("/group");
+    } catch (error) {
+        console.error("Fehler beim Verlassen der Gruppe:", error);
+        alert(error.response?.data?.error || "Es gab ein Problem beim Verlassen der Gruppe.");
+    }
+}
+
+watch(() => route.params.id, (newId) => {
+    if (newId) fetchGroup();
+})
 
 onMounted(() => {
     fetchGroup();
@@ -66,7 +96,14 @@ onMounted(() => {
         </div>
 
         <template v-else-if="group">
-            <PageHeader :title="group.name" />
+            <PageHeader :title="group.name">
+                <button v-if="group.is_admin" class="desktop-create-btn" @click="deleteGroup">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                        <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
+                    </svg>
+                    <span>Gruppe Löschen</span>
+                </button>
+            </PageHeader>
             
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
@@ -87,25 +124,28 @@ onMounted(() => {
                             <span>{{ group.member_count }} Mitglieder</span>
                         </div>
                         
-                        <button v-if="group.is_admin" @click="showPopup = true" class="action-btn desktop-invite-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
-                                <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
-                            </svg>
-                            <span>Einladen</span>
-                        </button>
+                        <div class="button-group">
+                            <button v-if="group.is_admin" @click="showPopup = true" class="action-btn desktop-invite-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                                    <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
+                                </svg>
+                                <span>Einladen</span>
+                            </button>
+
+                            <button @click="leaveGroup" class="leave-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                                    <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z"/>
+                                </svg>
+                                <span>Verlassen</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="card-stats-area">
                         <h4>Mitglieder</h4>
                         <ul class="member-list">
                             <li v-for="member in group.members" :key="member.id" class="member-item">
-                                
-                                <img 
-                                    v-if="member.profilbild" 
-                                    :src="member.profilbild" 
-                                    alt="Profilbild" 
-                                    class="member-avatar-img"
-                                />
+                                <img v-if="member.profilbild" :src="member.profilbild" alt="Profilbild" class="member-avatar-img"/>
                                 <div v-else class="member-avatar">
                                     {{ (member.first_name || member.email).charAt(0).toUpperCase() }}
                                 </div>
@@ -118,21 +158,16 @@ onMounted(() => {
                                         <template v-else>
                                             {{ member.username }}
                                         </template>
-                                        
                                         <span v-if="member.email === group.admin_email" class="admin-badge">Admin</span>
                                     </span>
                                     <span class="member-email">{{ member.email }}</span>
                                 </div>
 
                                 <div v-if="group.is_admin && member.email !== group.admin_email" class="delete-member" @click="deleteMember(member.email)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" 
-                                    height="22px" 
-                                    viewBox="0 -960 960 960" 
-                                    width="22px">
-                                    <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px">
+                                        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
                                     </svg>
                                 </div>
-
                             </li>
                         </ul>
                     </div>
@@ -144,7 +179,7 @@ onMounted(() => {
                     <h3>Mitglieder einladen</h3>
                     <input v-model="newMemberMail" type="email" placeholder="max@mail.de" @keyup.enter="inviteMember">
                     <div id="popup-actions">
-                        <button @click="showPopup = false" id="cancle-btn">Abbrechen</button>
+                        <button @click="showPopup = false" id="cancel-btn">Abbrechen</button>
                         <button @click="inviteMember" id="create-btn">Einladen</button>
                     </div>
                 </div>
@@ -182,14 +217,26 @@ onMounted(() => {
         font-size: 1.2rem;
         font-weight: 600;
         margin: 0;
-        padding-left: 130px; /* Perfekter Mobil-Abstand zur Navigation */
+        padding-left: 130px; 
         color: var(--color-text);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    /* --- REINER MOBILE BUTTON (FAB) --- */
+    .desktop-create-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        background-color: #ef4444;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-weight: 600;
+    }
+
     .mobile-fab-btn {
         position: fixed;
         bottom: 2rem;
@@ -212,14 +259,34 @@ onMounted(() => {
     .mobile-fab-btn:active {
         transform: scale(0.95);
     }
-    .mobile-fab-btn svg {
-        width: 1.6rem;
-        height: 1.6rem;
+
+    .button-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    /* --- REINER DESKTOP BUTTON --- */
     .desktop-invite-btn {
-        display: none; /* Mobil ausblenden */
+        display: none; 
+    }
+
+    .leave-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: transparent;
+        border: 1px solid #ef4444;
+        color: #ef4444;
+        cursor: pointer;
+        border-radius: var(--radius-md);
+        padding: 0.6em 1.2em;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .leave-btn:hover {
+        background-color: #fee2e2;
     }
 
     .page-content {
@@ -259,7 +326,7 @@ onMounted(() => {
         align-items: center;
         width: 3rem;          
         height: 3rem;
-        background-color: #e8f7f3; /* Beibehalten für leichten Akzentton */
+        background-color: #e8f7f3; 
         border-radius: var(--radius-md);     
         flex-shrink: 0;            
     }
@@ -274,12 +341,16 @@ onMounted(() => {
         flex-direction: column;
         gap: 0.1rem;   
         flex-grow: 1;      
+        min-width: 0;
     }
     .group-info h3 {
         margin: 0;
         font-size: 1.25rem;
         font-weight: 600;
         color: var(--color-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .group-info span {
         font-size: 0.85rem;
@@ -345,7 +416,7 @@ onMounted(() => {
         display: flex;
         flex-direction: column;
         gap: 0.1rem;
-        min-width: 0; /* Verhindert Text-Overflow-Probleme auf winzigen Displays */
+        min-width: 0; 
     }
 
     .member-name {
@@ -388,16 +459,12 @@ onMounted(() => {
     }
     .delete-member svg {
         fill: #94a3b8; 
-        transition: fill 0.2s ease;
     }
     .delete-member:hover {
         background-color: #fee2e2; 
     }
     .delete-member:hover svg {
         fill: #ef4444; 
-    }
-    .delete-member:active {
-        transform: scale(0.9); 
     }
 
     #popup-overlay {
@@ -442,13 +509,11 @@ onMounted(() => {
         border-radius: var(--radius-md);
         outline: none;
         color: var(--color-text);
-        transition: all 0.2s ease;
         box-sizing: border-box;
         background-color: var(--color-bg-page);
     }
     #popup-content input[type="email"]:focus {
         border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px rgba(61, 184, 151, 0.15);
     }
     #popup-actions {
         display: flex;
@@ -462,22 +527,15 @@ onMounted(() => {
         padding: 0.85rem 1.5rem;
         font-size: 0.95rem;
         font-weight: 600;
-        transition: all 0.2s ease;
         flex: 1;
     }
-    #cancle-btn {
+    #cancel-btn {
         background-color: #f1f5f9;
         color: #64748b;
-    }
-    #cancle-btn:hover {
-        background-color: #e2e8f0;
     }
     #create-btn {
         background-color: var(--color-primary);
         color: white;
-    }
-    #create-btn:hover {
-        background-color: var(--color-primary-dark);
     }
 
     .loading-state {
@@ -486,52 +544,21 @@ onMounted(() => {
         align-items: center;
         min-height: 100vh;
         color: var(--color-text-muted);
-        font-weight: 500;
     }
 
-    /* --- TABLET / DESKTOP OPTIMIERUNGEN --- */
     @media (min-width: 480px) {
-        header {
-            padding: 1.2rem 2rem;
-        }
         header h3 {
-            font-size: 1.25rem;
-            padding-left: 95px; /* Gewohnter Standard-Desktop-Abstand */
+            padding-left: 95px; 
         }
         .page-content {
             padding: 3rem 2rem;
         }
         .group-card {
             padding: 2rem;
-            border-radius: var(--radius-lg);
-            gap: 1.8rem;
         }
-        .group-info h3 {
-            font-size: 1.5rem;
-        }
-        .group-info span {
-            font-size: 0.9rem;
-        }
-        .card-stats-area h4 {
-            font-size: 1.05rem;
-        }
-        .member-item {
-            padding: 0.6rem 0.8rem;
-        }
-        #popup-content {
-            padding: 2.5rem;
-            gap: 1.5rem;
-        }
-        #popup-actions button {
-            flex: none;
-        }
-
-        /* Mobil-Button verstecken */
         .mobile-fab-btn {
             display: none;
         }
-
-        /* Desktop-Button einblenden */
         .desktop-invite-btn {
             display: flex;
             align-items: center;
@@ -544,7 +571,7 @@ onMounted(() => {
             padding: 0.6em 1.4em;
             font-size: 0.9rem;
             font-weight: 600;
-            transition: all 0.2s ease;
+            white-space: nowrap;
         }
         .desktop-invite-btn:hover {
             background-color: var(--color-primary-dark);
