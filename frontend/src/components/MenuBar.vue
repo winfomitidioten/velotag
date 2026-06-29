@@ -12,7 +12,7 @@
   <aside class="sidebar" :class="{ 'is-open': isOpen }">
     <!-- Header: Logo & Close -->
     <div class="sidebar-header">
-      <RouterLink to="/karte" @click="closeMenu" class="logo">
+      <RouterLink to="/map" @click="closeMenu" class="logo">
         <img src="@/assets/logo.png" alt="velotag logo" class="logo" />
       </RouterLink>
       <button class="close-button" @click="closeMenu" aria-label="Menü schließen">
@@ -40,7 +40,7 @@
     <nav>
       <ul>
         <li>
-          <!-- TODO: Fahrten hier einfügen, wenn es bereit ist -->
+        
           <RouterLink to="/rides" @click="closeMenu" class="nav-item">
             <span class="icon-wrap icon-green">
               <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="#3db897">

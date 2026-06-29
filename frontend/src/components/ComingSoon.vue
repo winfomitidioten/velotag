@@ -37,7 +37,7 @@ const route = useRoute();
 <style scoped>
     .page-container {
         min-height: 100vh;
-        background-color: #f8f9fa;
+        background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
     }

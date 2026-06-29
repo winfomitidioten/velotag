@@ -3,6 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
+import HeaderButton from './HeaderButton.vue';
 
 const route = useRoute()
 const router = useRouter()
@@ -96,13 +97,13 @@ onMounted(() => {
         </div>
 
         <template v-else-if="group">
-            <PageHeader :title="group.name">
-                <button v-if="group.is_admin" class="desktop-create-btn" @click="deleteGroup">
+            <PageHeader>
+                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="deleteGroup">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
                     </svg>
                     <span>Gruppe Löschen</span>
-                </button>
+                </HeaderButton>
             </PageHeader>
             
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
@@ -202,22 +203,11 @@ onMounted(() => {
         flex-direction: column;
     }
 
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        background-color: var(--color-bg-card);
-        box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
-        box-sizing: border-box;
-        padding: 1rem 1.5rem;
-        min-height: 4.8rem;
-    }
     header h3 {
         font-size: 1.2rem;
         font-weight: 600;
         margin: 0;
-        padding-left: 130px; 
+        padding-left: 130px;
         color: var(--color-text);
         white-space: nowrap;
         overflow: hidden;

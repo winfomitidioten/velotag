@@ -25,7 +25,7 @@ defineProps({
     position: sticky;
     top: 0;
     z-index: 100;
-    background: #f8f9fa;
+    background: var(--color-bg-page);
     padding-top: var(--safe-top, 0px);
     flex-shrink: 0;
 }
@@ -50,9 +50,9 @@ defineProps({
     left: 50%;
     transform: translateX(-50%);
     max-width: 55%;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--color-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -65,5 +65,8 @@ defineProps({
     align-items: center;
     gap: 0.5rem;
     margin-left: auto;
+    min-width: calc(88px + 0.75rem);
+    justify-content: flex-end;
 }
+
 </style>

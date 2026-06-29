@@ -3,6 +3,7 @@
     import api from '@/api/api';
     import { useRouter } from 'vue-router'
     import PageHeader from '@/components/PageHeader.vue';
+    import HeaderButton from './HeaderButton.vue';
 
     const groups = ref([])
     const loading = ref(false)
@@ -46,17 +47,9 @@
 <template>
     <div class="page-container">
         <PageHeader title="Meine Gruppen">
-            <button class="header-btn" @click="showPopup = true">+ Neue Gruppe</button>
+            <HeaderButton @click="showPopup = true ">+ Neue Gruppe</HeaderButton>
         </PageHeader>
-        <header>
-            <h3>Meine Gruppen</h3>
-            <button class="desktop-create-btn" @click="showPopup = true">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-                    <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
-                </svg>
-                <span>Neue Gruppe</span>
-            </button>
-        </header>
+
 
         <button class="mobile-fab-btn" @click="showPopup = true">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
@@ -119,20 +112,6 @@
         flex-direction: column;
     }
 
-    .header-btn {
-        background-color: #3db897;
-    }
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        background-color: var(--color-bg-card);
-        box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
-        box-sizing: border-box;
-        padding: 1rem 1.5rem;
-        min-height: 4.8rem;
-    }
     
     header h3 {
         font-size: 1.2rem;
@@ -166,10 +145,7 @@
         box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
         transition: all 0.2s ease;
     }
-    .header-btn:hover {
-        background-color: #2da081;
 
-    }
     .mobile-fab-btn:active {
         transform: scale(0.95);
     }
