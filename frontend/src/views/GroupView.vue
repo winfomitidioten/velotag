@@ -221,8 +221,9 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        align-items: center; /* WICHTIG: Zentriert alles horizontal */
-        padding: 2rem;       /* Etwas kompakter */
+        align-items: center;
+        justify-content: flex-start; /* Bereinigt: Jetzt wirklich oben ausgerichtet */
+        padding: 2rem;               /* Bereinigt: Nur noch ein Padding-Wert */
         box-sizing: border-box;
     }
     

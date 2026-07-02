@@ -26,6 +26,10 @@ class RouteListSerializer(serializers.ModelSerializer):
         if not stream or len(stream) < 2:
             return 0
         fmt = "%Y-%m-%dT%H:%M:%SZ"
+
+        if not stream or stream[0] is None:
+            return 0  # Oder return None, je nachdem, was dein Frontend bevorzugt
+    
         start = datetime.strptime(stream[0], fmt).replace(tzinfo=timezone.utc)
         end = datetime.strptime(stream[-1], fmt).replace(tzinfo=timezone.utc)
         return int((end - start).total_seconds())
