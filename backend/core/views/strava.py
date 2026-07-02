@@ -1,16 +1,29 @@
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core import signing
 from django.http import JsonResponse, HttpResponseRedirect
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from urllib.parse import urlencode
 from users.models import StravaToken
 import requests
 import time
 
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def strava_connect(request):
+    # Strava schickt diesen state 1:1 im Callback zurück (Redirects tragen keinen
+    # Authorization-Header) - so wissen wir dort, welcher User verbindet
+    state = signing.dumps({'user_id': request.user.id})
+
     params = {
         'client_id':     settings.STRAVA_CLIENT_ID,     # wer fragt an?
         'redirect_uri':  settings.STRAVA_REDIRECT_URI,  # wohin soll Strava zurückschicken
         'response_type': 'code',
         'scope':         'activity:read_all',           # was soll abgefragt werden?
+        'state':         state,
     }
     auth_url = f"https://www.strava.com/oauth/authorize?{urlencode(params)}"
     return JsonResponse({'auth_url': auth_url})
@@ -21,7 +34,13 @@ def strava_connect(request):
 
 def strava_callback(request):
     code = request.GET.get('code')  # Strava schickt ?code=... in der URL
-    
+    state = request.GET.get('state')  # vom strava_connect erzeugt, enthält die User-ID
+
+    # State prüfen und den User ermitteln, der die Verbindung gestartet hat
+    # (request.user funktioniert hier nicht, da der Redirect keinen Authorization-Header trägt)
+    user_id = signing.loads(state, max_age=600)['user_id']  # 600s = 10 Min. gültig
+    user = User.objects.get(pk=user_id)
+
     # Code gegen Token tauschen
     response = requests.post('https://www.strava.com/oauth/token', data={
         'client_id':     settings.STRAVA_CLIENT_ID,
@@ -29,17 +48,17 @@ def strava_callback(request):
         'code':          code,
         'grant_type':    'authorization_code',
     })
-    
+
     token_data = response.json()
     # token_data enthält:
     # - access_token  → für API-Calls (läuft nach 6h ab)
     # - refresh_token → um neuen access_token zu holen
     # - expires_at    → Unix-Timestamp wann access_token abläuft
-    
 
-    
+
+
     StravaToken.objects.update_or_create(
-        user=request.user,
+        user=user,
         defaults={
             'access_token':  token_data['access_token'],
             'refresh_token': token_data['refresh_token'],
