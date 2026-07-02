@@ -16,6 +16,14 @@ import time
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
+def strava_status(request):
+    connected = StravaToken.objects.filter(user=request.user).exists()
+    return JsonResponse({'connected': connected})
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def strava_connect(request):
     # Strava schickt diesen state 1:1 im Callback zurück (Redirects tragen keinen
     # Authorization-Header) - so wissen wir dort, welcher User verbindet
