@@ -5,6 +5,9 @@ from django.http import JsonResponse, HttpResponse
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from routes.models import Route
+from datetime import datetime, timedelta, timezone as dt_timezone
 from urllib.parse import urlencode
 from users.models import StravaToken
 import requests
@@ -101,13 +104,63 @@ def get_valid_access_token(user):
     
     return token.access_token
 
-
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def get_activities(request):
     access_token = get_valid_access_token(request.user)
 
     response = requests.get(
         'https://www.strava.com/api/v3/athlete/activities',
-        headers={'Authorization': f'Bearer {access_token}'}
+        headers={'Authorization': f'Bearer {access_token}'},
+        params={'per_page':50},
     )
-    return JsonResponse(response.json(), safe=False)
+    activities = response.json()
+
+    imported_ids = set(
+        Route.objects.filter(user=request.user, strava_activity_id__isnull=False)
+        .values_list('strava_activity_id', flat=True)
+    )
+    for activity in activities:
+        activity['already_imported'] = activity['id'] in imported_ids
+
+    return JsonResponse(activities, safe=False)
  
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def import_activity(request, activity_id):
+    if Route.objects.filter(user=request.user, strava_activity_id=activity_id).exists():
+        return Response({'error':'Diese Aktivität wurde bereits importiert.'}, status=400)
+
+    access_token = get_valid_access_token(request.user)
+    headers = {'Authorization': f'Bearer {access_token}'}
+
+    detail = requests.get(
+        f'https://www.strava.com/api/v3/activities/{activity_id}',
+        headers=headers,
+    ).json()
+
+    streams = requests.get(
+        f'https://www.strava.com/api/v3/activities/{activity_id}/streams',
+        headers=headers,
+        params={'keys': 'time,heartrate,watts', 'key_by_type': 'true'},
+    ).json()
+
+    start = datetime.strptime(detail['start_date'], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt_timezone.utc)
+    zeit_stream = [
+        (start + timedelta(seconds=s)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        for s in streams.get('time', {}).get('data', [])
+    ]
+
+    route = Route.objects.create(
+        strecken_name=request.data.get('strecken_name', detail.get('name', 'Strava-Fahrt')),
+        user=request.user,
+        polyline_map=detail.get('map', {}).get('polyline') or detail.get('map', {}).get('summary_polyline', ''),
+        puls_stream=streams.get('heartrate', {}).get('data'),
+        zeit_stream=zeit_stream,
+        watt_stream=streams.get('watts', {}).get('data'),
+        strava_activity_id=activity_id,
+    )
+
+    return Response({'message': 'Route importiert', 'strecken_id': route.strecken_id}, status=201)

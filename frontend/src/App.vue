@@ -1,7 +1,8 @@
 <script setup>
 import { RouterView, useRoute, useRouter } from 'vue-router'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import MenuBar from '@/components/MenuBar.vue'
+import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
 import { useUserStore } from '@/store/userStore'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
@@ -12,6 +13,7 @@ import apiClient from '@/api/client'
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const showStravaImport = ref(false);
 
 const goBack = () => {
   router.push(route.meta.backTo ?? '/map');
@@ -32,6 +34,7 @@ onMounted(async () => {
     CapacitorApp.addListener('appUrlOpen', ({ url }) => {
       if (url.startsWith('velotag://strava-callback')) {
         router.push('/map');
+        showStravaImport.value = true;
       }
     });
   }
@@ -66,6 +69,8 @@ onMounted(async () => {
       <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/>
     </svg>
   </button>
+
+  <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
 </template>
 
 <style>
