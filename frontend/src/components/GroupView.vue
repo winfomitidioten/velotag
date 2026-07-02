@@ -77,8 +77,6 @@
     <div class="page-container">
         <header>
             <h3>Meine Gruppen</h3>
-            
-            <button @click="showPopup = true"> + Neue Gruppe</button>
             <button class="desktop-create-btn" @click="showPopup = true">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                     <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
@@ -237,10 +235,9 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        align-items: center; /* WICHTIG: Zentriert alles horizontal */
-        padding: 2rem;       /* Etwas kompakter */
-        justify-content: center;
-        padding: 1rem;
+        align-items: center;
+        justify-content: flex-start; /* Bereinigt: Jetzt wirklich oben ausgerichtet */
+        padding: 2rem;               /* Bereinigt: Nur noch ein Padding-Wert */
         box-sizing: border-box;
     }
     
