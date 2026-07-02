@@ -4,6 +4,7 @@ import { onMounted } from 'vue'
 import MenuBar from '@/components/MenuBar.vue'
 import { useUserStore } from '@/store/userStore'
 import { Capacitor } from '@capacitor/core'
+import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import apiClient from '@/api/client'
 
@@ -25,6 +26,14 @@ onMounted(async () => {
     apiClient.defaults.baseURL = 'http://167.233.33.166/api';
     await StatusBar.setOverlaysWebView({ overlay: true });
     await StatusBar.setStyle({ style: Style.Dark });
+
+    // Fängt den velotag://strava-callback Deep Link ab, mit dem das Backend
+    // nach dem Strava-Login zurück in die App springt
+    CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+      if (url.startsWith('velotag://strava-callback')) {
+        router.push('/map');
+      }
+    });
   }
 
   setAppHeight();

@@ -1,17 +1,18 @@
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
+from urllib.parse import urlencode
 from users.models import StravaToken
 import requests
 import time
 
 def strava_connect(request):
-    auth_url = (
-        f"https://www.strava.com/oauth/authorize"
-        f"?client_id={settings.STRAVA_CLIENT_ID}" # wer fragt an?
-        f"&redirect_uri=http://localhost:8000/api/strava/callback/" # wohin soll Strava zurückschicken
-        f"&response_type=code"
-        f"&scope=activity:read_all" # was soll abgefragt werden?
-    )
+    params = {
+        'client_id':     settings.STRAVA_CLIENT_ID,     # wer fragt an?
+        'redirect_uri':  settings.STRAVA_REDIRECT_URI,  # wohin soll Strava zurückschicken
+        'response_type': 'code',
+        'scope':         'activity:read_all',           # was soll abgefragt werden?
+    }
+    auth_url = f"https://www.strava.com/oauth/authorize?{urlencode(params)}"
     return JsonResponse({'auth_url': auth_url})
 
 
@@ -45,6 +46,10 @@ def strava_callback(request):
             'expires_at':    token_data['expires_at'],
         }
     )
+
+    # Strava kann nicht direkt auf ein App-Schema (velotag://...) weiterleiten,
+    # deshalb springt der Browser/das WebView hier per eigenem Redirect in die App zurück
+    return HttpResponseRedirect(f"{settings.STRAVA_APP_REDIRECT_URL}?strava=connected")
 
 
 
