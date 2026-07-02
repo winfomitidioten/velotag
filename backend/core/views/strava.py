@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import signing
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponse
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -66,9 +66,11 @@ def strava_callback(request):
         }
     )
 
-    # Strava kann nicht direkt auf ein App-Schema (velotag://...) weiterleiten,
-    # deshalb springt der Browser/das WebView hier per eigenem Redirect in die App zurück
-    return HttpResponseRedirect(f"{settings.STRAVA_APP_REDIRECT_URL}?strava=connected")
+    # HttpResponseRedirect erlaubt nur http/https/ftp als Ziel-Protokoll und würde bei
+    # velotag:// eine DisallowedRedirect werfen - deshalb Location-Header manuell setzen
+    redirect_response = HttpResponse(status=302)
+    redirect_response['Location'] = f"{settings.STRAVA_APP_REDIRECT_URL}?strava=connected"
+    return redirect_response
 
 
 
