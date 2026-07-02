@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api/api';
+import PageHeader from '@/components/PageHeader.vue';
 
 const loading = ref(false);
 const invites = ref([]);
@@ -41,9 +42,7 @@ onMounted(() => {
         </div>
 
         <template v-else>
-            <header>
-                <h3>Gruppen Einladungen</h3>
-            </header>
+            <PageHeader title="Gruppen Einladungen" />
             
             <main class="page-content">
                 <div v-if="invites.length === 0" class="empty-state">
@@ -91,17 +90,6 @@ onMounted(() => {
         flex-direction: column;
     }
 
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        background-color: var(--color-bg-card);
-        box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
-        box-sizing: border-box;
-        padding: 1rem 1.5rem;
-        min-height: 4.8rem;
-    }
     header h3 {
         font-size: 1.2rem;
         font-weight: 600;
@@ -112,7 +100,7 @@ onMounted(() => {
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
+    
     .page-content {
         flex: 1;
         width: 100%;

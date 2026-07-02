@@ -21,12 +21,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000', //http://167.233.33.166
+//        target: 'http://167.233.33.166',
+        target: 'http://127.0.0.1:8000',      // Für die Entwicklung: das hier auskommentieren und das andere target kommentieren    
         changeOrigin: true,
         rewrite: (path) => path
       },
       '/media': {
-        target: 'http://127.0.0.1:8000', //http://167.233.33.166
+//        target: '//http://167.233.33.166',
+        target: 'http://127.0.0.1:8000',      // Für die Entwicklung: das hier auskommentieren und das andere target kommentieren
         changeOrigin: true
       }
     }

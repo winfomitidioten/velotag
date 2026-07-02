@@ -1,7 +1,10 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-    baseURL: '/api', // beginnt jede Anfrage automatisch mit /api, statt mit der vollen Adresse 
+    // baseURL: '/api', // beginnt jede Anfrage automatisch mit /api, statt mit der vollen Adresse 
+    baseURL: import.meta.env.DEV
+        ? '/api'
+        : 'http://167.233.33.166/api',
     headers: {
         'Content-Type': 'application/json', // schickt Daten an Django in JSON und erwartet JSON zurück
     },

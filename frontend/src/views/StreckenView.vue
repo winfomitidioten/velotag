@@ -2,6 +2,7 @@
     import { ref, onMounted } from 'vue'
     import api from '@/api/api'
     import RouteEditModal from '@/components/RouteEditModal.vue'
+    import PageHeader from '@/components/PageHeader.vue'
 
     const strecken = ref([])       // Array der Strecken vom Backend
     const loading = ref(false)     // Ladeindikator
@@ -53,10 +54,9 @@
 
 <template>
     <div class="page-container">
-        <header>
-            <h3>Meine Strecken</h3>
+        <PageHeader title="Meine Strecken">
             <span class="count-badge">{{ strecken.length }} Strecken</span>
-        </header>
+        </PageHeader>
 
         <main class="page-content">
 
@@ -124,26 +124,6 @@
   background-color: var(--color-bg-page);
   display: flex;
   flex-direction: column;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  background-color: var(--color-bg-card);
-  box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.05);
-  box-sizing: border-box;
-  padding: 1.2rem 2rem;
-  min-height: 4.8rem;
-}
-
-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--color-text);
-  padding-left: 95px;
 }
 
 .count-badge {
