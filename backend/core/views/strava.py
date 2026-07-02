@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.http import JsonResponse
+from django.shortcuts import redirect
 from users.models import StravaToken
 import requests
 import time
@@ -45,6 +46,7 @@ def strava_callback(request):
             'expires_at':    token_data['expires_at'],
         }
     )
+    return redirect('/karte') 
 
 
 

@@ -62,11 +62,32 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
         # 3. Die JSON-Daten zurück an das Frontend schicken
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-# class RouteListView(APIView):
-#     authentication_classes = [TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
+class RouteDetailView(APIView): 
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
-#     def get(self,request):
-#         routes = Route.objects.filter(user=request.user)  # Nur Routen des eingeloggten Users
-#         serializer = RouteListSerializer(routes, many=True)  # Liste → many=True
-#         return Response(serializer.data, status=status.HTTP_200_OK)
+    # teilweise Update: schickt nut die Felder, die geändert werden können, nicht das ges. Objekt wie bei put
+    def patch(self, request, strecken_id): 
+        try:
+            route = Route.objects.get(pk=strecken_id, user=request.user)
+        except Route.DoesNotExist:
+            return Response({"error": "Strecke nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if 'strecken_name' in request.data:
+            route.strecken_name = request.data['strecken_name']
+        if 'group_id' in request.data:
+            route.group_id = request.data['group_id']
+        route.save()
+
+        serializer = RouteListSerializer(route)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def delete(self, request, strecken_id):
+        try:
+            route = Route.objects.get(pk=strecken_id, user=request.user)
+        except Route.DoesNotExist:
+            return Response({"error": "Strecke nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
+        
+        route.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    

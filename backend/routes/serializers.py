@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from datetime import datetime, timezone
 from .models import Route 
+from groups.models import Group
 
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,10 +17,11 @@ class RouteListSerializer(serializers.ModelSerializer):
     duration_seconds = serializers.SerializerMethodField()
     avg_puls = serializers.SerializerMethodField()
     avg_watt = serializers.SerializerMethodField()
+    groups = serializers.SerializerMethodField()
 
     class Meta:
         model = Route
-        fields = ['strecken_id', 'strecken_name', 'created_at', 'duration_seconds', 'avg_puls', 'avg_watt']
+        fields = ['strecken_id', 'strecken_name', 'created_at', 'duration_seconds', 'avg_puls', 'avg_watt', 'group_id', 'groups']
 
     def get_duration_seconds(self, obj):
         stream = obj.zeit_stream
@@ -43,6 +45,11 @@ class RouteListSerializer(serializers.ModelSerializer):
             return None
         values = [float(x) for x in stream if x is not None]
         return int(sum(values) / len(values)) if values else None
+    
+    def get_groups(self,obj):
+        if not obj.group_id:
+            return []
+        return list(Group.objects.filter(id__in=obj.group_id).values('id', 'name')) # groups liefert id, name für die Badges in der Liste 
 
 
 # # schlankerer Serializer ohne Polyline und mit berechneten Werten für die Strecken Liste
