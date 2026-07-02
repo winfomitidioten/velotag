@@ -107,22 +107,22 @@ if DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': env('DB_NAME'),
-            'USER': env('DB_USER'),
-            'PASSWORD': env('DB_PASSW'),
-            'HOST': env('DB_HOST'),
-            'PORT': env('DB_PORT'),
+            'NAME': env('DEV_DB_NAME'),
+            'USER': env('DEV_DB_USER'),
+            'PASSWORD': env('DEV_DB_PASSW'),
+            'HOST': env('DEV_DB_HOST'),
+            'PORT': env('DEV_DB_PORT'),
         }
     }
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': env('DEV_DB_NAME'),
-            'USER': env('DEV_DB_USER'),
-            'PASSWORD': env('DEV_DB_PASSW'),
-            'HOST': env('DEV_DB_HOST'),
-            'PORT': env('DEV_DB_PORT'),
+            'NAME': env('DB_NAME'),
+            'USER': env('DB_USER'),
+            'PASSWORD': env('DB_PASSW'),
+            'HOST': env('DB_HOST'),
+            'PORT': env('DB_PORT'),
         }
     }
 
