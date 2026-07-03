@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1054557793532",
+    "project_id": "velotag-8135c",
+    "storage_bucket": "velotag-8135c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054557793532:android:18b1c2ece61608eff2bb79",
+        "android_client_info": {
+          "package_name": "de.velotag.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKZDLJh_ZIlQJ0V6WJrs2fdflM2ltE8TM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

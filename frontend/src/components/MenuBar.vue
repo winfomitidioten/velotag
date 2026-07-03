@@ -65,6 +65,17 @@
             <span class="nav-label">Gruppen</span>
           </RouterLink>
         </li>
+        <li>
+          <RouterLink to="/group/invites" @click="closeMenu" class="nav-item">
+            <span class="icon-wrap icon-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </span>
+            <span class="nav-label">Mitteilungen</span>
+          </RouterLink>
+        </li>
         <li class="nav-divider"></li>
         <li>
           <!-- TODO: Route einfügen wenn Einstellungen-Seite bereit ist -->
