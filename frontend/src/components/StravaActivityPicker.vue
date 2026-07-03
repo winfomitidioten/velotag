@@ -27,20 +27,34 @@ const importActivity = async (activity) => {
   }
 }
 
+const formatDate = (isoDate) => new Date(isoDate).toLocaleDateString('de-DE')
+const formatDistance = (meters) => `${(meters / 1000).toFixed(1)} km`
+
 onMounted(loadActivities)
 </script>
 
 <template>
-  <div class="popup">
-    <div class="popup-content">
+  <div class="strava-picker">
+    <div class="picker-header">
       <h2>Strava-Fahrten importieren</h2>
+      <button @click="$emit('close')" class="close-button" aria-label="Schließen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+          <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+        </svg>
+      </button>
+    </div>
 
+    <div class="picker-body">
       <p v-if="loading">Aktivitäten werden geladen…</p>
       <p v-else-if="activities.length === 0">Keine Strava-Aktivitäten gefunden.</p>
 
-      <div v-else class="activity-list">
-        <div v-for="activity in activities" :key="activity.id" class="activity-row">
-          <span class="activity-name">{{ activity.name }} ({{ activity.start_date }})</span>
+      <div v-else class="activity-tiles">
+        <div v-for="activity in activities" :key="activity.id" class="activity-tile">
+          <div class="activity-info">
+            <div class="activity-title">{{ activity.name }}</div>
+            <div class="activity-meta">{{ formatDate(activity.start_date) }} · {{ formatDistance(activity.distance) }}</div>
+          </div>
+
           <button
             v-if="!activity.already_imported"
             class="import-button"
@@ -52,67 +66,111 @@ onMounted(loadActivities)
           <span v-else class="already-imported">Bereits importiert</span>
         </div>
       </div>
-
-      <button @click="$emit('close')" class="popup-close-button" aria-label="Schließen">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
-          <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
-        </svg>
-      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.popup {
+.strava-picker {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  z-index: 2000;
+  background: var(--color-bg-card, #ffffff);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+}
+
+.picker-header {
+  display: flex;
   align-items: center;
-  z-index: 1001;
+  justify-content: space-between;
+  padding: calc(var(--safe-top, 0px) + 1rem) 1.25rem 1rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid #f0f2f5;
 }
 
-.popup-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: left;
-  position: relative;
-  max-width: 90vw;
-  max-height: 80vh;
+.picker-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.close-button {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-lg, 10px);
+  background: var(--color-primary, #3db897);
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.close-button:hover {
+  background-color: var(--color-primary-dark, #35a684);
+}
+
+.close-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.picker-body {
+  flex: 1;
   overflow-y: auto;
+  padding: 1rem 1.25rem calc(var(--safe-bottom, 0px) + 1rem);
 }
 
-.activity-list {
+.activity-tiles {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 15px;
 }
 
-.activity-row {
+.activity-tile {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  padding: 12px 14px;
+  background: #f5f7fa;
+  border-radius: 12px;
 }
 
-.activity-name {
-  font-size: 14px;
+.activity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.activity-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-meta {
+  font-size: 0.8rem;
+  color: #888;
 }
 
 .import-button {
   background-color: var(--color-primary, #3db897);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .import-button:disabled {
@@ -121,35 +179,9 @@ onMounted(loadActivities)
 }
 
 .already-imported {
-  font-size: 13px;
-  color: #666;
+  font-size: 0.8rem;
+  color: #888;
   white-space: nowrap;
-}
-
-.popup-close-button {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background-color: var(--color-primary, #3db897);
-  border: none;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  border-radius: 50%;
-  transition: background-color 0.15s;
-  z-index: 3000;
-}
-
-.popup-close-button:hover {
-  background-color: var(--color-primary-dark, #35a684);
-}
-
-.popup-close-button svg {
-  width: 24px;
-  height: 24px;
+  flex-shrink: 0;
 }
 </style>

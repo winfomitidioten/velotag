@@ -1,9 +1,10 @@
 <script setup>
 import { RouterView, useRoute, useRouter } from 'vue-router'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import MenuBar from '@/components/MenuBar.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
 import { useUserStore } from '@/store/userStore'
+import { useStravaImport } from '@/composables/useStravaImport'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
@@ -13,7 +14,7 @@ import apiClient from '@/api/client'
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
-const showStravaImport = ref(false);
+const { showStravaImport } = useStravaImport();
 
 const goBack = () => {
   router.push(route.meta.backTo ?? '/map');
@@ -27,7 +28,9 @@ onMounted(async () => {
   if (Capacitor.isNativePlatform()) {
     apiClient.defaults.baseURL = 'http://167.233.33.166/api';
     await StatusBar.setOverlaysWebView({ overlay: true });
-    await StatusBar.setStyle({ style: Style.Dark });
+    // Style.Light => dunkle Uhr/Batterie-Icons, richtig für unseren hellen Hintergrund
+    // (Style.Dark ist entgegen des Namens für dunkle Hintergründe mit hellen Icons gedacht)
+    await StatusBar.setStyle({ style: Style.Light });
 
     // Fängt den velotag://strava-callback Deep Link ab, mit dem das Backend
     // nach dem Strava-Login zurück in die App springt
@@ -58,7 +61,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <MenuBar v-if="!route.meta.hideMenu" />
+  <MenuBar v-if="!route.meta.hideMenu && !showStravaImport" />
   <RouterView v-slot="{ Component }">
     <keep-alive include="Karte">
       <component :is="Component" />
