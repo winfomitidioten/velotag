@@ -3,6 +3,9 @@ import { RouterView, useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import MenuBar from '@/components/MenuBar.vue'
 import { useUserStore } from '@/store/userStore'
+import { Capacitor } from '@capacitor/core'
+import { StatusBar, Style } from '@capacitor/status-bar'
+import apiClient from '@/api/client'
 
 
 const route = useRoute();
@@ -10,12 +13,33 @@ const router = useRouter();
 const userStore = useUserStore();
 
 const goBack = () => {
-  router.push(route.meta.backTo ?? '/karte');
+  router.push(route.meta.backTo ?? '/map');
+};
+
+const setAppHeight = () => {
+  document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
 };
 
 onMounted(async () => {
-  if (localStorage.getItem('auth_token')) {
-    await userStore.fetchProfile();
+  if (Capacitor.isNativePlatform()) {
+    apiClient.defaults.baseURL = 'http://167.233.33.166/api';
+    await StatusBar.setOverlaysWebView({ overlay: true });
+    await StatusBar.setStyle({ style: Style.Dark });
+  }
+
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  // forceViewportRecalc();
+  const token = localStorage.getItem('auth_token');
+  if (token && token !== 'undefined') {
+    try {
+      await userStore.fetchProfile();
+    } catch {
+      localStorage.removeItem('auth_token');
+      router.push('/login');
+    }
+  } else {
+    localStorage.removeItem('auth_token');
   }
 });
 
@@ -23,7 +47,11 @@ onMounted(async () => {
 
 <template>
   <MenuBar v-if="!route.meta.hideMenu" />
-  <RouterView />
+  <RouterView v-slot="{ Component }">
+    <keep-alive include="Karte">
+      <component :is="Component" />
+    </keep-alive>
+  </RouterView>
   <button v-if="route.meta.showBack" class="back-button" @click="goBack" aria-label="Zurück zur Vorherigen Seite">
     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
       <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/>
@@ -49,7 +77,7 @@ html, body, #app {
 }
 .back-button {
   position: fixed;
-  top: 1rem;
+  top: calc(var(--safe-top) + 0.5rem);
   left: calc(1rem + 44px + 0.75rem);
   z-index: 1010;
   width: 44px;

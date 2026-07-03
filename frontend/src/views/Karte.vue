@@ -98,9 +98,10 @@ watch(isGroupView, async (newValue) => {
   }
 
   /* Karte füllt Container komplett aus*/
-  #map { 
-    height: 100%; 
+  #map {
+    height: 100dvh;
     width: 100%;
+    height: calc(100vh - env(safe-area-inset-bottom));
   }
 
   /* Upload Button "+" */
