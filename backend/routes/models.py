@@ -10,7 +10,8 @@ class Route (models.Model):
     puls_stream = models.JSONField(blank=True, null=True, help_text="Array: Pulswerte")
     zeit_stream = models.JSONField(blank=False, null=False, default=list, help_text="Array: Zeitstempel für Geschwindigkeitslogik")
     watt_stream = models.JSONField(blank=True, null=True, help_text="Array: Wattwerte")
-
+    strava_activity_id = models.BigIntegerField(null=True, blank=True, unique=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

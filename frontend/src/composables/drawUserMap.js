@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
@@ -34,14 +34,22 @@ const decodePolyline = (encoded) => {
     return coordinates;
 };
 
-export async function drawUserMap(map) {//async 
+let currentFeatureGroup = null
+let colorWatchStarted = false
+
+export async function drawUserMap(map) {//async
     const response = await api.get('routes/map/')
     const routes = response.data
     const numberOfRoutes = routes.length
     console.log("Routen aus Django:", routes)//Testausgabe, um API Call zu überprüfenw
+
+    // Bei erneutem Aufruf (z.B. nach einem Strava-Import) alte Routen erst entfernen,
+    // sonst werden sie doppelt gezeichnet
+    if (currentFeatureGroup) {
+        map.removeLayer(currentFeatureGroup)
+    }
     const featureGroup = L.featureGroup().addTo(map)
-
-
+    currentFeatureGroup = featureGroup
 
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
@@ -61,14 +69,18 @@ export async function drawUserMap(map) {//async
         polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
     });
 
-    watch(activeLayerId, (newLayerId) => {
-        // Neue Farbe basierend auf der neuen ID ermitteln
-        const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
-        
-        // Durch alle gezeichneten Linien in der FeatureGroup iterieren 
-        // und die Leaflet-Methode setStyle() aufrufen
-        featureGroup.eachLayer((layer) => {
-            layer.setStyle({ color: newColor });
+    // Nur einmal registrieren, sonst sammeln sich bei wiederholtem drawUserMap()-Aufruf
+    // (z.B. nach einem Strava-Import) mehrere Watcher an
+    if (!colorWatchStarted) {
+        colorWatchStarted = true
+        watch(activeLayerId, (newLayerId) => {
+            // Neue Farbe basierend auf der neuen ID ermitteln
+            const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
+
+            // Immer auf der aktuellen FeatureGroup arbeiten, nicht auf der von der ersten Zeichnung
+            currentFeatureGroup?.eachLayer((layer) => {
+                layer.setStyle({ color: newColor });
+            });
         });
-    });
+    }
 }
