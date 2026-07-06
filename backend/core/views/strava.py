@@ -112,6 +112,14 @@ def get_valid_access_token(user):
     
     return token.access_token
 
+# activity_types fürs Radfahren, die Strava kennt
+# alles außerhalb dieser Liste sind keine Radaktivtitäten
+
+CYCLING_SPORT_TYPES = {
+    'Ride', 'MountainBikeRide', 'GravelRide', 'EBikeRide', 'EMountainBikeRide', 'VirtualRide', 'Handcycle', 'Velomobile',
+}
+
+# Views für die Abfrage von Aktivitäten und den Import von Aktivitäten
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -123,7 +131,7 @@ def get_activities(request):
         headers={'Authorization': f'Bearer {access_token}'},
         params={'per_page':50},
     )
-    activities = response.json()
+    activities = [a for a in response.json() if a.get('sport_type') in CYCLING_SPORT_TYPES]
 
     imported_ids = set(
         Route.objects.filter(user=request.user, strava_activity_id__isnull=False)

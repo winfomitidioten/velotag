@@ -61,5 +61,9 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>velotag benötigt Zugriff auf Ihre Kamera, um ein Profilbild aufzunehmen.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>velotag benötigt Zugriff auf Ihre Mediathek, um ein Profilbild auszuwählen.</string>
 </dict>
 </plist>
