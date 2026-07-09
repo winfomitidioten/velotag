@@ -4,7 +4,7 @@ from .models import PhotoPin
 class PhotoPinCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PhotoPin
-        fields = ['latitude', 'longitude', 'image', 'decribtion', 'groups']
+        fields = ['latitude', 'longitude', 'image', 'decription', 'groups']
 
 class PhotoPinListSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()

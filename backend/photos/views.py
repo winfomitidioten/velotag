@@ -19,7 +19,7 @@ class PhotoPinCreateView(APIView):
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTPS_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class PhotoPinListView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -27,9 +27,9 @@ class PhotoPinListView(APIView):
 
     def get(self, request):
         user = request.user
-        joined_groups = Group.objects.filter(membership_user=user, membership_status='Joined')
+        joined_groups = Group.objects.filter(membership__user=user, membership__status='Joined')
         pins = PhotoPin.objects.filter(
-            Q(user=user) | Q(groups_in=joined_groups)
+            Q(user=user) | Q(groups__in=joined_groups)
         ).distinct()
 
         serializer = PhotoPinListSerializer(pins, many=True, context={'request': request})
