@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'users',
     'routes',
     'groups',
+    'photos',
 
     'rest_framework',
     'rest_framework.authtoken',

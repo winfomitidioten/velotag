@@ -5,6 +5,7 @@ import velotagLogo from '@/assets/velotag-logo.png'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
 import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
 import LayersSelectionModal from '@/components/layersSelectionModal.vue'
+import { usePinMode } from '@/composables/usePinMode.js'
 import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
 import L from 'leaflet'
@@ -14,6 +15,7 @@ const showLayers = ref(false);
 const { showStravaImport } = useStravaImport();
 
 const { initializeMap, availableLayers, activeLayerId } = useMap();
+const { isPinMode, setPinMode } = usePinMode();
 
 let mapInstance = null;
 
@@ -71,13 +73,29 @@ onMounted(() => {
 
 <template>
   <div id="map"></div>
-  <button v-if="!showStravaImport" class="btn_popup" @click="showModal = true">+</button>
+  <button v-if="!showStravaImport" class="btn_popup" @click="showModal = true">
+    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+      <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+    </svg>
+  </button>
 
   <GpxUploadModal v-if="showModal" @close="showModal = false" />
 
-  <button v-if="!showStravaImport" class="btn_ebenen_preview" @click="showLayers = true" title="Ebenen auswählen">
-    <img :src="activeLayerPreview" alt="Ebenen auswählen" />
-  </button>
+  <div v-if="!showStravaImport" class="map_controls_pill">
+    <button class="btn_ebenen_preview" @click="showLayers = true" title="Ebenen auswählen">
+      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+        <path d="M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z"/>
+      </svg>
+    </button>
+
+    <div class="pill-divider"></div>
+
+    <button class="btn_pin_mode" :class="{ active: isPinMode }" @click="setPinMode(!isPinMode)" title="Foto anpinnen">
+      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+        <path d="M440-440ZM120-120q-33 0-56.5-23.5T40-200v-480q0-33 23.5-56.5T120-760h126l74-80h240v80H355l-73 80H120v480h640v-360h80v360q0 33-23.5 56.5T760-120H120Zm640-560v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM440-260q75 0 127.5-52.5T620-440q0-75-52.5-127.5T440-620q-75 0-127.5 52.5T260-440q0 75 52.5 127.5T440-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Z"/>
+      </svg>
+    </button>
+  </div>
 
   <LayersSelectionModal v-if="showLayers" @close="showLayers = false"/>
 
@@ -143,26 +161,47 @@ onMounted(() => {
     cursor: pointer; /* Zeigt die Hand beim Hovern */
   }
 
-  .btn_ebenen_preview {
+  .map_controls_pill {
     position: absolute;
     bottom: calc(var(--safe-bottom) + 15px);
     left: 10px;
     z-index: 500;
-    padding: 0;
-    height: 50px;
-    width: 50px;
-    border-radius: 8px; /* Moderner Look mit abgerundeten Ecken */
-    border: 2px solid var(--color-primary); /* Velotag-Grüner Rahmen um das Bild */
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 20px;
     overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     background-color: white;
   }
-  .btn_ebenen_preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+
+  .btn_ebenen_preview,
+  .btn_pin_mode {
+    height: 50px;
+    width: 50px;
+    border: none;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    box-shadow: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: white;
+    color: var(--color-primary);
+    transition: color 0.2s ease;
+  }
+  
+  .pill-divider {
+    width: 24px;
+    height: 1px;
+    background: rgba(0,0,0,0.12);
+  }
+
+  .btn_pin_mode.active {
+    color: #9a9a9a;
   }
 
 </style>
