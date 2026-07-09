@@ -15,11 +15,26 @@ class PhotoPinCreateView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        serializer = PhotoPinCreateSerializer(data=request.data)
-        if serializer.is_valid():
+        images = request.FILES.getlist('image')
+        if not images:
+            return Response({'image': 'Mindestens ein Foto ist erforderlich.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        base_data = {
+            'latitude': request.data.get('latitude'),
+            'longitude': request.data.get('longitude'),
+            'description': request.data.get('description', ''),
+            'groups': request.data.getlist('groups'),
+        }
+
+        created = []
+        for image in images:            
+            serializer = PhotoPinCreateSerializer(data={**base_data, 'image': image})
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            created.append(serializer.data)
+
+        return Response(created, status=status.HTTP_201_CREATED)
     
 class PhotoPinListView(APIView):
     authentication_classes = [TokenAuthentication]
