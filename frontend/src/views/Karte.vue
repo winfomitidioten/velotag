@@ -6,6 +6,7 @@ import GpxUploadModal from '@/components/GpxUploadModal.vue'
 import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
 import LayersSelectionModal from '@/components/layersSelectionModal.vue'
 import { usePinMode } from '@/composables/usePinMode.js'
+import PhotoPinUploadModal from '@/components/PhotoPinUploadModal.vue';
 import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
 import L from 'leaflet'
@@ -16,6 +17,13 @@ const { showStravaImport } = useStravaImport();
 
 const { initializeMap, availableLayers, activeLayerId } = useMap();
 const { isPinMode, setPinMode } = usePinMode();
+const pinLatLng = ref(null);
+
+const handleMapClick = (e) => {
+  if (!isPinMode.value) return;
+  pinLatLng.value = e.latlng;
+  setPinMode(false);
+}
 
 let mapInstance = null;
 
@@ -36,6 +44,7 @@ onMounted(() => {
 
   const map = initializeMap('map');
   mapInstance = map;
+  map.on('click', handleMapClick);
 
   const WatermarkControl = L.Control.extend({
     onAdd: function(map) {
@@ -72,29 +81,47 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="map"></div>
-  <button v-if="!showStravaImport" class="btn_popup" @click="showModal = true">
+  <div id="map" :class="{ 'pin-mode-active': isPinMode }"></div>
+
+  <div v-if="isPinMode" class="pin-mode-banner">
+    <span>Du befindest dich im Foto-Pin-Modus - tippe auf die Karte, um einen Ort für dein Foto auszuwählen</span>
+    <button class="pin-mode-banner-close" @click="setPinMode(false)" aria-label="Foto-Pin-Modus verlassen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+          <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+        </svg>
+    </button>
+  </div>
+
+  <PhotoPinUploadModal
+    v-if="pinLatLng"
+    :latitude="pinLatLng.lat"
+    :longitude="pinLatLng.lng"
+    @close="pinLatLng = null"
+    @created="pinLatLng = null"
+  />
+
+  <button class="btn_ebenen_preview" @click="showLayers = true" title="Ebenen auswählen">
     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-      <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+      <path d="M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z"/>
     </svg>
   </button>
 
-  <GpxUploadModal v-if="showModal" @close="showModal = false" />
-
   <div v-if="!showStravaImport" class="map_controls_pill">
-    <button class="btn_ebenen_preview" @click="showLayers = true" title="Ebenen auswählen">
-      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-        <path d="M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z"/>
-      </svg>
-    </button>
-
-    <div class="pill-divider"></div>
-
     <button class="btn_pin_mode" :class="{ active: isPinMode }" @click="setPinMode(!isPinMode)" title="Foto anpinnen">
       <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
         <path d="M440-440ZM120-120q-33 0-56.5-23.5T40-200v-480q0-33 23.5-56.5T120-760h126l74-80h240v80H355l-73 80H120v480h640v-360h80v360q0 33-23.5 56.5T760-120H120Zm640-560v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM440-260q75 0 127.5-52.5T620-440q0-75-52.5-127.5T440-620q-75 0-127.5 52.5T260-440q0 75 52.5 127.5T440-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Z"/>
       </svg>
     </button>
+
+    <div class="pill-divider"></div>
+
+    <button class="btn_popup" @click="showModal = true">
+      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+        <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+      </svg>
+    </button>
+
+    <GpxUploadModal v-if="showModal" @close="showModal = false" />
   </div>
 
   <LayersSelectionModal v-if="showLayers" @close="showLayers = false"/>
@@ -146,7 +173,7 @@ onMounted(() => {
   /* Upload Button "+"
      z-index 500: über der Karte/Leaflet-Controls, aber unter allen Modals (>=1001),
      damit er beim Öffnen des Ebenen- oder Upload-Modals dahinter verschwindet */
-  .btn_popup {
+  /* .btn_popup {
     position: absolute;
     bottom: calc(var(--safe-bottom) + 15px);
     right: 10px;
@@ -158,13 +185,58 @@ onMounted(() => {
     width: 50px;
     border-radius: 50%;
     border: none;
-    cursor: pointer; /* Zeigt die Hand beim Hovern */
+    cursor: pointer; // Zeigt die Hand beim Hovern
+  } **/
+
+  /* Pin-Modus: cursor: copy zeigt in den meisten Browsern automatisch
+   ein kleines "+" am Mauszeiger - passendes Signal für "hier etwas hinzufügen" */
+  #map.pin-mode-active {
+    cursor: copy;
   }
 
+  .pin-mode-banner {
+  position: fixed;
+  top: calc(var(--safe-top) + 0.75rem);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 140px);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--color-primary, #3db897);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  font-size: 13px;
+  }
+
+  .pin-mode-banner-close {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.25);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .pin-mode-banner-close svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .btn_ebenen_preview,
   .map_controls_pill {
     position: absolute;
     bottom: calc(var(--safe-bottom) + 15px);
-    left: 10px;
+    right: 10px;
     z-index: 500;
     display: flex;
     flex-direction: column;
@@ -176,6 +248,7 @@ onMounted(() => {
   }
 
   .btn_ebenen_preview,
+  .btn_popup,
   .btn_pin_mode {
     height: 50px;
     width: 50px;
@@ -192,6 +265,12 @@ onMounted(() => {
     background-color: white;
     color: var(--color-primary);
     transition: color 0.2s ease;
+  }
+
+  .btn_ebenen_preview {
+    bottom: calc(var(--safe-bottom) + 125px);
+    right: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
   
   .pill-divider {
