@@ -92,9 +92,10 @@
       </ul>
     </nav>
 
-    <!-- Footer: Log-Out -->
+    <!-- Footer: Log-Out & Kartennachweis -->
     <div class="sidebar-footer">
       <button @click="handleLogout" class="logout-btn">Abmelden</button>
+      <p class="map-attribution" v-html="mapAttribution"></p>
     </div>
   </aside>
 </template>
@@ -103,15 +104,24 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
+import { useMap } from '@/composables/useMap';
 
 const isOpen = ref(false);
 
 const userStore = useUserStore();
+const { availableLayers, activeLayerId } = useMap();
 
 const userName = computed(() => `${userStore.firstname} ${userStore.lastname}`.trim() || 'Kein Name');
 const userEmail = computed(() => userStore.mail || '');
 const userInitials = computed(() => userStore.initials || '?');
 const userProfileImage = computed(() => userStore.profileImage || '');
+
+// Kartennachweis der aktuell gewählten Ebene (ersetzt die Leaflet-Attribution auf der Karte selbst)
+const leafletCredit = '<a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a>';
+const mapAttribution = computed(() => {
+  const active = availableLayers.find(l => l.id === activeLayerId.value);
+  return `${leafletCredit} | ${active ? active.attribution : ''}`;
+});
 
 // Logout
 const router = useRouter();
@@ -349,9 +359,23 @@ nav ul {
   padding: 1rem 1.25rem;
   flex-shrink: 0;
 }
+.map-attribution {
+  margin: 0.75rem 0 0;
+  font-size: 0.7rem;
+  color: #aaa;
+  text-align: center;
+  line-height: 1.4;
+}
+.map-attribution :deep(a) {
+  color: #aaa;
+}
+.map-attribution :deep(img) {
+  vertical-align: middle;
+}
 .logout-btn {
   display: block;
   width: 100%;
+  margin: 0;
   padding: 0.55rem 1rem;
   background: none;
   border: 1.5px solid #dde1e7;

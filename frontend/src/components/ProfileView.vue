@@ -201,9 +201,9 @@
 
 <style scoped>
     #outer-box {
-        /* Genug Platz nach oben (z.B. 4rem oder 65px), damit dein Header mit 
-           Zurück-Pfeil und Menü nicht über dem Profilbild liegt */
-        padding: 4rem 1rem 1rem 1rem; 
+        /* Genug Platz nach oben, damit Zurück-Pfeil und Menü-Button (beide bei
+           calc(var(--safe-top) + 0.5rem), Höhe 44px) nicht über dem Profilbild liegen */
+        padding: calc(var(--safe-top) + 5rem) 1rem 1rem 1rem;
         min-height: 100vh;
         width: 100%;
         background-color: var(--color-bg-page);
@@ -386,7 +386,7 @@
     @media (min-width: 480px) {
         #outer-box {
             /* Desktop braucht meist weniger Abstand nach oben, außer der Header zieht mit um */
-            padding: 3rem 1.5rem; 
+            padding: calc(var(--safe-top) + 3rem) 1.5rem;
         }
 
         .input-group {

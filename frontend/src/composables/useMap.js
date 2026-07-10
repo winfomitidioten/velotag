@@ -44,7 +44,8 @@ export function useMap() {
         }
 
         const map = L.map(elementId, {
-            zoomControl: false // <--- Hier schalten wir die Buttons aus
+            zoomControl: false, // <--- Hier schalten wir die Buttons aus
+            attributionControl: false // Attribution wird stattdessen im Menü angezeigt (siehe MenuBar.vue)
             }).setView([50.0963, 8.2195], 11);
         mapInstance.value = map;
         
@@ -52,11 +53,27 @@ export function useMap() {
         setLayer(activeLayerId.value);
 
         // Füge weitere Steuerelemente hinzu
-        L.control.scale({
+        const scaleControl = L.control.scale({
             metric: true,
             imperial: false,
             position: 'bottomleft'
         }).addTo(map);
+
+        // Maßstabsleiste nur während des Zoomens einblenden, danach wieder ausblenden
+        // (Styling/Positionierung dafür siehe Karte.vue, :deep(.map-scale-control))
+        const scaleContainer = scaleControl.getContainer();
+        scaleContainer.classList.add('map-scale-control');
+
+        let scaleHideTimeout = null;
+        map.on('zoomstart zoom', () => {
+            clearTimeout(scaleHideTimeout);
+            scaleContainer.classList.add('is-visible');
+        });
+        map.on('zoomend', () => {
+            scaleHideTimeout = setTimeout(() => {
+                scaleContainer.classList.remove('is-visible');
+            }, 1200);
+        });
 
         return map;
     };
