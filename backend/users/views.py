@@ -10,7 +10,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .serializers import UserProfileSerializer
-from .models import UserProfile
+from .models import UserProfile, UserDevice
 
 
 User = get_user_model()
@@ -120,3 +120,21 @@ class LogoutView(APIView):
     def post(self, request):
         request.user.auth_token.delete();
         return Response(status=204);
+
+class DeviceView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('token')
+        platform = request.data.get('platform', 'android')
+
+        if not token:
+            return Response({'error': 'Token fehlt'}, status=400)
+
+        device, created = UserDevice.objects.update_or_create(
+            push_token = token,
+            defaults={'user': request.user, 'platform': platform}
+        )
+
+        return Response({'status': 'success', 'created': created})
