@@ -7,6 +7,8 @@ import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion
 import LayersSelectionModal from '@/components/layersSelectionModal.vue'
 import { usePinMode } from '@/composables/usePinMode.js'
 import PhotoPinUploadModal from '@/components/PhotoPinUploadModal.vue';
+import { drawPhotoPins, activeGalleryPhotos } from '@/composables/drawPhotoPins';
+import PhotoPinGalleryModal from '@/components/PhotoPinGalleryModal.vue';
 import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
 import L from 'leaflet'
@@ -23,6 +25,11 @@ const handleMapClick = (e) => {
   if (!isPinMode.value) return;
   pinLatLng.value = e.latlng;
   setPinMode(false);
+}
+
+const onPhotoPinCreated = () => {
+  pinLatLng.value = null;
+  if (mapInstance) drawPhotoPins(mapInstance)
 }
 
 let mapInstance = null;
@@ -75,6 +82,7 @@ onMounted(() => {
 
   // Routen aus dem Backend abfragen
   drawUserMap(map) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
+  drawPhotoPins(map)
 
 })
 
@@ -97,7 +105,13 @@ onMounted(() => {
     :latitude="pinLatLng.lat"
     :longitude="pinLatLng.lng"
     @close="pinLatLng = null"
-    @created="pinLatLng = null"
+    @created="onPhotoPinCreated"
+  />
+
+  <PhotoPinGalleryModal
+    v-if="activeGalleryPhotos"
+    :photos="activeGalleryPhotos"
+    @close="activeGalleryPhotos = null"
   />
 
   <button class="btn_ebenen_preview" @click="showLayers = true" title="Ebenen auswählen">
@@ -168,6 +182,39 @@ onMounted(() => {
     font-weight: 600;
     color: var(--color-text, #1a1a1a);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  :deep(.photo-pin-dot) {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--color-primary, #3db897);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    border: 2px solid white;
+    cursor: pointer;
+  }
+
+  :deep(.photo-pin-count) {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 8px;
+    background-color: #e53e3e;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
 
   /* Upload Button "+"
