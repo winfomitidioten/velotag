@@ -26,12 +26,14 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
+<<<<<<< Updated upstream
         target: 'http://167.233.33.166',
 //        target: 'http://127.0.0.1:8000',      // Für die Entwicklung: das hier auskommentieren und das andere target kommentieren
         changeOrigin: false,
         rewrite: (path) => path
       },
       '/media': {
+<<<<<<< Updated upstream
         target: '//http://167.233.33.166',
 //        target: 'http://127.0.0.1:8000',      // Für die Entwicklung: das hier auskommentieren und das andere target kommentieren
         changeOrigin: false

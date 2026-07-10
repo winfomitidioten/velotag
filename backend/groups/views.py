@@ -7,6 +7,7 @@ from .serializers import GroupSerializer
 from .models import Group, Membership
 from rest_framework.authentication import TokenAuthentication
 from users.models import User
+from utils.notifications import send_push_notifications
 # Create your views here.
 
 class GroupView(APIView):
@@ -117,6 +118,14 @@ class GroupInviteAdmin(APIView):
                     )
             Membership.objects.create(user=user_to_add, group=group)
             serializer = GroupSerializer(group, context={'request': request})
+            send_push_notifications(
+                user=user_to_add,
+                title="Neue Gruppeneinladung",
+                body=f"{request.user.username} hat dich in eine Gruppe eingeladen",
+                data_payload={
+                    "type": "group_invitation"
+                }
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Group.DoesNotExist:
             return Response(
