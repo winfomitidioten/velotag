@@ -5,7 +5,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
 
-from .serializers import PhotoPinCreateSerializer, PhotoPinListSerializer
+from .serializers import PhotoPinCreateSerializer, PhotoPinListSerializer, PhotoPinUpdateSerializer
 from .models import PhotoPin
 from groups.models import Group, Membership
 
@@ -67,3 +67,32 @@ class PhotoPinGroupView(APIView):
         serializer = PhotoPinListSerializer(pins, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class PhotoPinDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_own_pin(self, request, pk):
+        # setzt den Filter auf user=request.user, damit sind "fremde" Pins nicht erreichbar
+        return PhotoPin.objects.filter(pk=pk, user=request.user).first()
+    
+    def patch(self, request, pk):
+        pin = self.get_own_pin(request, pk)
+        if pin is None:
+            return Response({'error': 'Foto wurde nicht gefunden.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = PhotoPinUpdateSerializer(pin, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+
+        return Response(PhotoPinListSerializer(pin, context={'request': request}).data, status=status.HTTP_200_OK)
+    
+    def delete(self, request, pk):
+        pin = self.get_own_pin(request, pk)
+        if pin is None:
+            return Response({'error': 'Foto wurde nicht gefunden.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        pin.image.delete(save=False) # Bild wird aus /photo_pins/ gelöscht
+        pin.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        

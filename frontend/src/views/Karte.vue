@@ -32,6 +32,19 @@ const onPhotoPinCreated = () => {
   if (mapInstance) drawPhotoPins(mapInstance)
 }
 
+const onPhotoDeleted = (deletedId) => {
+  const remaining = activeGalleryPhotos.value.filter(photo => photo.id !== deletedId);
+  // war es das letzte Foto an diesem Punkt, gibt es nichts mehr anzuzeigen -> Modal schließen
+  activeGalleryPhotos.value = remaining.length ? remaining : null;
+  if (mapInstance) drawPhotoPins(mapInstance);
+};
+
+const onPhotoUpdated = (updatedPhoto) => {
+  activeGalleryPhotos.value = activeGalleryPhotos.value.map(
+    photo => photo.id === updatedPhoto.id ? updatedPhoto : photo
+  );
+};
+
 let mapInstance = null;
 
 // Karte wird per <keep-alive> am Leben gehalten, onMounted läuft also nur einmal.
@@ -112,6 +125,8 @@ onMounted(() => {
     v-if="activeGalleryPhotos"
     :photos="activeGalleryPhotos"
     @close="activeGalleryPhotos = null"
+    @deleted="onPhotoDeleted"
+    @updated="onPhotoUpdated"
   />
 
   <button class="btn_ebenen_preview" @click="showLayers = true" title="Ebenen auswählen">
@@ -157,6 +172,7 @@ onMounted(() => {
     height: 100dvh;
     width: 100%;
   }
+  
 
   /* Maßstabsleiste (L.control.scale, unten links): nur während des Zoomens sichtbar
      (Ein-/Ausblenden siehe useMap.js), sitzt über dem Ebenen-Button statt am Kartenrand,
@@ -240,6 +256,21 @@ onMounted(() => {
   #map.pin-mode-active {
     cursor: copy;
   }
+
+  /* Im Pin-Modus dürfen die Routen-Polylines keine Klicks mehr schlucken,
+     sonst öffnet sich ihr Popup statt den Foto-Pin zu setzen.
+     Muss direkt auf den path-Elementen sitzen: Leaflet setzt dort selbst
+     pointer-events: auto, was ein none auf dem Pane wieder aufheben würde */
+  #map.pin-mode-active :deep(.leaflet-overlay-pane path) {
+    pointer-events: none;
+  }
+
+  /* Gleiches gilt für bestehende Foto-Pins - so kann man auch direkt auf einem
+     vorhandenen Pin ein weiteres Foto anlegen */
+  #map.pin-mode-active :deep(.photo-pin-marker) {
+    pointer-events: none;
+  }
+
 
   .pin-mode-banner {
   position: fixed;

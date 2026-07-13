@@ -58,6 +58,12 @@ const submitPin = async () => {
         uploading.value = false;
     };
 };
+
+const autoGrow = (event) => {
+    const textarea = event.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+}
 </script>
 <template>
     <div class="popup">
@@ -91,13 +97,7 @@ const submitPin = async () => {
                 </svg>
                 <span>{{ selectedPhotos.length ? 'Weitere Fotos hinzufügen' : 'Fotos auswählen' }}</span>
             </label>
-            <textarea
-                v-model="description"
-                class="description-input"
-                placeholder="Beschreibung (optional)"
-                rows="2"
-                :disabled="uploading"
-            ></textarea>
+            <textarea v-model="description" class="description-input" placeholder="Beschreibung (optional)" rows="2" :disabled="uploading" @input="autoGrow"></textarea>
 
             <GroupSelectionUploadModal @update:selected-group="selectedGroups = $event" />
 
@@ -134,7 +134,7 @@ const submitPin = async () => {
 }
 
 .header h2 {
-    margin: 0 40px 0 0;
+    margin: 20px 0px 20px 0;
 }
 
 .popup-close-button {
@@ -251,7 +251,9 @@ const submitPin = async () => {
     border-radius: 8px;
     font-family: inherit;
     font-size: 14px;
-    resize: vertical;
+    resize: none;
+    overflow: hidden;
+    max-height: 160px;
     margin: 15px 0 10px;
 }
 

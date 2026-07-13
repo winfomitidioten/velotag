@@ -1,32 +1,95 @@
 <script setup>
 import { ref, computed } from 'vue';
+import api from '@/api/api';
+import ConfirmDialog from './ConfirmDialog.vue';
 
 const props = defineProps({
     photos: { type: Array, required: true }
 });
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'deleted', 'updated']);
 
 const activeIndex = ref(null);
+const isEditing = ref(false);
+const editDescription = ref('');
+const saving = ref(false);
+const deleting = ref(false);
+const errors = ref('');
+const showDeleteConfirm = ref(false);
 
 const activePhoto = computed(() =>
     activeIndex.value !== null ? props.photos[activeIndex.value] : null
 );
 
+const resetEdit = () => {
+    isEditing.value = false;
+    errors.value = '';
+};
+
+const startEdit = () => {
+    editDescription.value = activePhoto.value.description || '';
+    isEditing.value = true;
+};
+
 const openSlide = (index) => {
+    resetEdit();
     activeIndex.value = index;
 };
 
 const backToGrid = () => {
+    resetEdit();
     activeIndex.value = null;
 };
 
 const showPrev = () => {
+    resetEdit();
     activeIndex.value = (activeIndex.value - 1 + props.photos.length) % props.photos.length;
 };
 
 const showNext = () => {
+    resetEdit();
     activeIndex.value = (activeIndex.value + 1) % props.photos.length;
 };
+
+const saveEdit = async () => {
+    try {
+        saving.value = true;
+        errors.value = '';
+        const response = await api.patch(`photo-pins/${activePhoto.value.id}/`, {
+            description : editDescription.value
+        });
+        emit('updated', response.data);
+        isEditing.value = false;
+    } catch (e) {
+        console.error('Fehler beim Speichern:', e);
+        errors.value = 'Änderung konnte nicht gespeichert werden';
+    } finally {
+        saving.value = false;
+    }
+}
+
+const deletePhoto = async () => {
+    try {
+        deleting.value = true;
+        errors.value = '';
+        const deletedId = activePhoto.value.id;
+        await api.delete(`photo-pins/${deletedId}/`);
+        showDeleteConfirm.value = false;
+        activeIndex.value = null; 
+        emit('deleted', deletedId);
+    } catch (e) {
+        console.error('Fehler beim Löschen:', e);
+        showDeleteConfirm.value = false;
+        errors.value = 'Foto konnte nicht gelöscht werden.';
+    } finally {
+        deleting.value = false;
+    }
+}
+
+const autoGrow = (event) => {
+    const textarea = event.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+}
 </script>
 
 <template>
@@ -78,11 +141,35 @@ const showNext = () => {
                         </svg>
                     </button>
                 </div>
+                
+                <p v-if="error" class="gallery-error">{{ error }}</p>
 
-                <p v-if="activePhoto.description" class="gallery-description">{{ activePhoto.description }}</p>
+                <!-- Beschreibung -->
+                <template v-if="isEditing">
+                    <textarea v-model="editDescription" class="gallery-edit-input" placeholder="Beschreibung (optional)" rows="2" :disabled="saving" @input="autoGrow"></textarea>
+                    <div class="gallery-actions">
+                        <button type="button" class="gallery-action" :disabled="saving" @click="resetEdit">Abbrechen</button>
+                        <button type="button" class="gallery-action gallery-action-save" :disabled="saving" @click="saveEdit">
+                            {{ saving ? 'Wird gespeichert ...' : 'Speichern' }}
+                        </button>
+                    </div>
+                </template>
+
+                <template v-else>
+                    <p v-if="activePhoto.description" class="gallery-description">{{ activePhoto.description }}</p>
+
+                    <div v-if="activePhoto.is_owner" class="gallery-actions">
+                        <button type="button" class="gallery-action gallery-action-update" @click="startEdit">Bearbeiten</button>
+                        <button type="button" class="gallery-action gallery-action-delete" :disabled="deleting" @click="showDeleteConfirm = true">
+                            {{ deleting ? 'Wird gelöscht ...' : 'Löschen' }}
+                        </button>
+                    </div>
+                </template>
+
                 <p class="gallery-counter">{{ activeIndex + 1 }} / {{ photos.length }}</p>
             </template>
         </div>
+        <ConfirmDialog v-if="showDeleteConfirm" title="Foto löschen?" message="Das Foto wird dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden." confirm-label="Löschen" danger :busy="deleting" @confirm="deletePhoto" @cancel="showDeleteConfirm = false" />
     </div>
 </template>
 
@@ -224,4 +311,66 @@ const showNext = () => {
     font-size: 12px;
     color: var(--color-text-muted, #888888);
 }
+
+.gallery-error {
+    margin: 12px 0 0;
+    background-color: #fee2e2;
+    color: #e53e3e;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.gallery-edit-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: none;
+    overflow: hidden;
+    max-height: 160px;
+    margin-top: 12px;
+}
+
+.gallery-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.gallery-action {
+    padding: 8px 14px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 20px;
+    background-color: white;
+    color: var(--color-text, #1a1a1a);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.gallery-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.gallery-action-save {
+    background-color: var(--color-primary, #3db897);
+    border-color: var(--color-primary, #3db897);
+    color: white;
+}
+
+.gallery-action-update {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.gallery-action-delete {
+    border-color: #e53e3e;
+    color: #e53e3e;
+}
+
 </style>
