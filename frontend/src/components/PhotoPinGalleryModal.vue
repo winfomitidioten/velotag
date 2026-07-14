@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import api from '@/api/api';
+import BaseModal from '@/components/BaseModal.vue';
 import ConfirmDialog from './ConfirmDialog.vue';
 
 const props = defineProps({
@@ -28,6 +29,13 @@ const resetEdit = () => {
 const startEdit = () => {
     editDescription.value = activePhoto.value.description || '';
     isEditing.value = true;
+};
+
+// Jede Schließen-Geste (X, Hintergrund-Klick, Escape) landet hier.
+// Laufende Requests blockt BaseModal über :busy bereits ab
+const requestClose = () => {
+    if (isEditing.value) return resetEdit();    // erst raus aus dem Bearbeiten-Modus, nicht gleich schließen
+    emit('close');
 };
 
 const openSlide = (index) => {
@@ -93,14 +101,7 @@ const autoGrow = (event) => {
 </script>
 
 <template>
-    <div class="popup">
-        <div class="popup-content">
-            <button @click="$emit('close')" class="popup-close-button" aria-label="Schließen">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
-                    <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
-                </svg>
-            </button>
-
+    <BaseModal width="min(480px, 88vw)" :busy="saving || deleting" @close="requestClose">
             <!-- Grid-Ansicht für die Fotos an einem Punkt -->
             <template v-if="activePhoto === null">
                 <h2>{{ photos.length > 1 ? `${photos.length} Fotos` : '1 Foto' }}</h2>
@@ -142,7 +143,7 @@ const autoGrow = (event) => {
                     </button>
                 </div>
                 
-                <p v-if="error" class="gallery-error">{{ error }}</p>
+                <p v-if="errors" class="gallery-error">{{ errors }}</p>
 
                 <!-- Beschreibung -->
                 <template v-if="isEditing">
@@ -168,62 +169,13 @@ const autoGrow = (event) => {
 
                 <p class="gallery-counter">{{ activeIndex + 1 }} / {{ photos.length }}</p>
             </template>
-        </div>
-        <ConfirmDialog v-if="showDeleteConfirm" title="Foto löschen?" message="Das Foto wird dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden." confirm-label="Löschen" danger :busy="deleting" @confirm="deletePhoto" @cancel="showDeleteConfirm = false" />
-    </div>
+
+            <ConfirmDialog v-if="showDeleteConfirm" title="Foto löschen?" message="Das Foto wird dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden." confirm-label="Löschen" danger :busy="deleting" @confirm="deletePhoto" @cancel="showDeleteConfirm = false" />
+    </BaseModal>
 </template>
 
 <style scoped>
-.popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1001;
-}
-
-.popup-content {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    position: relative;
-    width: min(480px, 92vw);
-    max-height: 85vh;
-    overflow-y: auto;
-}
-
-.popup-close-button {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background-color: var(--color-primary, #3db897);
-    border: none;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: white;
-    border-radius: 50%;
-    transition: background-color 0.15s;
-    z-index: 3000;
-}
-
-.popup-close-button:hover {
-    background-color: var(--color-primary-dark, #35a684);
-}
-
-.popup-close-button svg {
-    width: 24px;
-    height: 24px;
-}
+/* Overlay, Box und Schließen-Button kommen aus BaseModal */
 
 .gallery-grid {
     display: grid;

@@ -20,19 +20,19 @@
                 >Registrierung</button>
               </div>
 
-              <RegisterView v-if="activeTab === 'register'" @registered="onRegistered" />
+              <Register v-if="activeTab === 'register'" @registered="onRegistered" />
               <p v-if="registeredMessage && activeTab === 'login'" class="success-message">
                 {{ registeredMessage }}
               </p>
-              <LoginView v-if="activeTab === 'login'" />
+              <Login v-if="activeTab === 'login'" />
         </div>
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import LoginView from '@/components/LoginView.vue';
-import RegisterView from '@/components/RegisterView.vue';
+import Login from '@/components/Login.vue';
+import Register from '@/components/Register.vue';
 
 const activeTab = ref('login'); // steuert welcher Tab aktiv ist  
 
