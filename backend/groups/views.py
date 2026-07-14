@@ -183,14 +183,16 @@ class GroupLeaveView(APIView):
             group = Group.objects.get(pk=pk)
         except Group.DoesNotExist:
             return Response(
-                {"error": "Diese Gruppe exisitiert nicht"},
+                {"error": "Diese Gruppe existiert nicht"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        if request.user not in group.members.all():
+            
+        if not Membership.objects.filter(user=request.user, group=group, status='Joined').exists():
             return Response(
-                {"error": "Dieser Nutzer ist kein Migtlied der Gruppe"},
+                {"error": "Dieser Nutzer ist kein aktives Mitglied der Gruppe"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+            
         if group.admin == request.user:
             next_active_membership = Membership.objects.filter(
                 group=group,
@@ -203,9 +205,10 @@ class GroupLeaveView(APIView):
             else:
                 group.delete()
                 return Response(
-                    {"message": "Gruppe wurde gelöscht da es keine anderen aktiven Mitglieder gibt"},
+                    {"message": "Gruppe wurde gelöscht, da es keine anderen aktiven Mitglieder gibt"},
                     status=status.HTTP_200_OK
                 )
+                
         Membership.objects.filter(user=request.user, group=group).delete()
         return Response(
             {"message": "Du hast die Gruppe erfolgreich verlassen"},
@@ -314,3 +317,36 @@ class GetGroupFavoriteView(APIView):
             {"favorite_group_id": None}, 
             status=status.HTTP_200_OK
         )
+    
+class SetGroupFavoriteView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            # Prüfen, ob die Gruppe existiert
+            group = Group.objects.get(pk=pk)
+            
+            # Prüfen, ob der User wirklich ein aktives Mitglied der Gruppe ist
+            membership = Membership.objects.get(user=request.user, group=group, status='Joined')
+
+            # 1. Bisherigen Favoriten des Users entfernen
+            Membership.objects.filter(user=request.user, is_favorite=True).update(is_favorite=False)
+
+            # 2. Neue Gruppe als Favorit speichern
+            membership.is_favorite = True
+            membership.save()
+
+            return Response({"message": "Favorit erfolgreich aktualisiert."}, status=status.HTTP_200_OK)
+
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Diese Gruppe existiert nicht."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Membership.DoesNotExist:
+            return Response(
+                {"error": "Du bist kein aktives Mitglied dieser Gruppe."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+      

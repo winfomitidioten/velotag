@@ -1,16 +1,46 @@
 from rest_framework import serializers
 from datetime import datetime, timezone
 from .models import Route 
+from django.contrib.gis.geos import LineString  # 1. NEU: Import für Djangos Geometrie-Objekt
 
 class RouteSerializer(serializers.ModelSerializer):
+    #nur für Zwischenschritt coordinates => geom Feld 
+    coordinates = serializers.ListField(
+        child=serializers.ListField(child=serializers.FloatField()),
+        write_only=True,
+        required=False
+    )
+
     class Meta:
         model = Route
-        # Exakt die Namen aus deinem Vue-Payload und der DB-Tabelle!
-        fields = ['strecken_name', 'group_id', 'polyline_map', 'puls_stream', 'zeit_stream', 'watt_stream']
+        fields = ['strecken_name', 
+                  'group_id', 
+                  'polyline_map', 
+                  'puls_stream', 
+                  'zeit_stream', 
+                  'watt_stream', 
+                  'start_time',
+                  'end_time', 
+                  'coordinates',
+                  'geom']
         
-        # Wichtig: user_id, created_at und updated_at lassen wir hier weg!
-        # Der User wird sicherheitshalber über das Login-Token gesetzt, nicht vom Frontend.
+        read_only_fields = ['geom']#geom wird im Backend aus coordinates berechnet
 
+    # 2. NEU: Hier überschreiben wir den standardmäßigen Speichervorgang
+    def create(self, validated_data):
+        # A) Das Array aus den validierten Daten "aufpoppen" (entfernen & zwischenspeichern).
+        # Wichtig: Wenn wir .pop() nicht nutzen würden, würde Django versuchen, 
+        # ein Feld namens 'coordinates' in der DB zu speichern und abstürzen!
+        coords = validated_data.pop('coordinates', None)
+        
+        # B) Prüfen, ob Koordinaten mitgeschickt wurden und eine Linie bilden (min. 2 Punkte)
+        if coords and len(coords) >= 2:
+            # Wir bauen aus der Array-Liste eine echte PostGIS-Linie im GPS-Format (SRID 4326)
+            validated_data['geom'] = LineString(coords, srid=4326)
+            
+        # C) Die fertigen Daten an die Standard-Funktion weitergeben, 
+        # die jetzt ein sauberes 'geom'-Objekt (aber kein 'coordinates'-Array mehr) enthält
+        return super().create(validated_data)
 
 class RouteListSerializer(serializers.ModelSerializer):
     duration_seconds = serializers.SerializerMethodField()
@@ -21,6 +51,7 @@ class RouteListSerializer(serializers.ModelSerializer):
         model = Route
         fields = ['strecken_id', 'strecken_name', 'created_at', 'duration_seconds', 'avg_puls', 'avg_watt']
 
+    
     def get_duration_seconds(self, obj):
         stream = obj.zeit_stream
         if not stream or len(stream) < 2:

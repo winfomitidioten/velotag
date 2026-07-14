@@ -23,11 +23,11 @@ class Membership(models.Model):
             UniqueConstraint(
                 fields=['user', 'group'],
                 name='unique_user_group_membership'
-            )
-        ]
-
-        UniqueConstraint(
+            ),
+            UniqueConstraint(
                 fields=['user'],
                 condition=Q(is_favorite=True),#Q Objekt ist in Django für komplexe Abfragen; hier: quasi "WHERE is_favorite = True"
                 name='unique_user_favorite_group'
             )
+        ]
+        

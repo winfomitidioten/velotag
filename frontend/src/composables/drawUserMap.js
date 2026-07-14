@@ -52,6 +52,8 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     currentFeatureGroup = L.featureGroup().addTo(map);
     let numberOfRoutes = 0;
 
+    const colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
+
     if(isGroupViewStatus === false) {//Solo Ansicht
         const response = await api.get('routes/map/');
         routes = response.data; // Kiste mit Solo-Routen befüllen
@@ -59,20 +61,42 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
         console.log("Routen aus Django (Solo):", routes);
     }
 
-    else if(isGroupViewStatus === true) {
+    else if (isGroupViewStatus === true) {
         if (!groupId) {
             console.error("Gruppenansicht aktiv, aber keine group_id übergeben!");
             return;
         }
 
-        const response = await api.get('routes/map/', {
-            params: {
-                group_id: groupId
-            }
-        });
-        routes = response.data; // Kiste mit Solo-Routen befüllen
-        numberOfRoutes = routes.length;
-        console.log(`Routen aus Django (Gruppe ${groupId}):`, routes);
+        try {
+            const response = await api.get(`groups/${groupId}/intersections/`);
+            const geojsonData = response.data;
+            console.log(`Schnittmengen aus Django (Gruppe ${groupId}):`, geojsonData);
+
+            const numberOfGroupRoutes = (geojsonData.features && geojsonData.features.length) 
+                ? geojsonData.features.length 
+                : 1;
+
+            const geoJsonLayer = L.geoJSON(geojsonData, {
+                style: {
+                    color: colourLine,
+                    weight: 4,          // Zeichnet genau EINE 4px dicke Linie in der Mitte!
+                    opacity: Math.max(0.05, 1 / numberOfGroupRoutes),
+                    lineJoin: 'round',
+                    lineCap: 'round'
+                },
+                onEachFeature: (feature, layer) => {
+                    if (feature.properties && feature.properties.date) {
+                        layer.bindPopup(`<b>Gemeinsame Gruppenroute</b><br>Datum: ${feature.properties.date}`);
+                    }
+                }
+            });
+
+            currentFeatureGroup.addLayer(geoJsonLayer);
+
+            
+        } catch (err) {
+            console.error("Fehler beim Laden der Gruppen-Schnittmengen:", err);
+        }
     }
 
 
@@ -82,7 +106,7 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
         // Initiale Farbe beim ersten Laden ermitteln
-        let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
+        //let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
         const polyline = L.polyline(coordinates, 
             {color: colourLine,     // Grundfarbe

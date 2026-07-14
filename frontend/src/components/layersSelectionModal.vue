@@ -12,24 +12,31 @@ const selectLayer = (layerId) => {
 </script>
 
 <template>
-  <BaseModal variant="sheet" width="600px" @close="$emit('close')">
-    <div class="header">
-      <h2>Ebenen auswählen</h2>
-    </div>
-
-    <div class="layers-container">
-      <div
-        v-for="layer in availableLayers"
-        :key="layer.id"
-        class="layer-option"
-        :class="{ 'active': layer.id === activeLayerId }"
-        @click="selectLayer(layer.id)"
-      >
-        <img :src="layer.preview" :alt="layer.name" class="layer-preview" />
-        <span class="layer-name">{{ layer.name }}</span>
+  <div class="popup" @click.self="$emit('close')">
+    <div class="popup-content">
+      <div class="header">
+        <h2>Ebenen auswählen</h2>
+        <button @click="$emit('close')" class="popup-close-button" aria-label="Schließen">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+            <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="layers-container">
+        <div
+          v-for="layer in availableLayers"
+          :key="layer.id"
+          class="layer-option"
+          :class="{ 'active': layer.id === activeLayerId }"
+          @click="selectLayer(layer.id)"
+        >
+          <img :src="layer.preview" :alt="layer.name" class="layer-preview" />
+          <span class="layer-name">{{ layer.name }}</span>
+        </div>
       </div>
     </div>
-  </BaseModal>
+  </div>
 </template>
 
 <style scoped>
