@@ -23,22 +23,13 @@ export default defineConfig({
   // Android-Emulator auf das Gerät selbst zeigt und die Bilder ins Leere laufen lässt.
   // So bleibt der Host des Dev-Servers stehen und die Bilder kommen wieder über den Proxy zurück.
   server: {
+    host: true,
     proxy: {
       '/api': {
 //        target: 'http://167.233.33.166',
         target: 'http://127.0.0.1:8000',      // Für die Entwicklung: das hier auskommentieren und das andere target kommentieren
         changeOrigin: false,
         rewrite: (path) => path
-      },
-      // Medien-Pfade: MEDIA_URL steht in settings.py auf '/', die Uploads liegen daher
-      // direkt unter /photo_pins/ bzw. /profile_pics/ und brauchen jeweils eine eigene Regel
-      '/photo_pins': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: false
-      },
-      '/profile_pics': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: false
       },
       '/media': {
 //        target: '//http://167.233.33.166',

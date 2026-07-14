@@ -171,8 +171,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # In deiner settings.py ganz unten
-MEDIA_URL = '/'  
-MEDIA_ROOT = BASE_DIR  
+MEDIA_URL = '/media/'  
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Strava Werte aus der .env
 from decouple import config

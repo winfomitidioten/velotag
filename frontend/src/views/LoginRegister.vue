@@ -1,3 +1,17 @@
+<script setup>
+import { ref } from 'vue';
+import Login from '@/components/Login.vue';
+import Register from '@/components/Register.vue';
+
+const activeTab = ref('login'); // steuert welcher Tab aktiv ist  
+
+const registeredMessage = ref('');
+const onRegistered = () => {
+    registeredMessage.value = 'Ihre Registrierung war erfolgreich. Bitte melden Sie sich nun an.';
+    activeTab.value = 'login';
+}
+</script>
+
 <template>
     <div class="login-page">
         <div class="login-box">
@@ -28,21 +42,6 @@
         </div>
     </div>
 </template>
-
-<script setup>
-import { ref } from 'vue';
-import Login from '@/components/Login.vue';
-import Register from '@/components/Register.vue';
-
-const activeTab = ref('login'); // steuert welcher Tab aktiv ist  
-
-const registeredMessage = ref('');
-const onRegistered = () => {
-    registeredMessage.value = 'Ihre Registrierung war erfolgreich. Bitte melden Sie sich nun an.';
-    activeTab.value = 'login';
-}
-</script>
-
 
 <style scoped>
 /* --- Seite --- */
