@@ -177,8 +177,10 @@ MEDIA_ROOT = BASE_DIR
 
 # Strava Werte aus der .env
 from decouple import config
-STRAVA_CLIENT_ID     = config('STRAVA_CLIENT_ID')
-STRAVA_CLIENT_SECRET = config('STRAVA_CLIENT_SECRET')
+STRAVA_CLIENT_ID       = config('STRAVA_CLIENT_ID')
+STRAVA_CLIENT_SECRET   = config('STRAVA_CLIENT_SECRET')
+STRAVA_REDIRECT_URI    = config('STRAVA_REDIRECT_URI')
+STRAVA_APP_REDIRECT_URL = config('STRAVA_APP_REDIRECT_URL', default='velotag://strava-callback')
 
 # NEU: Diese Liste sagt Django, dass POST-Requests von eurem Frontend sicher sind
 CSRF_TRUSTED_ORIGINS = [

@@ -7,17 +7,20 @@ from django.conf import settings
 from django.conf.urls.static import static
 from routes.views import group_intersections_geojson
 from .views.strava import strava_connect, strava_callback, get_activities
+from users.views import CustomObtainAuthToken
+from .views.strava import strava_status, strava_connect, strava_callback, get_activities, import_activity
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('api/routes/', include('routes.urls')),
-    # path('api/login/', obtain_auth_token, name='api_token_auth')
     path('api/routes/', include('routes.urls')),#Bug Fix: aus routes/urls.py - api/routes/ wird hier schon angehängt
     path('api/profil/', ProfileView.as_view(), name='user-profile'),
     path('api/login/', CustomObtainAuthToken.as_view(), name='api_token_auth'),
+    path('api/strava/status/', strava_status),
     path('api/strava/connect/', strava_connect),
     path('api/strava/callback/', strava_callback),
     path('api/strava/activities/', get_activities),
+    path('api/strava/activities/<int:activity_id>/import/', import_activity),
+    path('api/groups/', GroupView.as_view(), name='my-groups'),
     path('api/register/', RegisterView.as_view(), name='register'),
 
     path('api/logout/', LogoutView.as_view()),

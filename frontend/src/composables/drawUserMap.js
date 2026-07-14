@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
@@ -125,6 +125,18 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
         // und die Leaflet-Methode setStyle() aufrufen
         currentFeatureGroup.eachLayer((layer) => {
             layer.setStyle({ color: newColor });
+    // Nur einmal registrieren, sonst sammeln sich bei wiederholtem drawUserMap()-Aufruf
+    // (z.B. nach einem Strava-Import) mehrere Watcher an
+    if (!colorWatchStarted) {
+        colorWatchStarted = true
+        watch(activeLayerId, (newLayerId) => {
+            // Neue Farbe basierend auf der neuen ID ermitteln
+            const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
+
+            // Immer auf der aktuellen FeatureGroup arbeiten, nicht auf der von der ersten Zeichnung
+            currentFeatureGroup?.eachLayer((layer) => {
+                layer.setStyle({ color: newColor });
+            });
         });
-    });
+    }
 }

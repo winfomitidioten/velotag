@@ -3,11 +3,13 @@
   import api from '@/api/api'
   import { useGPXVerarbeitung } from '@/composables/useGPXVerarbeitung'
   import GroupSelectionUploadModal from '@/components/GroupSelectionUploadModal.vue'
+  import { useStravaImport } from '@/composables/useStravaImport'
 
-  defineEmits(['close']) 
+  const emit = defineEmits(['close'])
 
   // NEU: Wir entpacken nun auch selectedGroupIds, um die ausgewählte Gruppe zu speichern
   const { isDragging, onFileDrop, errorMessage, erfolgsMessage, selectedGroupIds } = useGPXVerarbeitung()
+  const { showStravaImport } = useStravaImport()
 
   const fileInput = ref(null)
 
@@ -22,8 +24,16 @@
 
   // Die Strava-Logik bleibt hier, da sie ein völlig anderer Geschäftsprozess ist
   const connectStrava = async () => {
-    const response = await api.get('strava/connect/')
-    window.location.href = response.data.auth_url
+    const status = await api.get('strava/status/')
+
+    if (status.data.connected) {
+      // Bereits verbunden: kein erneuter Umweg über Strava, direkt Aktivitäten auswählen
+      showStravaImport.value = true
+      emit('close')
+    } else {
+      const response = await api.get('strava/connect/')
+      window.location.href = response.data.auth_url
+    }
   }
 </script>
 

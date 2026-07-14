@@ -16,6 +16,7 @@ class Route (models.Model):
     start_time = models.DateTimeField(db_index=True, null=True, blank=True)
     end_time = models.DateTimeField(db_index=True, null=True, blank=True)
     geom = gis_models.LineStringField(srid=4326, null=True, blank=True)
+    strava_activity_id = models.BigIntegerField(null=True, blank=True, unique=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
