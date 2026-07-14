@@ -11,7 +11,7 @@ const selectLayer = (layerId) => {
 </script>
 
 <template>
-  <div class="popup">
+  <div class="popup" @click.self="$emit('close')">
     <div class="popup-content">
       <div class="header">
         <h2>Ebenen auswählen</h2>
