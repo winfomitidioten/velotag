@@ -34,28 +34,76 @@ const decodePolyline = (encoded) => {
     return coordinates;
 };
 
-let currentFeatureGroup = null
-let colorWatchStarted = false
+let currentFeatureGroup = null;
+let unwatchColor = null;
 
-export async function drawUserMap(map) {//async
-    const response = await api.get('routes/map/')
-    const routes = response.data
-    const numberOfRoutes = routes.length
-    console.log("Routen aus Django:", routes)//Testausgabe, um API Call zu überprüfenw
-
-    // Bei erneutem Aufruf (z.B. nach einem Strava-Import) alte Routen erst entfernen,
-    // sonst werden sie doppelt gezeichnet
+export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
     if (currentFeatureGroup) {
-        map.removeLayer(currentFeatureGroup)
+        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
     }
-    const featureGroup = L.featureGroup().addTo(map)
-    currentFeatureGroup = featureGroup
+    if (unwatchColor) {//Watcher für Layer-Farbänderungen 
+        unwatchColor();//sonst zu viele watcher => performanceprobleme
+    }
+    let routes = []; 
+    // ---> GEÄNDERTE ZUWEISUNG:
+    currentFeatureGroup = L.featureGroup().addTo(map);
+    let numberOfRoutes = 0;
+
+    const colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
+
+    if(isGroupViewStatus === false) {//Solo Ansicht
+        const response = await api.get('routes/map/');
+        routes = response.data; // Kiste mit Solo-Routen befüllen
+        numberOfRoutes = routes.length;
+        console.log("Routen aus Django (Solo):", routes);
+    }
+
+    else if (isGroupViewStatus === true) {
+        if (!groupId) {
+            console.error("Gruppenansicht aktiv, aber keine group_id übergeben!");
+            return;
+        }
+
+        try {
+            const response = await api.get(`groups/${groupId}/intersections/`);
+            const geojsonData = response.data;
+            console.log(`Schnittmengen aus Django (Gruppe ${groupId}):`, geojsonData);
+
+            const numberOfGroupRoutes = (geojsonData.features && geojsonData.features.length) 
+                ? geojsonData.features.length 
+                : 1;
+
+            const geoJsonLayer = L.geoJSON(geojsonData, {
+                style: {
+                    color: colourLine,
+                    weight: 4,          // Zeichnet genau EINE 4px dicke Linie in der Mitte!
+                    opacity: Math.max(0.05, 1 / numberOfGroupRoutes),
+                    lineJoin: 'round',
+                    lineCap: 'round'
+                },
+                onEachFeature: (feature, layer) => {
+                    if (feature.properties && feature.properties.date) {
+                        layer.bindPopup(`<b>Gemeinsame Gruppenroute</b><br>Datum: ${feature.properties.date}`);
+                    }
+                }
+            });
+
+            currentFeatureGroup.addLayer(geoJsonLayer);
+
+            
+        } catch (err) {
+            console.error("Fehler beim Laden der Gruppen-Schnittmengen:", err);
+        }
+    }
+
+
+
 
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
         // Initiale Farbe beim ersten Laden ermitteln
-        let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
+        //let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
         const polyline = L.polyline(coordinates, 
             {color: colourLine,     // Grundfarbe
@@ -65,10 +113,18 @@ export async function drawUserMap(map) {//async
              lineJoin: 'round',    // Weiche Kurven
              lineCap: 'round'//,     // Abgerundete Enden}
         }).addTo(map);//color: 'blue'
-        featureGroup.addLayer(polyline);
+        currentFeatureGroup.addLayer(polyline);
         polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
     });
 
+    watch(activeLayerId, (newLayerId) => {
+        // Neue Farbe basierend auf der neuen ID ermitteln
+        const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
+        
+        // Durch alle gezeichneten Linien in der FeatureGroup iterieren 
+        // und die Leaflet-Methode setStyle() aufrufen
+        currentFeatureGroup.eachLayer((layer) => {
+            layer.setStyle({ color: newColor });
     // Nur einmal registrieren, sonst sammeln sich bei wiederholtem drawUserMap()-Aufruf
     // (z.B. nach einem Strava-Import) mehrere Watcher an
     if (!colorWatchStarted) {

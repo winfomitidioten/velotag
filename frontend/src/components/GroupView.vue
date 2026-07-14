@@ -1,7 +1,8 @@
 <script setup>
-    import { ref, onMounted } from 'vue'
+    import { ref, onMounted, watch } from 'vue'
     import api from '@/api/api';
     import { useRouter } from 'vue-router'
+    import { useFavorite } from '@/composables/useFavorite.js'
     import PageHeader from '@/components/PageHeader.vue';
     import HeaderButton from './HeaderButton.vue';
 
@@ -10,12 +11,42 @@
     const showPopup = ref(false)
     const newGroupName = ref("")
     const router = useRouter()
+    const { favoriteGroupId } = useFavorite()
+    const toggleFavorite = (id) => {
+    favoriteGroupId.value = favoriteGroupId.value === id ? null : id;
+}
+    
+
+    watch(favoriteGroupId, async (newId, oldId) => {
+    if (newId === oldId) return;
+    console.log("Neuer Favorit ausgewählt:", newId);
+    // Hier API call, falls wir den Favoriten in der Datenbank speichern wollen
+    try {
+        if (newId) {
+            // Wir nutzen POST auf unseren eigenen Endpoint, da hier komplexe 
+            // Datenbank-Operationen (altes False, neues True) passieren.
+            await api.post(`groups/${newId}/favorite/`);
+        } else {
+            // Fallback, wenn der User "Keine ausgewählt" klickt
+            await api.post(`groups/remove_favorite/`);
+        }
+    } catch(err) {
+        console.error('Fehler beim Speichern des Favoriten:', err);
+        // Rollback: Wenn das Backend einen Fehler wirft,
+        // springt das Dropdown automatisch wieder auf den alten Wert zurück
+        favoriteGroupId.value = oldId;
+    }
+    });
 
     const fetchGroups = async () => {
         try {
             loading.value = true;
             const response = await api.get('groups/');
             groups.value = response.data;
+
+            const favoriteGroup = groups.value.find(g => g.is_favorite === true);
+            favoriteGroupId.value = favoriteGroup ? favoriteGroup.id : null;
+
         } catch(err) {
             console.error('Fehler: ', err)
         } finally {
@@ -58,9 +89,33 @@
         </button>
 
         <main class="page-content">
+            <!--
+            
+            <div class="favorite-selector">
+                <span class="selector-label">Favorit:</span>
+                <select v-model="favoriteGroupId" class="clean-select">
+                    <option :value="null">Keine ausgewählt</option>
+                    <option v-for="group in groups" :key="group.id" :value="group.id">
+                        {{ group.name }}
+                    </option>
+                </select>
+            </div>
+            -->
+            
+
             <div id="group-grid">
                 <div v-for="group in groups" :key="group.id" class="group-card"
                 @click="router.push({ name: 'group-detail', params: { id: group.id } })">
+                <div 
+                    class="star-btn" 
+                    :class="{ 'is-favorite': favoriteGroupId === group.id }" 
+                    @click.stop="toggleFavorite(group.id)"
+                    title="Als Favorit markieren"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px">
+                        <path d="m233-120 65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Z"/>
+                    </svg>
+                </div>
                     
                     <div class="card-main-content">
                         <div class="group-icon-box">
@@ -165,8 +220,10 @@
     .page-content {
         flex: 1;
         display: flex;
-        justify-content: center;
-        padding: 1rem;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start; /* Bereinigt: Jetzt wirklich oben ausgerichtet */
+        padding: 2rem;               /* Bereinigt: Nur noch ein Padding-Wert */
         box-sizing: border-box;
     }
     
@@ -406,4 +463,75 @@
             flex: none;
         }
     }
+
+    .favorite-selector {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem; 
+        /* width: 100% und max-width hier ENTSORGEN */
+        align-self: flex-start; /* Linksbündig zum Grid ausrichten */
+        max-width: 58rem;       /* Nur für die Begrenzung */
+        width: 100%;
+    }
+
+.selector-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+.clean-select {
+    appearance: none;
+    background-color: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.4rem;
+    padding: 0.5rem 2rem 0.5rem 0.8rem;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2364748b"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 0.4rem center;
+    background-size: 1.2rem;
+}
+.clean-select:focus,
+.clean-select:hover {
+    border-color: #3db897;
+}
+.group-card {
+    /* ... deine bisherigen Styles ... */
+    position: relative; /* WICHTIG für die absolute Positionierung des Sterns */
+}
+
+/* Der Stern wird rechts oben in die Ecke gepinnt */
+.star-btn {
+    position: absolute;
+    top: 0.1rem;
+    right: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    z-index: 2; /* Stellt sicher, dass er über allem liegt */
+}
+
+.star-btn:hover {
+    background-color: #f1f5f9;
+}
+
+.star-btn svg {
+    fill: #cbd5e1; 
+    transition: fill 0.2s ease, transform 0.2s ease;
+}
+
+.star-btn.is-favorite svg {
+    fill: #f59e0b;
+    transform: scale(1.15); 
+}
 </style>

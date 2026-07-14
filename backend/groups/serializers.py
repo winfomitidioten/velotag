@@ -23,9 +23,10 @@ class GroupSerializer(serializers.ModelSerializer):
     member_count = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
 
+    is_favorite = serializers.SerializerMethodField() #für Favoriten Stern in Gruppenansicht
     class Meta:
         model = Group
-        fields = ['id', 'name', 'is_admin', 'member_count', 'members', 'admin_email']
+        fields = ['id', 'name', 'is_admin', 'member_count', 'members', 'admin_email', 'is_favorite']
 
     def get_is_admin(self, obj):
         request = self.context.get('request')
@@ -43,3 +44,14 @@ class GroupSerializer(serializers.ModelSerializer):
             membership__group=obj,
             membership__status='Joined'
         ).count()
+    
+    #prüft, ob die Gruppe der Favorit des Users ist
+    def get_is_favorite(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Membership.objects.filter(
+                group=obj, 
+                user=request.user, 
+                is_favorite=True
+            ).exists()
+        return False
