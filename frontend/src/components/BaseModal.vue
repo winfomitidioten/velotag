@@ -53,7 +53,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(15, 23, 42, 0.6); /* Moderneres, kühleres Overlay */
+    backdrop-filter: blur(4px); /* Schicker Blur-Effekt für den Hintergrund */
     display: flex;
     justify-content: center;
     z-index: 1001;
@@ -70,13 +71,23 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 
 .popup-content {
     background-color: white;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 40px 32px;
+    border-radius: 20px; /* Schön abgerundet, einheitlich mit dem GPX-Upload-Modal */
     text-align: center;
     position: relative;
     max-height: 85vh;
     overflow-y: auto;
     box-sizing: border-box;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Slot-Inhalt: Überschrift einheitlich stylen, ohne dass jedes Modal sie selbst definieren muss */
+:slotted(h2) {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
 }
 
 .popup-sheet .popup-content {
@@ -89,29 +100,32 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 
 .popup-close-button {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    background-color: var(--color-primary, #3db897);
+    top: 20px;
+    right: 20px;
+    background-color: #f1f5f9; /* Dezentes Grau statt auffälligem Grün */
+    color: #64748b;
     border: none;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: white;
     border-radius: 50%;
-    transition: background-color 0.15s;
+    transition: all 0.2s ease;
     z-index: 3000;
 }
 
 .popup-close-button:hover {
-    background-color: var(--color-primary-dark, #35a684);
+    background-color: #e2e8f0;
+    color: #0f172a;
+    transform: rotate(90deg); /* Kleine, spielerische Animation beim Hover */
 }
 
 .popup-close-button svg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+    color: #3db897;
 }
 
 @keyframes slideUp {

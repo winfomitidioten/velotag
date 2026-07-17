@@ -5,7 +5,8 @@ import BaseModal from '@/components/BaseModal.vue';
 import ConfirmDialog from './ConfirmDialog.vue';
 
 const props = defineProps({
-    photos: { type: Array, required: true }
+    photos: { type: Array, required: true },
+    isGroupView: { type: Boolean, default: false }
 });
 const emit = defineEmits(['close', 'deleted', 'updated']);
 
@@ -157,6 +158,11 @@ const autoGrow = (event) => {
                 </template>
 
                 <template v-else>
+                    <p v-if="isGroupView && activePhoto.uploader" class="gallery-meta">Von {{ activePhoto.uploader }}</p>
+                    <p v-else-if="!isGroupView && activePhoto.groups && activePhoto.groups.length" class="gallery-meta">
+                        {{ activePhoto.groups.length > 1 ? 'Gruppen' : 'Gruppe' }}: {{ activePhoto.groups.map(g => g.name).join(', ') }}
+                    </p>
+
                     <p v-if="activePhoto.description" class="gallery-description">{{ activePhoto.description }}</p>
 
                     <div v-if="activePhoto.is_owner" class="gallery-actions">
@@ -250,6 +256,13 @@ const autoGrow = (event) => {
 .gallery-nav svg {
     width: 20px;
     height: 20px;
+}
+
+.gallery-meta {
+    margin: 12px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #888888);
 }
 
 .gallery-description {

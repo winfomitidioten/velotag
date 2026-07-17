@@ -19,11 +19,13 @@ const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Üb
 const showLayers = ref(false);
 const { showStravaImport } = useStravaImport();
 
-const { initializeMap, availableLayers, activeLayerId } = useMap();
+const { initializeMap, availableLayers, activeLayerId, isAttributionVisible, toggleAttribution, closeAttribution, isAttributionTarget } = useMap();
 const { isPinMode, setPinMode } = usePinMode();
 const pinLatLng = ref(null);
+const attributionButton = ref(null); // Template-Ref für Klick-außerhalb-Erkennung
 
 const handleMapClick = (e) => {
+  closeAttribution(); // Klick irgendwo auf die Karte schließt den ausgeklappten Kartennachweis
   if (!isPinMode.value) return;
   pinLatLng.value = e.latlng;
   setPinMode(false);
@@ -31,14 +33,14 @@ const handleMapClick = (e) => {
 
 const onPhotoPinCreated = () => {
   pinLatLng.value = null;
-  if (mapInstance) drawPhotoPins(mapInstance)
+  if (mapInstance) drawPhotoPins(mapInstance, isGroupView.value, selectedGroupId.value)
 }
 
 const onPhotoDeleted = (deletedId) => {
   const remaining = activeGalleryPhotos.value.filter(photo => photo.id !== deletedId);
   // war es das letzte Foto an diesem Punkt, gibt es nichts mehr anzuzeigen -> Modal schließen
   activeGalleryPhotos.value = remaining.length ? remaining : null;
-  if (mapInstance) drawPhotoPins(mapInstance);
+  if (mapInstance) drawPhotoPins(mapInstance, isGroupView.value, selectedGroupId.value);
 };
 
 const onPhotoUpdated = (updatedPhoto) => {
@@ -88,6 +90,11 @@ const handleClickOutside = (event) => {
   if (groupDropdown.value && !groupDropdown.value.contains(event.target)) {
     showGroupDropdown.value = false;
   }
+  const clickedButton = attributionButton.value && attributionButton.value.contains(event.target);
+  const clickedBar = isAttributionTarget(event.target);
+  if (isAttributionVisible.value && !clickedButton && !clickedBar) {
+    closeAttribution();
+  }
 };
 
 const map = shallowRef(null);//shallowRef überwacht nur .value von Map und nicht alle internen Eigenschaften => Performance
@@ -109,8 +116,8 @@ const fetchGroups = async () => {
 onMounted(() => {
 
   map.value = initializeMap('map');
-  mapInstance = map;
-  map.on('click', handleMapClick);
+  mapInstance = map.value;
+  map.value.on('click', handleMapClick);
 
   const WatermarkControl = L.Control.extend({
     onAdd: function(m) {
@@ -139,9 +146,10 @@ onMounted(() => {
     map.value.invalidateSize()
   })
 
-  // Routen aus dem Backend abfragen
+  // Routen und Foto-Pins aus dem Backend abfragen
   drawUserMap(map.value, isGroupView.value, favoriteGroupId.value) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
-  console.log("übergebene Gruppen-ID in Karte.vue:", favoriteGroupId.value)  
+  drawPhotoPins(map.value, isGroupView.value, favoriteGroupId.value)
+  console.log("übergebene Gruppen-ID in Karte.vue:", favoriteGroupId.value)
 
   fetchGroups(); // Gruppenliste für das Auswahl-Dropdown laden
 
@@ -150,8 +158,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
-  drawPhotoPins(map)
-
 })
 
 watch(isGroupView, async (newValue) => {
@@ -167,8 +173,10 @@ watch(isGroupView, async (newValue) => {
     // Beim Wechsel in die Gruppenansicht wird standardmäßig der Favorit ausgewählt
     selectedGroupId.value = favoriteGroupId.value;
     drawUserMap(map.value, true, selectedGroupId.value)
+    drawPhotoPins(map.value, true, selectedGroupId.value)
   } else {
     drawUserMap(map.value, false)
+    drawPhotoPins(map.value, false)
   }
 });
 
@@ -176,6 +184,7 @@ watch(isGroupView, async (newValue) => {
 watch(selectedGroupId, (newGroupId) => {
   if (isGroupView.value) {
     drawUserMap(map.value, true, newGroupId)
+    drawPhotoPins(map.value, true, newGroupId)
   }
 });
 </script>
@@ -203,6 +212,7 @@ watch(selectedGroupId, (newGroupId) => {
   <PhotoPinGalleryModal
     v-if="activeGalleryPhotos"
     :photos="activeGalleryPhotos"
+    :is-group-view="isGroupView"
     @close="activeGalleryPhotos = null"
     @deleted="onPhotoDeleted"
     @updated="onPhotoUpdated"
@@ -211,6 +221,19 @@ watch(selectedGroupId, (newGroupId) => {
   <button class="btn_ebenen_preview" @click="showLayers = true" title="Ebenen auswählen">
     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
       <path d="M480-118 120-398l66-50 294 228 294-228 66 50-360 280Zm0-202L120-600l360-280 360 280-360 280Zm0-280Zm0 178 230-178-230-178-230 178 230 178Z"/>
+    </svg>
+  </button>
+
+  <button
+    ref="attributionButton"
+    class="btn_map_info"
+    :class="{ active: isAttributionVisible }"
+    @click="toggleAttribution"
+    title="Kartennachweis anzeigen"
+    aria-label="Kartennachweis anzeigen"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor">
+      <path d="M440-280h80v-240h-80v240Zm68.5-331.5Q520-623 520-640t-11.5-28.5Q497-680 480-680t-28.5 11.5Q440-657 440-640t11.5 28.5Q463-600 480-600t28.5-11.5ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
     </svg>
   </button>
 
@@ -293,11 +316,11 @@ watch(selectedGroupId, (newGroupId) => {
   
 
   /* Maßstabsleiste (L.control.scale, unten links): nur während des Zoomens sichtbar
-     (Ein-/Ausblenden siehe useMap.js), sitzt über dem Ebenen-Button statt am Kartenrand,
+     (Ein-/Ausblenden siehe useMap.js), liegt oberhalb des Info-Buttons/Kartennachweises,
      zeigt nur noch den Text als abgerundete Pille statt sich als Lineal zu verbreitern.
      :deep(), da Leaflet dieses Element dynamisch selbst ins DOM einfügt */
   :deep(.map-scale-control) {
-    margin-bottom: calc(var(--safe-bottom) + 75px) !important;
+    margin-bottom: calc(var(--safe-bottom) + 55px) !important;
     margin-left: 10px;
     opacity: 0;
     pointer-events: none;
@@ -316,6 +339,57 @@ watch(selectedGroupId, (newGroupId) => {
     font-weight: 600;
     color: var(--color-text, #1a1a1a);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Kartennachweis (L.control.attribution): standardmäßig unsichtbar, umschließt den
+     Info-Button (.btn_map_info) am linken Ende wie eine Pille - der Button liegt optisch
+     "in" der Leiste (linkes Padding = Buttonbreite, Button selbst per z-index obenauf) und
+     die Leiste expandiert beim Anklicken seitlich nach rechts aus ihm heraus.
+     :deep(), da Leaflet dieses Element dynamisch selbst ins DOM einfügt */
+  :deep(.map-attribution-control) {
+    position: fixed !important;
+    left: 10px !important; /* identisch mit .btn_map_info, damit die linke Kante zusammenfällt */
+    bottom: calc(var(--safe-bottom) + 15px) !important; /* gleiche Zeile wie .btn_map_info */
+    margin: 0 !important;
+    box-sizing: border-box;
+    height: 34px; /* exakt so hoch wie .btn_map_info, statt größer/versetzt zu wirken */
+    width: fit-content;
+    max-width: calc(100vw - 20px); /* nie über den Bildschirmrand hinaus, aber sonst textbreit */
+    display: flex;
+    align-items: center;
+    background: var(--color-bg-card, #ffffff);
+    color: var(--color-text-muted, #666);
+    font-size: 12px;
+    padding: 0 16px 0 42px; /* links Platz für den Button (34px + 8px Abstand), vertikal zentriert per flex */
+    border-radius: 17px; /* halbe Höhe = Pillenform, passend zur 34px-Höhe */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    /* Eine Zeile, die exakt in die 34px-Höhe passt, statt bei Umbruch die Box höher zu
+       machen als den Button. !important gegen Leaflets eigenes nowrap/Ladereihenfolge-Zufall */
+    white-space: nowrap !important;
+    word-spacing: 0.15em;
+    letter-spacing: 0.01em;
+    overflow: hidden; /* verhindert Text-Reste außerhalb der Pille, v.a. beim Zuklappen */
+    z-index: 499; /* knapp unter dem Button (500/1001), damit der optisch obenauf/"in" der Leiste liegt */
+    opacity: 0;
+    transform-origin: left center; /* wächst von der dem Button zugewandten Kante nach rechts */
+    transform: scaleX(0);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  :deep(.map-attribution-control.is-visible) {
+    opacity: 1;
+    transform: scaleX(1);
+    pointer-events: auto;
+  }
+  :deep(.map-attribution-control a) {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+    margin: 0 2px;
+  }
+  :deep(.map-attribution-control img) {
+    vertical-align: middle;
+    margin-left: 4px;
   }
 
   :deep(.photo-pin-dot) {
@@ -392,7 +466,7 @@ watch(selectedGroupId, (newGroupId) => {
 
   .pin-mode-banner {
   position: fixed;
-  top: calc(var(--safe-top) + 0.75rem);
+  top: calc(var(--safe-top) + var(--app-header-height) + 0.75rem);
   left: 50%;
   transform: translateX(-50%);
   max-width: calc(100% - 140px);
@@ -468,7 +542,45 @@ watch(selectedGroupId, (newGroupId) => {
     right: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
-  
+
+  /* Info-Button für den Kartennachweis: unten links, unterhalb der Maßstabsanzeige,
+     dezent (kleiner + blasser als die übrigen Karten-Buttons) */
+  .btn_map_info {
+    position: absolute;
+    bottom: calc(var(--safe-bottom) + 15px);
+    left: 10px;
+    /* Muss über Leaflets eigenem Ecken-Container liegen: .leaflet-bottom.leaflet-left
+       (in dem die Attribution-Leiste steckt) hat per Leaflet-Standard-CSS z-index:1000 -
+       das schlägt jedes kleinere z-index hier, unabhängig vom z-index der Leiste selbst */
+    z-index: 1001;
+    width: 34px;
+    height: 34px;
+    border: none;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.92);
+    color: var(--color-text-muted, #888888);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+  }
+
+  .btn_map_info:active {
+    transform: scale(0.92);
+  }
+
+  .btn_map_info.active {
+    background-color: var(--color-primary);
+    color: white;
+    box-shadow: 0 2px 10px rgba(61, 184, 151, 0.5);
+  }
+
   .pill-divider {
     width: 24px;
     height: 1px;
@@ -482,8 +594,8 @@ watch(selectedGroupId, (newGroupId) => {
   /* --- NEUES STYLING FÜR DEN TOGGLE SWITCH --- */
   .toggle-switch-container {
     position: absolute;
-    top: 20px;
-    right: 110px; /* Weiter links platziert, damit es nicht mit dem Velotag-Logo überlappt */
+    top: calc(var(--safe-top) + var(--app-header-height) + 12px); /* unter dem fixierten AppHeader */
+    right: 10px; /* Ganz am rechten Bildschirmrand, wie die übrigen Karten-Buttons */
     z-index: 9999;
     background-color: white;
     border-radius: 30px;
@@ -531,8 +643,8 @@ watch(selectedGroupId, (newGroupId) => {
   /* Dropdown zur Gruppenauswahl, erscheint direkt unter dem Toggle-Switch */
   .group-dropdown {
     position: absolute;
-    top: 68px;
-    right: 110px;
+    top: calc(var(--safe-top) + var(--app-header-height) + 60px); /* direkt unter dem Toggle-Switch */
+    right: 10px;
     z-index: 9999;
     width: 170px;
   }

@@ -22,13 +22,22 @@ function groupPinsByLocation(pins) {
     return Array.from(groups.values());
 }
 
-export async function drawPhotoPins(map) {
-    const response = await api.get('photo-pins/list/');
-    const groups = groupPinsByLocation(response.data);
-
+export async function drawPhotoPins(map, isGroupViewStatus = false, groupId = null) {
     if (currentPhotoPinGroup) {
         map.removeLayer(currentPhotoPinGroup);
+        currentPhotoPinGroup = null;
     }
+
+    // Gruppenansicht ohne ausgewählte Gruppe (z.B. noch kein Favorit gesetzt):
+    // keine Pins zeichnen, statt auf die "alle Pins"-Liste zurückzufallen
+    if (isGroupViewStatus && !groupId) {
+        return;
+    }
+
+    const url = isGroupViewStatus ? `photo-pins/group/${groupId}/` : 'photo-pins/list/';
+    const response = await api.get(url);
+    const groups = groupPinsByLocation(response.data);
+
     const featureGroup = L.featureGroup().addTo(map);
     currentPhotoPinGroup = featureGroup;
 

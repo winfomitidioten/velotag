@@ -36,8 +36,6 @@ const decodePolyline = (encoded) => {
 
 let currentFeatureGroup = null
 let colorWatchStarted = false
-
-let currentFeatureGroup = null;
 let unwatchColor = null;
 
 export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
