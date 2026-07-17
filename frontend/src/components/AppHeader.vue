@@ -258,7 +258,7 @@ onUnmounted(() => {
   align-items: center;
 }
 .app-logo img {
-  height: 40px;
+  height: 60px;
   width: auto;
   object-fit: contain;
 }
