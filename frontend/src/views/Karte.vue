@@ -1,6 +1,7 @@
 <script setup>
 
 import { onMounted, onUnmounted, ref, computed, watch, shallowRef } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
+import { onMounted, ref, computed, watch } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
 import velotagLogo from '@/assets/velotag-logo.png'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
 import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
@@ -12,8 +13,6 @@ import PhotoPinGalleryModal from '@/components/PhotoPinGalleryModal.vue';
 import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
 import L from 'leaflet'
-import { useFavorite } from '@/composables/useFavorite.js'
-import api from '@/api/api';
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
 const showLayers = ref(false);
@@ -104,6 +103,8 @@ const activeLayerPreview = computed(() => {
   return active ? active.preview : availableLayers[0].preview;
 });
 
+
+
 const fetchGroups = async () => {
   try {
     const response = await api.get('groups/');
@@ -132,7 +133,7 @@ onMounted(() => {
   });
 
   // Logo oben rechts auf die Karte setzen
-  //new WatermarkControl({ position: 'topright' }).addTo(map);
+  new WatermarkControl({ position: 'topright' }).addTo(map.value);
 
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
 // daher muss die Karte hier manuell aktualisiert werden, damit sie korrekt angezeigt wird
@@ -299,7 +300,7 @@ watch(selectedGroupId, (newGroupId) => {
 </template>
 
 <style scoped>
-  /* Wrapper als Container für die Karte*/
+/* Wrapper als Container für die Karte*/
   .map-wrapper {
     position: relative; 
     height: 100vh;
@@ -734,4 +735,5 @@ watch(selectedGroupId, (newGroupId) => {
     color: var(--color-primary);
     font-weight: 600;
   }
+
 </style>

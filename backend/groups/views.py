@@ -245,37 +245,6 @@ class GroupKickView(APIView):
                 {"error": "Gruppe wurde nicht gefunden."}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except User.DoesNotExist:
-            return Response(
-                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-class GroupFavoriteView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, pk):
-        try:
-            # Prüfen, ob die Gruppe existiert
-            group = Group.objects.get(pk=pk)
-            
-            # Prüfen, ob der User wirklich ein aktives Mitglied der Gruppe ist
-            membership = Membership.objects.get(user=request.user, group=group, status='Joined')
-
-            # 1. Bisherigen Favoriten des Users entfernen (wegen des UniqueConstraints)
-            Membership.objects.filter(user=request.user, is_favorite=True).update(is_favorite=False)
-
-            # 2. Neue Gruppe als Favorit speichern
-            membership.is_favorite = True
-            membership.save()
-
-            return Response({"message": "Favorit erfolgreich aktualisiert."}, status=status.HTTP_200_OK)
-
-        except Group.DoesNotExist:
-            return Response(
-                {"error": "Gruppe wurde nicht gefunden."}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
         except Membership.DoesNotExist:
             return Response(
                 {"error": "Du bist kein aktives Mitglied dieser Gruppe."}, 
@@ -344,9 +313,3 @@ class SetGroupFavoriteView(APIView):
                 {"error": "Diese Gruppe existiert nicht."},
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Membership.DoesNotExist:
-            return Response(
-                {"error": "Du bist kein aktives Mitglied dieser Gruppe."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-      

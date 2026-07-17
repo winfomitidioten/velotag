@@ -34,8 +34,7 @@ const decodePolyline = (encoded) => {
     return coordinates;
 };
 
-let currentFeatureGroup = null
-let colorWatchStarted = false
+let currentFeatureGroup = null;
 let unwatchColor = null;
 
 export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
@@ -127,5 +126,19 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
         currentFeatureGroup.eachLayer((layer) => {
             layer.setStyle({ color: newColor });
         });
-    });
+    });    
+    // Nur einmal registrieren, sonst sammeln sich bei wiederholtem drawUserMap()-Aufruf
+    // (z.B. nach einem Strava-Import) mehrere Watcher an
+    if (!colorWatchStarted) {
+        colorWatchStarted = true
+        watch(activeLayerId, (newLayerId) => {
+            // Neue Farbe basierend auf der neuen ID ermitteln
+            const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
+
+            // Immer auf der aktuellen FeatureGroup arbeiten, nicht auf der von der ersten Zeichnung
+            currentFeatureGroup?.eachLayer((layer) => {
+                layer.setStyle({ color: newColor });
+            });
+        });
+    }
 }
