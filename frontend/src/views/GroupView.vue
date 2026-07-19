@@ -4,7 +4,8 @@
     import { useRouter } from 'vue-router'
     import { useFavorite } from '@/composables/useFavorite.js'
     import PageHeader from '@/components/PageHeader.vue';
-    import HeaderButton from './HeaderButton.vue';
+    import HeaderButton from '@/components/HeaderButton.vue';
+    import { useFavorite } from '@/composables/useFavorite.js'
 
     const groups = ref([])
     const loading = ref(false)

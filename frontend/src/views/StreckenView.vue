@@ -1,7 +1,7 @@
 <script setup>
     import { ref, onMounted } from 'vue'
     import api from '@/api/api'
-import PageHeader from '@/components/PageHeader.vue'
+    import PageHeader from '@/components/PageHeader.vue'
 
     const strecken = ref([])       // Array der Strecken vom Backend
     const loading = ref(false)     // Ladeindikator

@@ -313,9 +313,3 @@ class SetGroupFavoriteView(APIView):
                 {"error": "Diese Gruppe existiert nicht."},
                 status=status.HTTP_404_NOT_FOUND
             )
-        except Membership.DoesNotExist:
-            return Response(
-                {"error": "Du bist kein aktives Mitglied dieser Gruppe."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-      

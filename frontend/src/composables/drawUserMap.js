@@ -125,6 +125,8 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
         // und die Leaflet-Methode setStyle() aufrufen
         currentFeatureGroup.eachLayer((layer) => {
             layer.setStyle({ color: newColor });
+        });
+    });    
     // Nur einmal registrieren, sonst sammeln sich bei wiederholtem drawUserMap()-Aufruf
     // (z.B. nach einem Strava-Import) mehrere Watcher an
     if (!colorWatchStarted) {

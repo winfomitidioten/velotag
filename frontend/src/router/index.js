@@ -1,12 +1,11 @@
 
 import { createRouter, createWebHistory } from 'vue-router';
-import ProfileView from '../components/ProfileView.vue'
-
+import ProfileView from '../views/ProfileView.vue'
 import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
-import GroupView from '../components/GroupView.vue'
-import GroupDetailView from '../components/GroupDetailView.vue'
-import GroupInviteView from '../components/GroupInviteView.vue'
+import GroupView from '../views/GroupView.vue'
+import GroupDetailView from '../views/GroupDetailView.vue'
+import GroupInviteView from '../views/GroupInviteView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
 
 const routes = [

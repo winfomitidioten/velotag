@@ -2,6 +2,7 @@
   import { ref } from 'vue'
   import api from '@/api/api'
   import { useGPXVerarbeitung } from '@/composables/useGPXVerarbeitung'
+  import BaseModal from '@/components/BaseModal.vue'
   import GroupSelectionUploadModal from '@/components/GroupSelectionUploadModal.vue'
   import { useStravaImport } from '@/composables/useStravaImport'
 
@@ -38,15 +39,10 @@
 </script>
 
 <template>
-  <div class="popup" @click.self="$emit('close')">
+  <div class="popup">
     <div class="popup-content">
       <h2>Fahrt hochladen</h2>
-
-      <button @click="$emit('close')" class="popup-close-button" aria-label="Schließen">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
-          <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
-        </svg>
-      </button>
+      <p>.gpx Datei auswählen</p>
 
       <div v-if="errorMessage" class="error-message">
         {{ errorMessage }}
@@ -56,23 +52,19 @@
         {{ erfolgsMessage }}
       </div>
 
-      <div class="strava-section">
-        <a @click="connectStrava" class="strava-btn"> 
+      <div> 
+        <a @click="connectStrava"> 
           <img src="@/assets/btn_strava_connect_with_orange.png" alt="Connect with Strava" />
         </a>
       </div>
       
-      <div class="divider">
-        <span>ODER</span>
-      </div>
-
       <GroupSelectionUploadModal @update:selectedGroup="selectedGroupIds = $event" />
-    
-      <div 
+
+      <div
         class="dropzone-box"
         :class="{ 'active': isDragging }"
         @dragover.prevent
-        @dragenter.prevent="isDragging = true" 
+        @dragenter.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="onFileDrop"
         @click="openFileChooser"
@@ -83,136 +75,89 @@
           </svg>
           <span>Zieh deine GPX-Fahrt hier rein<br>oder klicke, um eine Datei auszuwählen</span>
         </div>
-        <input 
-          type="file" 
-          ref="fileInput" 
-          style="display: none" 
-          accept=".gpx" 
-          @change="handleFileChange" 
+        <input
+          type="file"
+          ref="fileInput"
+          style="display: none"
+          accept=".gpx"
+          @change="handleFileChange"
         />
       </div>
 
+      <button @click="$emit('close')" class="popup-close-button" aria-label="Schließen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+          <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+        </svg>
+      </button>
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <style scoped>
-  /* --- MODAL BACKDROP --- */
-  .popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(15, 23, 42, 0.6); /* Moderneres, kühleres Overlay */
-    backdrop-filter: blur(4px); /* Schicker Blur-Effekt für den Hintergrund */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1001; 
-  }
-
-  /* --- MODAL CONTAINER --- */
+  /* PopUp Content*/
   .popup-content {
-    background-color: #ffffff;
-    padding: 40px 32px;
-    border-radius: 20px; /* Schön abgerundet */
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
     position: relative;
-    width: 90%;
-    max-width: 480px; /* Begrenzt die Breite auf großen Bildschirmen */
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    
-    /* Flexbox sorgt für perfekte, gleichmäßige Abstände (ohne margin-Gefummel) */
-    display: flex;
-    flex-direction: column;
-    gap: 24px; 
-  }
-
-  h2 {
-    margin: 0;
-    color: #1e293b;
-    font-size: 1.5rem;
-    font-weight: 700;
-    text-align: center;
-  }
-
-  /* --- CLOSE BUTTON --- */
-  .popup-close-button {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background-color: #f1f5f9; /* Dezentes Grau statt auffälligem Grün */
-    color: #64748b;
-    border: none;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-    z-index: 3000;
-  }
-
-  .popup-close-button:hover {
-    background-color: #e2e8f0;
-    color: #0f172a;
-    transform: rotate(90deg); /* Kleine, spielerische Animation beim Hover */
-  }
-
-  .popup-close-button svg {
-    width: 20px;
-    height: 20px;
-    color:#3db897
-  }
-
-  /* --- MESSAGES --- */
-  .error-message, .erfolgs-message {
-    padding: 12px 16px;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin: 0;
-    text-align: center;
   }
 
   .error-message {
-    background-color: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
+    background-color: #fee2e2;
+    color: #e53e3e;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
   }
 
-  .erfolgs-message {
-    background-color: #f0fdf4;
-    color: #16a34a;
-    border: 1px solid #bbf7d0;
+  .erfolgs-message{
+    background-color: #c6f6d5;
+    color: #385e38;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
   }
 
-  /* --- STRAVA BUTTON --- */
-  .strava-section {
-    text-align: center;
-  }
-
-  .strava-btn {
-    display: inline-block;
+  .popup-close-button {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background-color: var(--color-primary, #3db897);
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    color: white; /* Weiß für guten Kontrast zum grünen Hintergrund */
+    border-radius: 50%;
+    transition: background-color 0.15s;
+    z-index: 3000;
   }
 
-  .strava-btn img {
-    max-width: 240px; /* Verhindert, dass der Button zu riesig wird */
+  /* Hover-Effekt in einem dunkleren Grün */
+  .popup-close-button:hover {
+    background-color: var(--color-primary-dark, #35a684);
+    color: white;
+  }
+
+  .popup-close-button svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Upload PopUp*/
+  .popup {
+    position: fixed;
+    bottom: 20px;
+    right: 10px;
     width: 100%;
-    height: auto;
-    transition: transform 0.2s ease, filter 0.2s ease;
-  }
-
-  .strava-btn:hover img {
-    transform: translateY(-2px);
-    filter: brightness(1.05); /* Leichter Leuchteffekt beim Hover */
-  }
-
-  /* --- DIVIDER (ODER) --- */
-  .divider {
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); 
     display: flex;
     align-items: center;
     text-align: center;
