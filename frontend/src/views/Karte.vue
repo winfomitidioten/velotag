@@ -1,9 +1,9 @@
 <script setup>
 
 import { onMounted, onUnmounted, ref, computed, watch, shallowRef } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
-import { onMounted, ref, computed, watch } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
-import velotagLogo from '@/assets/velotag-logo.png'
+import api from '@/api/api'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
+import velotagLogo from '@/assets/velotag-logo.png'
 import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
 import LayersSelectionModal from '@/components/layersSelectionModal.vue'
 import { usePinMode } from '@/composables/usePinMode.js'
@@ -12,6 +12,7 @@ import { drawPhotoPins, activeGalleryPhotos } from '@/composables/drawPhotoPins'
 import PhotoPinGalleryModal from '@/components/PhotoPinGalleryModal.vue';
 import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
+import { useFavorite } from '@/composables/useFavorite.js'
 import L from 'leaflet'
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
@@ -138,8 +139,8 @@ onMounted(() => {
 // Karte aktualisieren, Leaflet zeigt Karte schneller an, als Vue die Karte rendert und die CSS-Datei geladen hat (siehe main.js)
 // daher muss die Karte hier manuell aktualisiert werden, damit sie korrekt angezeigt wird
   setTimeout(() => {
-    if (map) {
-      map.invalidateSize()
+    if (map.value) {
+      map.value.invalidateSize()
     }
   }, 250)
   

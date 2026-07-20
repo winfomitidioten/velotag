@@ -36,6 +36,7 @@ const decodePolyline = (encoded) => {
 
 let currentFeatureGroup = null;
 let unwatchColor = null;
+let colorWatchStarted = false;
 
 export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
     if (currentFeatureGroup) {
@@ -117,16 +118,6 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
         polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
     });
 
-    watch(activeLayerId, (newLayerId) => {
-        // Neue Farbe basierend auf der neuen ID ermitteln
-        const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
-        
-        // Durch alle gezeichneten Linien in der FeatureGroup iterieren 
-        // und die Leaflet-Methode setStyle() aufrufen
-        currentFeatureGroup.eachLayer((layer) => {
-            layer.setStyle({ color: newColor });
-        });
-    });    
     // Nur einmal registrieren, sonst sammeln sich bei wiederholtem drawUserMap()-Aufruf
     // (z.B. nach einem Strava-Import) mehrere Watcher an
     if (!colorWatchStarted) {

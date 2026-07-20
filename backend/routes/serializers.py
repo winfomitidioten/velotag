@@ -66,9 +66,6 @@ class RouteListSerializer(serializers.ModelSerializer):
             end = datetime.fromisoformat(stream[-1].replace('Z', '+00:00'))
         except (ValueError, TypeError, AttributeError):
             return 0
-        fmt = "%Y-%m-%dT%H:%M:%SZ"
-        start = datetime.strptime(stream[0], fmt).replace(tzinfo=timezone.utc)
-        end = datetime.strptime(stream[-1], fmt).replace(tzinfo=timezone.utc)
         return int((end - start).total_seconds())
 
     def get_avg_puls(self, obj):
