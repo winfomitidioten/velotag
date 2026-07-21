@@ -4,6 +4,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from '@/components/HeaderButton.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const route = useRoute()
 const router = useRouter()
@@ -42,44 +43,96 @@ const inviteMember = async () => {
     }
 }
 
-const deleteMember = async (email) => {
-    if (!confirm(`Möchtest du das Mitglied (${email}) wirklich aus der Gruppe entfernen?`)) return;
+// Bestätigungs-Dialoge
+const confirmAction = ref(null);
+const memberToDelete = ref(null);
+const actionBusy = ref(false);
 
+const askDeleteMember = (email) => {
+    memberToDelete.value = email;
+    confirmAction.value = 'deleteMember';
+};
+
+const askDeleteGroup = () => { confirmAction.value = 'deleteGroup' };
+const askLeaveGroup = () => { confirmAction.value = 'leaveGroup' };
+
+const cancleConfirm = () => {
+    confirmAction.value = null;
+    memberToDelete.value = null;
+};
+
+const confirmConfig = computed(() => {
+    switch (confirmAction.value) {
+        case 'deleteMember':
+            return {
+                title: 'Mitglied entfernen?',
+                message: `Möchtest du ${memberToDelete.value} wirklich aus der Gruppe entfernen?`,
+                confirmLabel: 'Entfernen'
+            };
+        case 'deleteGroup':
+            return {
+                title: 'Gruppe löschen?',
+                message: 'Die Gruppe wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
+                confirmLabel: 'Löschen'
+            };
+        case 'leaveGroup':
+            return {
+                title: 'Gruppe verlassen?',
+                message: 'Möchtest du diese Gruppe wirklich verlassen?',
+                confirmLabel: 'Verlassen'
+            };
+        default:
+            return {};
+    }
+});
+
+const handleConfirm = () => {
+    if (confirmAction.value === 'deleteMember') return deleteMember();
+    if (confirmAction.value === 'deleteGroup') return deleteGroup();
+    if (confirmAction.value === 'leaveGroup') return leaveGroup();
+};
+
+
+const deleteMember = async () => {
     try{
+        actionBusy.value = true;
         const response = await api.delete(`groups/${groupId.value}/kick`, {
-            data: { email: email }
+            data: { email: memberToDelete.value }
         });
-        
+    
         group.value = response.data;
+        cancleConfirm();
     } catch (error) {
         console.error("Fehler beim Löschen des Mitglieds:", error);
         alert(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.");
+    } finally {
+        actionBusy.value = false;
     }
-}
+};
 
 const deleteGroup = async () =>{
-    if(!confirm("Möchtest du diese Gruppe wirklich dauerhaft löschen?")) return;
     try{
+        actionBusy.value = true;
         await api.delete(`groups/${groupId.value}/`);
-        alert("Gruppe wurde erfolgreich gelöscht");
         router.push("/group");
     } catch (error) {
         console.error("Fehler beim Löschen der Gruppe:", error);
         alert(error.response?.data?.error || "Es gab ein Problem beim Löschen der Gruppe.");
+        actionBusy.value = false;
     }
-}
+};
 
 const leaveGroup = async () =>{
-    if(!confirm("Möchtest du diese Gruppe wirklich verlassen?")) return;
     try{
+        actionBusy.value = true;
         await api.post(`groups/${groupId.value}/leave`);
-        alert("Gruppe wurde erfolgreich verlassen");
         router.push("/group");
     } catch (error) {
         console.error("Fehler beim Verlassen der Gruppe:", error);
         alert(error.response?.data?.error || "Es gab ein Problem beim Verlassen der Gruppe.");
+        actionBusy.value = false;
     }
-}
+};
 
 watch(() => route.params.id, (newId) => {
     if (newId) fetchGroup();
@@ -98,7 +151,7 @@ onMounted(() => {
 
         <template v-else-if="group">
             <PageHeader>
-                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="deleteGroup">
+                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="askDeleteGroup">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
                     </svg>
@@ -133,7 +186,7 @@ onMounted(() => {
                                 <span>Einladen</span>
                             </button>
 
-                            <button @click="leaveGroup" class="leave-btn">
+                            <button @click="askLeaveGroup" class="leave-btn">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
                                     <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z"/>
                                 </svg>
@@ -164,7 +217,7 @@ onMounted(() => {
                                     <span class="member-email">{{ member.email }}</span>
                                 </div>
 
-                                <div v-if="group.is_admin && member.email !== group.admin_email" class="delete-member" @click="deleteMember(member.email)">
+                                <div v-if="group.is_admin && member.email !== group.admin_email" class="delete-member" @click="askDeleteMember(member.email)">
                                     <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px">
                                         <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
                                     </svg>
@@ -185,6 +238,16 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
+            <ConfirmDialog
+                v-if="confirmAction"
+                :title="confirmConfig.title"
+                :message="confirmConfig.message"
+                :confirm-label="confirmConfig.confirmLabel"
+                danger
+                :busy="actionBusy"
+                @confirm="handleConfirm"
+                @cancel="cancleConfirm"
+            />
         </template>
     </div>
 </template>

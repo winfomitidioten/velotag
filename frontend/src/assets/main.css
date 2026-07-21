@@ -20,7 +20,7 @@
   /* Höhe der Inhaltszeile des globalen AppHeader (ohne --safe-top).
      Andere Komponenten (PageHeader, Karte-Controls, back-button) rechnen
      damit, um nicht unter dem fixierten Header zu verschwinden. */
-  --app-header-height: 72px;
+  --app-header-height: 56px;
 }
 
 /* --- Reset & Basis --- */

@@ -301,19 +301,15 @@ watch(selectedGroupId, (newGroupId) => {
 </template>
 
 <style scoped>
-/* Wrapper als Container für die Karte*/
-  .map-wrapper {
-    position: relative; 
-    height: 100vh;
-    width: 100%;
-  }
-
-  /* Karte füllt Container komplett aus, bis an den unteren Bildschirmrand
-     (kein Abzug von safe-area-inset-bottom mehr - die Buttons haben ihren eigenen
-     Sicherheitsabstand schon über --safe-bottom, die Karte selbst darf bis ganz unten laufen) */
+  /* Karte füllt den vom Flex-Container (#app) verbleibenden Platz exakt aus.
+     flex:1 statt fester 100dvh/100vh vermeidet die Höhen-Diskrepanz, die sonst
+     rechts/unten Scroll-Leisten erzeugt hat; overflow:hidden fängt Rest-Überlauf ab.
+     (Der AppHeader ist position:fixed und belegt daher keinen Flex-Platz.) */
   #map {
-    height: 100dvh;
+    flex: 1;
+    min-height: 0;
     width: 100%;
+    overflow: hidden;
   }
   
 

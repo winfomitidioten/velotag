@@ -90,17 +90,6 @@ onMounted(() => {
         flex-direction: column;
     }
 
-    header h3 {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin: 0;
-        padding-left: 130px; /* Synchroner Abstand für die mobile Sidebar */
-        color: var(--color-text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
     .page-content {
         flex: 1;
         width: 100%;
@@ -251,13 +240,6 @@ onMounted(() => {
 
     /* --- TABLET / DESKTOP OPTIMIERUNGEN --- */
     @media (min-width: 580px) {
-        header {
-            padding: 1.2rem 2rem;
-        }
-        header h3 {
-            font-size: 1.25rem;
-            padding-left: 95px; /* Synchroner Desktop-Abstand */
-        }
         .page-content {
             padding: 2rem 0rem; /* Mehr Luft nach oben/unten im Desktop-Grid */
         }

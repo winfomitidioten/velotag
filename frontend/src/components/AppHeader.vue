@@ -3,9 +3,12 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
 import api from '@/api/api';
+import CreateGroupModal from '@/components/CreateGroupModal.vue';
 
 const userStore = useUserStore();
 const router = useRouter();
+
+const showCreateGroup = ref(false);
 
 const userInitials = computed(() => userStore.initials || '?');
 const userProfileImage = computed(() => userStore.profileImage || '');
@@ -32,6 +35,16 @@ const fetchGroups = async () => {
 const closeMenus = () => {
   showGroupsMenu.value = false;
   showProfileMenu.value = false;
+};
+
+const openCreateGroup = () => {
+  closeMenus();
+  showCreateGroup.value = true;
+};
+
+const handleGroupCreated = (newGroup) => {
+  groups.value.push(newGroup);
+  showCreateGroup.value = false;
 };
 
 // Berechnet die Bildschirmposition des Dropdowns aus der tatsächlichen Position
@@ -183,9 +196,9 @@ onUnmounted(() => {
               <RouterLink to="/group" class="nav-dropdown-item" @click="closeMenus">Zu den Gruppen</RouterLink>
             </li>
             <li>
-              <RouterLink to="/group" class="nav-dropdown-item nav-dropdown-item--create" @click="closeMenus">
+              <button type="button" class="nav-dropdown-item nav-dropdown-item--create" @click="openCreateGroup">
                 + Neue Gruppe erstellen
-              </RouterLink>
+              </button>
             </li>
           </ul>
         </Teleport>
@@ -226,6 +239,12 @@ onUnmounted(() => {
         </ul>
       </div>
     </div>
+
+    <CreateGroupModal
+      v-if="showCreateGroup"
+      @close="showCreateGroup = false"
+      @created="handleGroupCreated"
+    />
   </header>
 </template>
 
