@@ -1,7 +1,7 @@
 <script setup>
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
-import MenuBar from '@/components/MenuBar.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
 import { useUserStore } from '@/store/userStore'
 import { useStravaImport } from '@/composables/useStravaImport'
@@ -61,7 +61,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <MenuBar v-if="!route.meta.hideMenu && !showStravaImport" />
+  <AppHeader v-if="!route.meta.hideMenu && !showStravaImport" />
   <RouterView v-slot="{ Component }">
     <keep-alive include="Karte">
       <component :is="Component" />
@@ -94,9 +94,11 @@ html, body, #app {
 }
 .back-button {
   position: fixed;
-  top: calc(var(--safe-top) + 0.5rem);
-  left: calc(1rem + 44px + 0.75rem);
-  z-index: 1010;
+  /* Sitzt unter dem fixierten AppHeader statt daneben, seit der Hamburger-Button
+     weggefallen ist */
+  top: calc(var(--safe-top) + var(--app-header-height) + 0.5rem);
+  left: 1rem;
+  z-index: 1005;
   width: 44px;
   height: 44px;
   padding: 0;

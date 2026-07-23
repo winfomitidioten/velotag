@@ -2,6 +2,7 @@
     import { ref, onMounted } from 'vue';
     import { useUserStore } from '@/store/userStore';
     import api from '@/api/api';
+    import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 
     const userStore = useUserStore();
 
@@ -20,11 +21,11 @@
     const selectedFile = ref(null)
     const previewImage = ref(null)
 
-    const onFileChange = (event) => {
-        const file = event.target.files[0]
-        if(!file) return
-        selectedFile.value = file
-        previewImage.value = URL.createObjectURL(file)
+    const onProfilePhotoAdded = (photos) => {
+        const photo = photos[0];
+        if (!photo) return;
+        selectedFile.value = photo.file;
+        previewImage.value = photo.previewUrl;
     }
 
     const fetchProfile = async () => {
@@ -91,7 +92,7 @@
     }
 
     onMounted(() => {
-        fetchProfile()
+        fetchProfile();
     })
 </script>
 
@@ -99,22 +100,21 @@
     <div id="outer-box">
         <form id="formular" @submit.prevent="updateProfile">
             <div id="profile-selector" class="input-group">
-                <div id="profile-picture">
-                    <img :src="previewImage || profile.profilbild || '/profile_pic.jpg'" id="picture" alt="Profilbild">
-                    <input type="file" accept="image/*" id="img-upload" @change="onFileChange">
-                    <label for="img-upload" id="img-upload-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" 
-                            viewBox="0 -960 960 960" 
-                            fill="currentColor"
-                            id="camera-icon">
-                            <path d="M480-260q75 0 127.5-52.5T660-440q0-75-52.5-127.5T480-620q-75 0-127.5 52.5T300-440q0 75 52.5 127.5T480-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29ZM160-120q-33 0-56.5-23.5T80-200v-480q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5 23.5T880-680v480q0 33-23.5 56.5T800-120H160Zm0-80h640v-480H638l-73-80H395l-73 80H160v480Zm320-240Z"/>
-                        </svg>
-                    </label>
+                <div class="profile-row">
+                    <div id="profile-picture">
+                        <img :src="previewImage || profile.profilbild || '/profile_pic.jpg'" id="picture" alt="Profilbild">
+                    </div>
+                    <div id="profile-text">
+                        <h3>Profilbild</h3>
+                        <p>Wähle ein neues Profilbild aus</p>
+                    </div>
                 </div>
-                <div id="profile-text">
-                    <h3>Profilbild</h3>
-                    <p>Klicken Sie auf das Kamera-Symbol, um ein neues Bild hochzuladen</p>
-                </div>
+
+                <CameraGalleryPicker
+                    :multiple="false"
+                    :has-photos="!!previewImage"
+                    @photos-added="onProfilePhotoAdded"
+                />
             </div>
             
             <div id="personal-info" class="input-group">
@@ -201,9 +201,10 @@
 
 <style scoped>
     #outer-box {
-        /* Genug Platz nach oben, damit Zurück-Pfeil und Menü-Button (beide bei
-           calc(var(--safe-top) + 0.5rem), Höhe 44px) nicht über dem Profilbild liegen */
-        padding: calc(var(--safe-top) + 5rem) 1rem 1rem 1rem;
+        /* Genug Platz nach oben, damit der fixierte AppHeader und der darunter
+           liegende Zurück-Pfeil (bei calc(var(--safe-top) + var(--app-header-height) + 0.5rem),
+           Höhe 44px) nicht über dem Profilbild liegen */
+        padding: calc(var(--safe-top) + var(--app-header-height) + 5rem) 1rem 1rem 1rem;
         min-height: 100vh;
         width: 100%;
         background-color: var(--color-bg-page);
@@ -229,31 +230,6 @@
         object-fit: cover;
     }
 
-    #img-upload {
-        display: none;
-    }
-
-    #img-upload-button {
-        position: absolute;
-        border-radius: 50%;
-        background-color: var(--color-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        cursor: pointer;    
-        color: #ffffff;
-        bottom: 0;
-        right: 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-
-    #camera-icon {
-        width: 1rem;
-        height: 1rem;
-    }
-
     .input-group {
         background-color: var(--color-bg-card);
         padding: 1.25rem;
@@ -261,10 +237,16 @@
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
 
-    /* JETZT NEBENEEINANDER AUF DEM HANDY */
     #profile-selector {
         display: flex;
-        flex-direction: row; 
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* JETZT NEBENEEINANDER AUF DEM HANDY */
+    .profile-row {
+        display: flex;
+        flex-direction: row;
         align-items: center;
         text-align: left;
         gap: 1.2rem;
@@ -386,7 +368,7 @@
     @media (min-width: 480px) {
         #outer-box {
             /* Desktop braucht meist weniger Abstand nach oben, außer der Header zieht mit um */
-            padding: calc(var(--safe-top) + 3rem) 1.5rem;
+            padding: calc(var(--safe-top) + var(--app-header-height) + 3rem) 1.5rem;
         }
 
         .input-group {
@@ -397,16 +379,6 @@
             /* Auf dem Desktop darf das Bild wieder etwas größer sein */
             width: 7rem;
             height: 7rem;
-        }
-        
-        #img-upload-button {
-            width: 2.5rem;
-            height: 2.5rem;
-        }
-        
-        #camera-icon {
-            width: 1.3rem;
-            height: 1.3rem;
         }
 
         #names, #password-change {

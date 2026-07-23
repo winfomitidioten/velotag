@@ -2,6 +2,7 @@
 import { useMap } from '@/composables/useMap'
 import { usePerformanceView } from '@/composables/usePerformanceView'
 import { intensityGradientCss, METRIC_UNITS } from '@/utils/intensityColor'
+import BaseModal from '@/components/BaseModal.vue'
 
 defineEmits(['close'])
 
@@ -33,7 +34,7 @@ const selectPerformanceMode = (metric) => {
 </script>
 
 <template>
-  <div class="popup" @click.self="$emit('close')">
+  <div class="popup">
     <div class="popup-content">
       <div class="header">
         <h2>Ebenen auswählen</h2>
@@ -89,70 +90,9 @@ const selectPerformanceMode = (metric) => {
 </template>
 
 <style scoped>
-.popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: flex-end; /* Element ganz nach unten setzen */
-  z-index: 1001;
-  animation: fadeIn 0.2s ease-out; /* Weiches Einblenden des Hintergrunds */
-}
-
-.popup-content {
-  background: white;
-  padding: 24px 24px 40px 24px; /* Mehr Platz unten, z.B. für Wischgesten auf dem Smartphone */
-  border-radius: 24px 24px 0 0; /* Nur die oberen Ecken abrunden */
-  text-align: center;
-  width: 100%;
-  max-width: 600px; /* Begrenzt die Breite auf großen Bildschirmen */
-  box-sizing: border-box;
-  box-shadow: 0 -5px 15px rgba(0,0,0,0.2); /* Schattenverlauf nach oben gerichtet */
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; /* Fährt von unten hoch */
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Overlay, Box, Radius/Schatten und Schließen-Button kommen aus BaseModal */
+.layers-modal-title {
   margin-bottom: 20px;
-  position: relative;
-}
-
-.header h2 {
-  margin: 0;
-  text-align: center;
-  flex-grow: 1;
-}
-
-.popup-close-button {
-  position: absolute;
-  top: -5px;
-  right: -5px; /* Etwas eingerückt, damit es bei 100% Breite nicht übersteht */
-  background-color: var(--color-primary, #3db897);
-  border: none;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  border-radius: 50%;
-  transition: background-color 0.15s;
-}
-
-.popup-close-button:hover {
-  background-color: var(--color-primary-dark, #35a684);
-}
-
-.popup-close-button svg {
-  width: 24px;
-  height: 24px;
 }
 
 .layers-container {

@@ -37,6 +37,7 @@ const decodePolyline = (encoded) => {
 };
 
 let currentFeatureGroup = null;
+let unwatchColor = null;
 let colorWatchStarted = false;
 
 export function clearUserMap(map) {
