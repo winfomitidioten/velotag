@@ -223,11 +223,11 @@ const autoGrow = (event) => {
     background: transparent;
 }
 .gallery-grid::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
+    background-color: var(--color-border);
     border-radius: 8px;
 }
 .gallery-grid::-webkit-scrollbar-thumb:hover {
-    background-color: #94a3b8;
+    background-color: var(--color-text-muted);
 }
 
 .gallery-grid-item {
@@ -396,8 +396,8 @@ const autoGrow = (event) => {
 
 .gallery-error {
     margin: 12px 0 0;
-    background-color: #fee2e2;
-    color: #e53e3e;
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
     padding: 8px;
     border-radius: 8px;
     font-size: 13px;
@@ -426,10 +426,10 @@ const autoGrow = (event) => {
 
 .gallery-action {
     padding: 8px 14px;
-    border: 1px solid var(--color-border, #e5e7eb);
+    border: 1px solid var(--color-border);
     border-radius: 20px;
-    background-color: white;
-    color: var(--color-text, #1a1a1a);
+    background-color: var(--color-bg-card);
+    color: var(--color-text);
     font-size: 13px;
     cursor: pointer;
 }
@@ -440,9 +440,9 @@ const autoGrow = (event) => {
 }
 
 .gallery-action-save {
-    background-color: var(--color-primary, #3db897);
-    border-color: var(--color-primary, #3db897);
-    color: white;
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
 }
 
 .gallery-action-update {
@@ -451,8 +451,8 @@ const autoGrow = (event) => {
 }
 
 .gallery-action-delete {
-    border-color: #e53e3e;
-    color: #e53e3e;
+    border-color: var(--color-danger);
+    color: var(--color-danger);
 }
 
 </style>

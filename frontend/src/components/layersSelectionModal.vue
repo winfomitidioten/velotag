@@ -57,7 +57,7 @@ const selectLayer = (layerId) => {
 
 .layer-option.active {
   border-color: var(--color-primary);
-  box-shadow: 0 0 10px rgba(61, 184, 151, 0.5);
+  box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.5);
 }
 
 .layer-preview {

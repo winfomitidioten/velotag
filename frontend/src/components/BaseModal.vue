@@ -72,8 +72,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
     align-items: flex-end; /* Box klebt am unteren Bildschirmrand */
 }
 
+/* definiert das Aussehen des modalen Fensters */
 .popup-content {
-    background-color: white;
+    background-color: var(--color-bg-card);
     padding: 40px 32px;
     border-radius: 20px; /* Schön abgerundet, einheitlich mit dem GPX-Upload-Modal */
     text-align: center;
@@ -93,17 +94,17 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
     margin: 20px 0; /* damit der Track nicht in die runden Ecken läuft */
 }
 .popup-content::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
+    background-color: var(--color-border);
     border-radius: 8px;
 }
 .popup-content::-webkit-scrollbar-thumb:hover {
-    background-color: #94a3b8;
+    background-color: var(--color-text-muted);
 }
 
 /* Slot-Inhalt: Überschrift einheitlich stylen, ohne dass jedes Modal sie selbst definieren muss */
 :slotted(h2) {
     margin: 0;
-    color: #1e293b;
+    color: var(--color-text);
     font-size: 1.5rem;
     font-weight: 700;
     text-align: center;
@@ -121,8 +122,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
     position: absolute;
     top: 20px;
     right: 20px;
-    background-color: #f1f5f9; /* Dezentes Grau statt auffälligem Grün */
-    color: #64748b;
+    background-color: var(--color-bg-close-btn);
+    color: var(--color-text-muted);
     border: none;
     width: 36px;
     height: 36px;
@@ -136,15 +137,15 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 }
 
 .popup-close-button:hover {
-    background-color: #e2e8f0;
-    color: #0f172a;
+    background-color: var(--color-bg-close-btn);
+    color: var(--color-text);
     transform: rotate(90deg); /* Kleine, spielerische Animation beim Hover */
 }
 
 .popup-close-button svg {
     width: 20px;
     height: 20px;
-    color: #3db897;
+    color: var(--color-primary);
 }
 
 @keyframes slideUp {

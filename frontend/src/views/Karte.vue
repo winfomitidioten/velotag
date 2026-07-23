@@ -331,11 +331,11 @@ watch(selectedGroupId, (newGroupId) => {
     width: auto !important; /* ignoriert Leaflets dynamische Breite, die den "Lineal"-Effekt erzeugt */
     border: none;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(var(--color-bg-card-rgb), 0.92) !important; /* !important gegen Leaflets eigene .leaflet-control-attribution-Regel (gleiche Spezifität) */
     padding: 4px 10px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text, #1a1a1a);
+    color: var(--color-text) !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   }
 
@@ -355,8 +355,8 @@ watch(selectedGroupId, (newGroupId) => {
     max-width: calc(100vw - 20px); /* nie über den Bildschirmrand hinaus, aber sonst textbreit */
     display: flex;
     align-items: center;
-    background: var(--color-bg-card, #ffffff);
-    color: var(--color-text-muted, #666);
+    background: var(--color-bg-card) !important; /* !important gegen Leaflets eigene .leaflet-control-attribution-Regel (gleiche Spezifität) */
+    color: var(--color-text-muted) !important;
     font-size: 12px;
     padding: 0 16px 0 42px; /* links Platz für den Button (34px + 8px Abstand), vertikal zentriert per flex */
     border-radius: 17px; /* halbe Höhe = Pillenform, passend zur 34px-Höhe */
@@ -395,13 +395,13 @@ watch(selectedGroupId, (newGroupId) => {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background-color: var(--color-primary, #3db897);
-    color: white;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-    border: 2px solid white;
+    border: 2px solid var(--color-bg-card);
     cursor: pointer;
   }
 
@@ -413,8 +413,8 @@ watch(selectedGroupId, (newGroupId) => {
     height: 16px;
     padding: 0 3px;
     border-radius: 8px;
-    background-color: #e53e3e;
-    color: white;
+    background-color: var(--color-danger);
+    color: var(--color-on-primary);
     font-size: 10px;
     font-weight: 700;
     display: flex;
@@ -472,8 +472,8 @@ watch(selectedGroupId, (newGroupId) => {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: var(--color-primary, #3db897);
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
   padding: 10px 14px;
   border-radius: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -487,7 +487,7 @@ watch(selectedGroupId, (newGroupId) => {
     border: none;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.25);
-    color: white;
+    color: var(--color-on-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -512,7 +512,7 @@ watch(selectedGroupId, (newGroupId) => {
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    background-color: white;
+    background-color: var(--color-bg-card);
   }
 
   .btn_ebenen_preview,
@@ -530,7 +530,7 @@ watch(selectedGroupId, (newGroupId) => {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background-color: white;
+    background-color: var(--color-bg-card);
     color: var(--color-primary);
     transition: color 0.2s ease;
   }
@@ -563,8 +563,8 @@ watch(selectedGroupId, (newGroupId) => {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background-color: rgba(255, 255, 255, 0.92);
-    color: var(--color-text-muted, #888888);
+    background-color: rgba(var(--color-bg-card-rgb), 0.92);
+    color: var(--color-text-muted);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
   }
@@ -575,18 +575,18 @@ watch(selectedGroupId, (newGroupId) => {
 
   .btn_map_info.active {
     background-color: var(--color-primary);
-    color: white;
-    box-shadow: 0 2px 10px rgba(61, 184, 151, 0.5);
+    color: var(--color-on-primary);
+    box-shadow: 0 2px 10px rgba(var(--color-primary-rgb), 0.5);
   }
 
   .pill-divider {
     width: 24px;
     height: 1px;
-    background: rgba(0,0,0,0.12);
+    background: var(--color-border);
   }
 
   .btn_pin_mode.active {
-    color: #9a9a9a;
+    color: var(--color-text-muted);
   }
 
   /* --- NEUES STYLING FÜR DEN TOGGLE SWITCH --- */
@@ -595,7 +595,7 @@ watch(selectedGroupId, (newGroupId) => {
     top: calc(var(--safe-top) + var(--app-header-height) + 12px); /* unter dem fixierten AppHeader */
     right: 10px; /* Ganz am rechten Bildschirmrand, wie die übrigen Karten-Buttons */
     z-index: 9999;
-    background-color: white;
+    background-color: var(--color-bg-card);
     border-radius: 30px;
     display: flex;
     align-items: center;
@@ -612,13 +612,13 @@ watch(selectedGroupId, (newGroupId) => {
     text-align: center;
     font-size: 14px;
     font-weight: 600;
-    color: #555;
+    color: var(--color-text-muted);
     z-index: 2; /* Hält den Text über dem grünen Slider */
     transition: color 0.3s ease;
   }
 
   .toggle-option.active {
-    color: white; /* Schrift wird weiß, wenn der farbige Slider darunter liegt */
+    color: var(--color-on-primary); /* Schrift wird weiß, wenn der farbige Slider darunter liegt */
   }
 
   .toggle-slider {
@@ -654,13 +654,13 @@ watch(selectedGroupId, (newGroupId) => {
     height: 40px;
     padding: 0 10px;
     gap: 6px;
-    background-color: white;
+    background-color: var(--color-bg-card);
     border: none;
     border-radius: 20px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text, #2c3e50);
+    color: var(--color-text);
     cursor: pointer;
     transition: border-radius 0.15s ease;
   }
@@ -681,7 +681,7 @@ watch(selectedGroupId, (newGroupId) => {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
-    fill: #94a3b8;
+    fill: var(--color-text-muted);
     transition: transform 0.2s ease;
   }
 
@@ -693,7 +693,7 @@ watch(selectedGroupId, (newGroupId) => {
     width: 15px;
     height: 15px;
     flex-shrink: 0;
-    fill: #f59e0b;
+    fill: var(--color-warning);
   }
 
   .group-dropdown-list {
@@ -706,7 +706,7 @@ watch(selectedGroupId, (newGroupId) => {
     margin: 0;
     padding: 4px 0;
     list-style: none;
-    background-color: white;
+    background-color: var(--color-bg-card);
     border-radius: 0 0 16px 16px;
     box-shadow: 0 6px 14px rgba(0,0,0,0.25);
   }
@@ -718,17 +718,17 @@ watch(selectedGroupId, (newGroupId) => {
     padding: 8px 10px;
     font-size: 13px;
     font-weight: 500;
-    color: var(--color-text, #2c3e50);
+    color: var(--color-text);
     cursor: pointer;
     transition: background-color 0.15s ease;
   }
 
   .group-dropdown-item:hover {
-    background-color: #f1f5f9;
+    background-color: var(--color-bg-hover);
   }
 
   .group-dropdown-item.selected {
-    background-color: #e8f7f3;
+    background-color: var(--color-primary-soft);
     color: var(--color-primary);
     font-weight: 600;
   }

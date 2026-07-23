@@ -161,7 +161,7 @@ const activeIndex = computed(() =>
 }
 
 .theme-option.active {
-    color: #ffffff;
+    color: var(--color-on-primary);
 }
 
 .theme-slider {
@@ -223,10 +223,10 @@ const activeIndex = computed(() =>
 
 /* optional, falls du später eine rote Aktion (z. B. Konto löschen) einbaust */
 .row-link--danger {
-    color: #ef4444;
+    color: var(--color-danger);
 }
 .row-link--danger:hover {
-    color: #dc2626;
+    color: var(--color-danger-dark);
 }
 
 /* Chevron bei navigierenden Zeilen – rechtsbündig durch space-between der .row-link */
@@ -304,7 +304,7 @@ const activeIndex = computed(() =>
     left: 3px;
     width: 20px;
     height: 20px;
-    background-color: #ffffff;
+    background-color: var(--color-bg-card);
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     transition: transform 0.25s ease;

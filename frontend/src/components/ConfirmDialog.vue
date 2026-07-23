@@ -46,7 +46,7 @@ defineEmits(['confirm', 'cancel']);
 }
 
 .confirm-box {
-    background-color: white;
+    background-color: var(--color-bg-card);
     border-radius: 12px;
     padding: 24px 20px 20px;
     width: min(340px, 88vw);
@@ -57,14 +57,14 @@ defineEmits(['confirm', 'cancel']);
 .confirm-title {
     margin: 0;
     font-size: 17px;
-    color: var(--color-text, #1a1a1a);
+    color: var(--color-text);
 }
 
 .confirm-message {
     margin: 8px 0 0;
     font-size: 14px;
     line-height: 1.4;
-    color: var(--color-text-muted, #888888);
+    color: var(--color-text-muted);
 }
 
 .confirm-actions {
@@ -90,26 +90,26 @@ defineEmits(['confirm', 'cancel']);
 }
 
 .confirm-cancel {
-    background-color: white;
-    border-color: var(--color-border, #e5e7eb);
-    color: var(--color-text, #1a1a1a);
+    background-color: var(--color-bg-card);
+    border-color: var(--color-border);
+    color: var(--color-text);
 }
 
 .confirm-primary {
-    background-color: var(--color-primary, #3db897);
-    color: white;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
 }
 
 .confirm-primary:hover:not(:disabled) {
-    background-color: var(--color-primary-dark, #35a684);
+    background-color: var(--color-primary-dark);
 }
 
 .confirm-danger {
-    background-color: #e53e3e;
-    color: white;
+    background-color: var(--color-danger);
+    color: var(--color-on-primary);
 }
 
 .confirm-danger:hover:not(:disabled) {
-    background-color: #c53030;
+    background-color: var(--color-danger-dark);
 }
 </style>

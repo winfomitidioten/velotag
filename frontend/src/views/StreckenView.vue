@@ -98,7 +98,7 @@
 }
 
 .count-badge {
-  background-color: color-mix(in srgb, var(--color-primary) 15%, white);
+  background-color: var(--color-primary-soft);
   color: var(--color-primary);
   font-size: 0.85rem;
   font-weight: 600;
@@ -176,7 +176,7 @@
 .row-icon {
   width: 2.2rem;
   height: 2.2rem;
-  background-color: color-mix(in srgb, var(--color-primary) 15%, white);
+  background-color: var(--color-primary-soft);
   border-radius: 0.5rem;
   display: flex;
   align-items: center;

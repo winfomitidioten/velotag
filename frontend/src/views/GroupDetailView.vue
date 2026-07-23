@@ -281,8 +281,8 @@ onMounted(() => {
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        background-color: #ef4444;
-        color: white;
+        background-color: var(--color-danger);
+        color: var(--color-on-primary);
         border: none;
         padding: 0.5rem 1rem;
         border-radius: var(--radius-md);
@@ -296,7 +296,7 @@ onMounted(() => {
         right: 1.5rem;
         z-index: 90;
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-on-primary);
         border: none;
         cursor: pointer;
         width: 3.5rem;
@@ -306,7 +306,7 @@ onMounted(() => {
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
+        box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.4);
         transition: all 0.2s ease;
     }
     .mobile-fab-btn:active {
@@ -328,8 +328,8 @@ onMounted(() => {
         align-items: center;
         gap: 0.5rem;
         background-color: transparent;
-        border: 1px solid #ef4444;
-        color: #ef4444;
+        border: 1px solid var(--color-danger);
+        color: var(--color-danger);
         cursor: pointer;
         border-radius: var(--radius-md);
         padding: 0.6em 1.2em;
@@ -339,7 +339,7 @@ onMounted(() => {
         white-space: nowrap;
     }
     .leave-btn:hover {
-        background-color: #fee2e2;
+        background-color: var(--color-danger-bg);
     }
 
     .page-content {
@@ -379,7 +379,7 @@ onMounted(() => {
         align-items: center;
         width: 3rem;          
         height: 3rem;
-        background-color: #e8f7f3; 
+        background-color: var(--color-primary-soft);
         border-radius: var(--radius-md);     
         flex-shrink: 0;            
     }
@@ -457,7 +457,7 @@ onMounted(() => {
         align-items: center;
         width: 2.2rem;
         height: 2.2rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         color: var(--color-primary);
         font-weight: 600;
         font-size: 0.95rem;
@@ -491,7 +491,7 @@ onMounted(() => {
 
     .admin-badge {
         font-size: 0.7rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         color: var(--color-primary);
         padding: 0.1rem 0.4rem;
         border-radius: var(--radius-sm);
@@ -511,13 +511,13 @@ onMounted(() => {
         flex-shrink: 0;
     }
     .delete-member svg {
-        fill: #94a3b8; 
+        fill: var(--color-text-muted);
     }
     .delete-member:hover {
-        background-color: #fee2e2; 
+        background-color: var(--color-danger-bg);
     }
     .delete-member:hover svg {
-        fill: #ef4444; 
+        fill: var(--color-danger);
     }
 
     #popup-overlay {
@@ -583,12 +583,12 @@ onMounted(() => {
         flex: 1;
     }
     #cancel-btn {
-        background-color: #f1f5f9;
-        color: #64748b;
+        background-color: var(--color-bg-hover);
+        color: var(--color-text-muted);
     }
     #create-btn {
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-on-primary);
     }
 
     .loading-state {
@@ -617,7 +617,7 @@ onMounted(() => {
             align-items: center;
             gap: 0.5rem;
             background-color: var(--color-primary);
-            color: white;
+            color: var(--color-on-primary);
             border: none;
             cursor: pointer;
             border-radius: var(--radius-md);

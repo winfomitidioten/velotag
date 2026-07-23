@@ -133,7 +133,8 @@ onUnmounted(() => {
   <header class="app-header">
     <div class="app-header-inner">
       <RouterLink to="/map" class="app-logo" @click="closeMenus">
-        <img src="@/assets/logo.png" alt="velotag logo" />
+        <img src="@/assets/logo-light.png" alt="velotag logo" class="logo-img logo-img--light" />
+        <img src="@/assets/logo-dark.png" alt="velotag logo" class="logo-img logo-img--dark" />
       </RouterLink>
 
       <nav class="app-nav">
@@ -282,6 +283,26 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
+/* Wortmarke ist dunkel eingefärbt -> im Dunkel-Modus die helle Variante zeigen,
+   sonst wäre der Schriftzug auf dunklem Hintergrund unlesbar */
+.logo-img--dark {
+  display: none;
+}
+:root[data-theme='dark'] .logo-img--light {
+  display: none;
+}
+:root[data-theme='dark'] .logo-img--dark {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .logo-img--light {
+    display: none;
+  }
+  :root:not([data-theme]) .logo-img--dark {
+    display: block;
+  }
+}
+
 /* Mittlerer Navigationsbereich: scrollt horizontal, statt umzubrechen,
    damit er auf schmalen Handy-Bildschirmen nicht überläuft */
 .app-nav {
@@ -325,7 +346,7 @@ onUnmounted(() => {
 .nav-link.router-link-active,
 .nav-link.open {
   color: var(--color-primary);
-  background-color: rgba(61, 184, 151, 0.1);
+  background-color: rgba(var(--color-primary-rgb), 0.1);
 }
 
 .chevron {
@@ -390,7 +411,7 @@ onUnmounted(() => {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 .nav-dropdown-empty {
@@ -422,7 +443,7 @@ onUnmounted(() => {
   height: 42px;
   border-radius: 50%;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   font-weight: 600;
   font-size: 0.95rem;
   display: flex;
@@ -469,7 +490,7 @@ onUnmounted(() => {
   background-color: var(--color-bg-page, #f0f2f5);
 }
 .profile-dropdown-item--danger {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .profile-dropdown-divider {

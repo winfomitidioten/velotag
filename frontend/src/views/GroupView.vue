@@ -159,20 +159,20 @@
         right: 1.5rem;
         z-index: 90;
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-on-primary);
         border: none;
         cursor: pointer;
-        
+
         /* Macht den Button mobil kreisrund */
         width: 3.5rem;
         height: 3.5rem;
         border-radius: 50%;
         padding: 0;
-        
+
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
+        box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.4);
         transition: all 0.2s ease;
     }
 
@@ -222,7 +222,7 @@
     
     .group-card:hover {
         border-color: var(--color-primary);              
-        box-shadow: 0 0.6rem 1.8rem rgba(61, 184, 151, 0.08); 
+        box-shadow: 0 0.6rem 1.8rem rgba(var(--color-primary-rgb), 0.08);
     }
     
     .group-card:hover .forward-icon svg {
@@ -242,9 +242,9 @@
         align-items: center;
         width: 3rem;          
         height: 3rem;
-        background-color: #e8f7f3; 
-        border-radius: var(--radius-md);     
-        flex-shrink: 0;            
+        background-color: var(--color-primary-soft);
+        border-radius: var(--radius-md);
+        flex-shrink: 0;
     }
     .group-icon-box svg {
         width: 1.5rem;
@@ -282,7 +282,7 @@
     }
     
     .forward-icon svg {
-        fill: #94a3b8;
+        fill: var(--color-text-muted);
         transition: fill 0.2s ease;
     }
 
@@ -321,17 +321,17 @@
 
 .selector-label {
     font-size: 0.9rem;
-    color: #64748b;
+    color: var(--color-text-muted);
     font-weight: 500;
 }
 .clean-select {
     appearance: none;
-    background-color: #f8f9fa;
-    border: 1px solid #e2e8f0;
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border);
     border-radius: 0.4rem;
     padding: 0.5rem 2rem 0.5rem 0.8rem;
     font-size: 0.9rem;
-    color: #2c3e50;
+    color: var(--color-text);
     font-weight: 500;
     cursor: pointer;
     outline: none;
@@ -343,7 +343,7 @@
 }
 .clean-select:focus,
 .clean-select:hover {
-    border-color: #3db897;
+    border-color: var(--color-primary);
 }
 .group-card {
     /* ... deine bisherigen Styles ... */
@@ -366,16 +366,16 @@
 }
 
 .star-btn:hover {
-    background-color: #f1f5f9;
+    background-color: var(--color-bg-hover);
 }
 
 .star-btn svg {
-    fill: #cbd5e1; 
+    fill: var(--color-border);
     transition: fill 0.2s ease, transform 0.2s ease;
 }
 
 .star-btn.is-favorite svg {
-    fill: #f59e0b;
-    transform: scale(1.15); 
+    fill: var(--color-warning);
+    transform: scale(1.15);
 }
 </style>

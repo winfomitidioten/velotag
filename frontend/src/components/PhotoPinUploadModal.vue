@@ -105,8 +105,8 @@ const autoGrow = (event) => {
 }
 
 .error-message {
-    background-color: #fee2e2;
-    color: #e53e3e;
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
     padding: 10px;
     border-radius: 8px;
     margin-bottom: 15px;
@@ -140,8 +140,8 @@ const autoGrow = (event) => {
     height: 22px;
     border-radius: 50%;
     border: none;
-    background-color: #e53e3e;
-    color: white;
+    background-color: var(--color-danger);
+    color: var(--color-on-primary);
     line-height: 1;
     cursor: pointer;
     display: flex;
@@ -175,7 +175,7 @@ const autoGrow = (event) => {
     border: none;
     border-radius: 8px;
     background-color: var(--color-primary, #3db897);
-    color: white;
+    color: var(--color-on-primary);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;

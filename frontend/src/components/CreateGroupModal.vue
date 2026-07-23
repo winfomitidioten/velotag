@@ -70,13 +70,13 @@ const createNewGroup = async () => {
 
 .group-name-input:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(61, 184, 151, 0.15);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.15);
 }
 
 .group-error {
     margin: 0.75rem 0 0;
-    background-color: #fee2e2;
-    color: #e53e3e;
+    background-color: var(--color-bg-card);
+    color: var(--color-danger);
     padding: 0.5rem;
     border-radius: var(--radius-md);
     font-size: 0.85rem;
@@ -97,13 +97,13 @@ const createNewGroup = async () => {
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    background-color: #f1f5f9;
-    color: #64748b;
+    background-color: var(--color-bg-page);
+    color: var(--color-text-muted);
     transition: all 0.2s ease;
 }
 
 .group-action:hover:not(:disabled) {
-    background-color: #e2e8f0;
+    background-color: var(--color-bg-hover);
 }
 
 .group-action:disabled {
@@ -113,7 +113,7 @@ const createNewGroup = async () => {
 
 .group-action-create {
     background-color: var(--color-primary);
-    color: white;
+    color: var(--color-on-primary);
 }
 
 .group-action-create:hover:not(:disabled) {

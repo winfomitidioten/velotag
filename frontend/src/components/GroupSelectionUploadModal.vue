@@ -160,8 +160,8 @@ hr {
   align-items: center;
   min-height: 32px;
   padding: 4px 10px;
-  background-color: var(--color-background-soft, #f9f9f9);
-  border: 1px solid var(--color-border, #ccc);
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   transition: border-color 0.2s;
@@ -169,7 +169,7 @@ hr {
 }
 
 .dropdown-header:hover {
-  border-color: var(--color-border-hover, #888);
+  border-color: var(--color-text-muted);
 }
 
 .placeholder {
@@ -187,8 +187,8 @@ hr {
 .badge {
   display: flex;
   align-items: center;
-  background-color: var(--color-primary, #3db897); /* Velotag Grün als Akzentfarbe */
-  color: white;
+  background-color: var(--color-primary); /* Velotag Grün als Akzentfarbe */
+  color: var(--color-on-primary);
   padding: 3px 8px;
   border-radius: 35px;
   font-size: 0.8rem;
@@ -197,7 +197,7 @@ hr {
 .remove-btn {
   background: none;
   border: none;
-  color: white;
+  color: var(--color-on-primary);
   margin-left: 6px;
   cursor: pointer;
   font-size: 1.1rem;
@@ -233,8 +233,8 @@ hr {
   margin: 4px 0 0 0;
   padding: 0;
   list-style: none;
-  background-color: var(--color-background, #fff);
-  border: 1px solid var(--color-border, #ccc);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   max-height: 200px;
   overflow-y: auto;
@@ -267,11 +267,11 @@ hr {
 }
 
 .dropdown-list li:hover {
-  background-color: var(--color-background-mute, #f1f1f1);
+  background-color: var(--color-bg-hover);
 }
 
 .dropdown-list li.selected {
-  background-color: rgba(61, 184, 151, 0.15); /* Helles Velotag-Grün als Hintergrund */
+  background-color: rgba(var(--color-primary-rgb), 0.15); /* Helles Velotag-Grün als Hintergrund */
 }
 
 .dropdown-list input[type="checkbox"] {
@@ -279,6 +279,6 @@ hr {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: var(--color-primary, #3db897); /* Velotag Grün */
+  accent-color: var(--color-primary); /* Velotag Grün */
 }
 </style>

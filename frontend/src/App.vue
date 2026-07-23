@@ -91,6 +91,9 @@ html, body, #app {
   width: 100%;
   height: 100%;
   background-color: var(--color-bg-page);
+  /* Basis-Textfarbe: greift für alle Texte ohne eigene color-Regel (sonst
+     bleiben sie beim UA-Standard schwarz und sind im Dunkel-Modus unlesbar) */
+  color: var(--color-text);
   transition: var(--theme-transition);
   font-family: sans-serif;
   box-sizing: border-box;
