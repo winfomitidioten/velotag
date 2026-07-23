@@ -23,6 +23,32 @@
   --app-header-height: 56px;
 }
 
+/* Darkmode: Theme greift, wenn der Store data-theme="dark" gesetzt hat */
+/* --color-primary bleibt gleich - das Grün funktioniert auf beiden Hintergründen */
+:root[data-theme='dark'] {
+  --color-bg-page:    #121417;
+  --color-bg-card:    #1e2126;
+  --color-text:       #e6e8eb;
+  --color-text-muted: #9aa0a6;
+  --color-border:     #333a42;
+}
+
+/* System: übernimmt die Systemeinstellungen des Endgeräts aus dem OS (kein data-theme gesetzt) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg-page:    #121417;
+    --color-bg-card:    #1e2126;
+    --color-text:       #e6e8eb;
+    --color-text-muted: #9aa0a6;
+    --color-border:     #333a42;
+  }
+}
+
+/* weicher Übergang beim Wechseln der Themes */
+:root {
+  --theme-transition: background-color 0.25s ease, color 0.25s ease;
+}
+
 /* --- Reset & Basis --- */
 #app {
   width: 100%;
