@@ -2,6 +2,8 @@ import { watch } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
+import { clearPerformanceMap } from '@/composables/drawPerformanceMap.js'
+import { startDraw, isStaleDraw } from '@/composables/mapDrawGeneration.js'
 
 // Dekodiert den komprimierten String zurück in ein [Lat, Lng] Array
 const decodePolyline = (encoded) => {
@@ -35,19 +37,22 @@ const decodePolyline = (encoded) => {
 };
 
 let currentFeatureGroup = null;
-let unwatchColor = null;
+let colorWatchStarted = false;
 
-export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
+export function clearUserMap(map) {
     if (currentFeatureGroup) {
-        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
+        map.removeLayer(currentFeatureGroup);
+        currentFeatureGroup = null;
     }
-    if (unwatchColor) {//Watcher für Layer-Farbänderungen 
-        unwatchColor();//sonst zu viele watcher => performanceprobleme
-    }
-    let routes = []; 
-    // ---> GEÄNDERTE ZUWEISUNG:
-    currentFeatureGroup = L.featureGroup().addTo(map);
+}
+
+export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async
+    const myGeneration = startDraw(); // Erkennt veraltete Aufrufe, falls währenddessen umgeschaltet wird
+    clearPerformanceMap(map); // Leistungs-Ansicht ausblenden, falls gerade aktiv
+
+    let routes = [];
     let numberOfRoutes = 0;
+    let geoJsonLayer = null;
 
     const colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
@@ -73,7 +78,7 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                 ? geojsonData.features.length 
                 : 1;
 
-            const geoJsonLayer = L.geoJSON(geojsonData, {
+            geoJsonLayer = L.geoJSON(geojsonData, {
                 style: {
                     color: colourLine,
                     weight: 4,          // Zeichnet genau EINE 4px dicke Linie in der Mitte!
@@ -87,17 +92,24 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                     }
                 }
             });
-
-            currentFeatureGroup.addLayer(geoJsonLayer);
-
-            
         } catch (err) {
             console.error("Fehler beim Laden der Gruppen-Schnittmengen:", err);
+            return;
         }
     }
 
+    // Veraltete Anfrage: Während des Fetches wurde bereits eine neuere Zeichenanfrage gestartet
+    // (z.B. schnelles Umschalten Solo/Group/Leistung) - nichts mehr an der Karte ändern.
+    if (isStaleDraw(myGeneration)) return;
 
+    if (currentFeatureGroup) {
+        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
+    }
+    currentFeatureGroup = L.featureGroup().addTo(map);
 
+    if (geoJsonLayer) {
+        currentFeatureGroup.addLayer(geoJsonLayer);
+    }
 
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
@@ -117,14 +129,6 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
         polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
     });
 
-    watch(activeLayerId, (newLayerId) => {
-        // Neue Farbe basierend auf der neuen ID ermitteln
-        const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
-        
-        // Durch alle gezeichneten Linien in der FeatureGroup iterieren 
-        // und die Leaflet-Methode setStyle() aufrufen
-        currentFeatureGroup.eachLayer((layer) => {
-            layer.setStyle({ color: newColor });
     // Nur einmal registrieren, sonst sammeln sich bei wiederholtem drawUserMap()-Aufruf
     // (z.B. nach einem Strava-Import) mehrere Watcher an
     if (!colorWatchStarted) {

@@ -1,12 +1,16 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api/api'
+import GroupSelectionUploadModal from '@/components/GroupSelectionUploadModal.vue'
 
 defineEmits(['close'])
 
 const activities = ref([])
 const importing = ref(null)
 const loading = ref(true)
+// Gilt für alle Aktivitäten, die in dieser Sitzung importiert werden (gleiches Prinzip wie
+// beim GPX-Upload in GpxUploadModal.vue)
+const selectedGroupIds = ref([])
 
 const loadActivities = async () => {
   loading.value = true
@@ -20,6 +24,7 @@ const importActivity = async (activity) => {
   try {
     await api.post(`strava/activities/${activity.id}/import/`, {
       strecken_name: activity.name,
+      group_id: selectedGroupIds.value,
     })
     activity.already_imported = true
   } finally {
@@ -45,6 +50,8 @@ onMounted(loadActivities)
     </div>
 
     <div class="picker-body">
+      <GroupSelectionUploadModal @update:selectedGroup="selectedGroupIds = $event" />
+
       <p v-if="loading">Aktivitäten werden geladen…</p>
       <p v-else-if="activities.length === 0">Keine Strava-Aktivitäten gefunden.</p>
 

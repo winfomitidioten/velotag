@@ -46,3 +46,29 @@ class GroupRideIntersection(models.Model):
 
     def __str__(self):
         return f"Schnittmenge {self.group.name} am {self.date}"
+
+
+class UserPerformanceBucket(models.Model):
+    """Eine Rasterzelle (siehe routes/performance.py, PERFORMANCE_GRID_SIZE_METERS) für die
+    Leistungs-Ansicht (Puls/Tempo/Watt) eines Users. Wird beim Hochladen einer Route inkrementell
+    aktualisiert (siehe routes/signals.py) - nur der Beitrag der neuen Route wird addiert, nicht
+    die komplette Historie neu berechnet. Dadurch bleibt das Kartenladen schnell, egal wie viele
+    Routen der User insgesamt hat."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='performance_buckets')
+    grid_x = models.IntegerField()
+    grid_y = models.IntegerField()
+
+    # Repräsentative Geometrie dieser Zelle (vom ersten Segment, das hier hineinfiel)
+    geom = gis_models.LineStringField(srid=4326)
+
+    puls_sum = models.FloatField(default=0.0)
+    puls_count = models.IntegerField(default=0)
+    tempo_sum = models.FloatField(default=0.0)
+    tempo_count = models.IntegerField(default=0)
+    watt_sum = models.FloatField(default=0.0)
+    watt_count = models.IntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'grid_x', 'grid_y'], name='unique_user_performance_bucket')
+        ]
