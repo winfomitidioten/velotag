@@ -462,7 +462,7 @@ onUnmounted(() => {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  width: 280px;
+  width: 150px;
   margin: 0;
   padding: 8px;
   list-style: none;
