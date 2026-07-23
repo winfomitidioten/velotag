@@ -166,6 +166,8 @@ const autoGrow = (event) => {
     overflow: hidden;
     max-height: 160px;
     margin: 15px 0 10px;
+    background-color: var(--color-bg-page);
+    color: var(--color-text);
 }
 
 .submit-button {
