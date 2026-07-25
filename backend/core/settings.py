@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import environ
 import os
+import platform
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -44,10 +45,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
 
     'users',
     'routes',
     'groups',
+    'photos',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -106,23 +109,23 @@ REST_FRAMEWORK = {
 if DEBUG:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': env('DEV_DB_NAME'),
-            'USER': env('DEV_DB_USER'),
-            'PASSWORD': env('DEV_DB_PASSW'),
-            'HOST': env('DEV_DB_HOST'),
-            'PORT': env('DEV_DB_PORT'),
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
             'NAME': env('DB_NAME'),
             'USER': env('DB_USER'),
             'PASSWORD': env('DB_PASSW'),
             'HOST': env('DB_HOST'),
             'PORT': env('DB_PORT'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
+            'NAME': env('DEV_DB_NAME'),
+            'USER': env('DEV_DB_USER'),
+            'PASSWORD': env('DEV_DB_PASSW'),
+            'HOST': env('DEV_DB_HOST'),
+            'PORT': env('DEV_DB_PORT'),
         }
     }
 
@@ -170,8 +173,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # In deiner settings.py ganz unten
-MEDIA_URL = '/'  
-MEDIA_ROOT = BASE_DIR  
+MEDIA_URL = '/media/'  
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Strava Werte aus der .env
 from decouple import config
@@ -194,3 +197,39 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+
+
+# AUTOMATISCHER GDAL/GEOS-LOADER FÜR WINDOWS
+# Verhindert "ImproperlyConfigured" Fehler bei Teammitgiedern auf Windows.
+# Auf Linux/Mac Servern oder Docker wird dieser Block automatisch übersprungen.
+# AUTOMATISCHER GDAL/GEOS-LOADER FÜR WINDOWS
+if platform.system() == "Windows":
+    possible_paths = [
+        os.getenv("WINDOWS_GDAL_BIN_PATH"), # 1. Prio: Eigener Pfad aus lokaler .env
+        r"C:\Program Files\PostgreSQL\18\bin", # 2. Prio: Postgres 18 (Standard)
+        r"C:\Program Files\PostgreSQL\17\bin", # 3. Prio: Fallback für Postgres 17
+        r"C:\Program Files\PostgreSQL\16\bin", # 4. Prio: Fallback für Postgres 16
+    ]
+    
+    for path in possible_paths:
+        if path and os.path.exists(path):
+            os.environ['PATH'] = path + ';' + os.environ['PATH']
+            if hasattr(os, 'add_dll_directory'):
+                os.add_dll_directory(path)
+            
+            # Dynamische Erkennung für GDAL und GEOS
+            try:
+                # 1. GDAL-Pfad setzen
+                gdal_files = [f for f in os.listdir(path) if 'gdal' in f.lower() and f.endswith('.dll')]
+                if gdal_files:
+                    GDAL_LIBRARY_PATH = os.path.join(path, gdal_files[0])
+                
+                # 2. GEOS-Pfad setzen (sucht nach geos_c.dll oder libgeos_c.dll)
+                geos_files = [f for f in os.listdir(path) if 'geos_c' in f.lower() and f.endswith('.dll')]
+                if geos_files:
+                    GEOS_LIBRARY_PATH = os.path.join(path, geos_files[0])
+            except Exception:
+                pass
+                
+            break

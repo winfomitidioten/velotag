@@ -35,6 +35,10 @@ const mapInstance = shallowRef(null);
 const currentTileLayer = shallowRef(null);
 export const activeLayerId = ref(availableLayers[0].id); // Standardmäßig der erste Layer
 
+// Kartennachweis: standardmäßig ausgeblendet, wird erst über den Info-Button in Karte.vue eingeblendet
+const isAttributionVisible = ref(false);
+let attributionContainer = null; // rohes Leaflet-DOM-Element, kein Vue-Ref nötig
+
 // Diese Funktion stellt sicher, dass der Zustand über die ganze App hinweg geteilt wird.
 export function useMap() {
 
@@ -45,10 +49,10 @@ export function useMap() {
 
         const map = L.map(elementId, {
             zoomControl: false, // <--- Hier schalten wir die Buttons aus
-            attributionControl: false // Attribution wird stattdessen im Menü angezeigt (siehe MenuBar.vue)
+            attributionControl: false // eigene Attribution unten links statt Leaflets Standard-Ecke unten rechts (kollidiert sonst mit den Karten-Buttons)
             }).setView([50.0963, 8.2195], 11);
         mapInstance.value = map;
-        
+
         // Setze den initialen Layer
         setLayer(activeLayerId.value);
 
@@ -58,6 +62,12 @@ export function useMap() {
             imperial: false,
             position: 'bottomleft'
         }).addTo(map);
+
+        // Kartennachweis (OSM/CARTO-Lizenzpflicht) direkt auf der Karte statt im (inzwischen entfernten) Menü -
+        // standardmäßig unsichtbar, wird über den Info-Button in Karte.vue ein-/ausgeblendet (siehe toggleAttribution)
+        const attributionControl = L.control.attribution({ position: 'bottomleft' }).addTo(map);
+        attributionContainer = attributionControl.getContainer();
+        attributionContainer.classList.add('map-attribution-control');
 
         // Maßstabsleiste nur während des Zoomens einblenden, danach wieder ausblenden
         // (Styling/Positionierung dafür siehe Karte.vue, :deep(.map-scale-control))
@@ -98,10 +108,38 @@ export function useMap() {
         activeLayerId.value = layerId;
     };
 
+    const toggleAttribution = () => {
+        isAttributionVisible.value = !isAttributionVisible.value;
+        if (attributionContainer) {
+            attributionContainer.classList.toggle('is-visible', isAttributionVisible.value);
+        }
+    };
+
+    // Schließt den Kartennachweis nur, falls er offen ist (z.B. bei einem Klick irgendwo
+    // auf die Karte) - im Gegensatz zu toggleAttribution kein Umschalten, damit ein
+    // Karten-Klick ihn nicht versehentlich wieder öffnet
+    const closeAttribution = () => {
+        if (!isAttributionVisible.value) return;
+        isAttributionVisible.value = false;
+        if (attributionContainer) {
+            attributionContainer.classList.remove('is-visible');
+        }
+    };
+
+    // Für Klick-außerhalb-Erkennung (document-weiter Listener in Karte.vue): die Leiste
+    // ist ein von Leaflet erzeugtes DOM-Element und daher nicht per Template-Ref erreichbar
+    const isAttributionTarget = (target) => {
+        return !!(attributionContainer && attributionContainer.contains(target));
+    };
+
     return {
         initializeMap,
         setLayer,
         availableLayers,
-        activeLayerId
+        activeLayerId,
+        isAttributionVisible,
+        toggleAttribution,
+        closeAttribution,
+        isAttributionTarget
     };
 }
