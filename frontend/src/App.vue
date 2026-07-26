@@ -4,6 +4,7 @@ import { onMounted } from 'vue'
 import apiClient from '@/api/client'
 
 import AppHeader from '@/components/AppHeader.vue'
+import AppToast from '@/components/AppToast.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
 
 import { useUserStore } from '@/store/userStore'
@@ -80,6 +81,7 @@ onMounted(async () => {
   </button>
 
   <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
+  <AppToast />
 </template>
 
 <style>
