@@ -1,4 +1,8 @@
 from django.conf import settings
+
+
+from django.shortcuts import redirect
+
 from django.contrib.auth.models import User
 from django.core import signing
 from django.http import JsonResponse, HttpResponse
@@ -9,6 +13,7 @@ from rest_framework.response import Response
 from routes.models import Route
 from datetime import datetime, timedelta, timezone as dt_timezone
 from urllib.parse import urlencode
+
 from users.models import StravaToken
 import requests
 import time
@@ -76,6 +81,7 @@ def strava_callback(request):
             'expires_at':    token_data['expires_at'],
         }
     )
+    return redirect('/karte') 
 
     # HttpResponseRedirect erlaubt nur http/https/ftp als Ziel-Protokoll und würde bei
     # velotag:// eine DisallowedRedirect werfen - deshalb Location-Header manuell setzen
