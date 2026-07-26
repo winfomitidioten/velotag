@@ -2,6 +2,7 @@
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
+import AppToast from '@/components/AppToast.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
 import { useUserStore } from '@/store/userStore'
 import { useStravaImport } from '@/composables/useStravaImport'
@@ -128,6 +129,7 @@ onMounted(async () => {
   </button>
 
   <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
+  <AppToast />
 </template>
 
 <style>
