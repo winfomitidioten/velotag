@@ -1,9 +1,12 @@
 <script setup>
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
-import MenuBar from '@/components/MenuBar.vue'
+import AppHeader from '@/components/AppHeader.vue'
+import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
 import { useUserStore } from '@/store/userStore'
+import { useStravaImport } from '@/composables/useStravaImport'
 import { Capacitor } from '@capacitor/core'
+import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import apiClient from '@/api/client'
 
@@ -11,6 +14,7 @@ import apiClient from '@/api/client'
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const { showStravaImport } = useStravaImport();
 
 const goBack = () => {
   router.push(route.meta.backTo ?? '/map');
@@ -24,7 +28,18 @@ onMounted(async () => {
   if (Capacitor.isNativePlatform()) {
     apiClient.defaults.baseURL = 'http://167.233.33.166/api';
     await StatusBar.setOverlaysWebView({ overlay: true });
-    await StatusBar.setStyle({ style: Style.Dark });
+    // Style.Light => dunkle Uhr/Batterie-Icons, richtig für unseren hellen Hintergrund
+    // (Style.Dark ist entgegen des Namens für dunkle Hintergründe mit hellen Icons gedacht)
+    await StatusBar.setStyle({ style: Style.Light });
+
+    // Fängt den velotag://strava-callback Deep Link ab, mit dem das Backend
+    // nach dem Strava-Login zurück in die App springt
+    CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+      if (url.startsWith('velotag://strava-callback')) {
+        router.push('/map');
+        showStravaImport.value = true;
+      }
+    });
   }
 
   setAppHeight();
@@ -46,7 +61,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <MenuBar v-if="!route.meta.hideMenu" />
+  <AppHeader v-if="!route.meta.hideMenu && !showStravaImport" />
   <RouterView v-slot="{ Component }">
     <keep-alive include="Karte">
       <component :is="Component" />
@@ -57,6 +72,8 @@ onMounted(async () => {
       <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/>
     </svg>
   </button>
+
+  <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
 </template>
 
 <style>
@@ -77,9 +94,11 @@ html, body, #app {
 }
 .back-button {
   position: fixed;
-  top: calc(var(--safe-top) + 0.5rem);
-  left: calc(1rem + 44px + 0.75rem);
-  z-index: 1010;
+  /* Sitzt unter dem fixierten AppHeader statt daneben, seit der Hamburger-Button
+     weggefallen ist */
+  top: calc(var(--safe-top) + var(--app-header-height) + 0.5rem);
+  left: 1rem;
+  z-index: 1005;
   width: 44px;
   height: 44px;
   padding: 0;

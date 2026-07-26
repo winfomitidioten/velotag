@@ -23,10 +23,11 @@ defineProps({
 <style scoped>
 .page-header {
     position: sticky;
-    top: 0;
+    /* Bleibt direkt unter dem fixierten, globalen AppHeader stehen */
+    top: calc(var(--safe-top, 0px) + var(--app-header-height));
+    margin-top: calc(var(--safe-top, 0px) + var(--app-header-height));
     z-index: 100;
     background: var(--color-bg-page);
-    padding-top: var(--safe-top, 0px);
     flex-shrink: 0;
 }
 
@@ -39,9 +40,9 @@ defineProps({
     padding: 0 1rem;
 }
 
-/* Breite = Hamburger (44px) + Lücke (0.75rem) + Zurück-Button (44px) */
+/* Breite = Zurück-Button (44px); Hamburger ist mit dem AppHeader entfallen */
 .header-left {
-    width: calc(88px + 0.75rem);
+    width: 44px;
     flex-shrink: 0;
 }
 
