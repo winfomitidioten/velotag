@@ -2,32 +2,31 @@ import { ref, watch } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
-import { decodePolyline } from './polyline'
+import { decodePolyline } from './polyline' //calculateRouteDistance
 
-// Summiert die Punktabstände einer Polyline in Metern
-const calculateRouteDistance = (coordinates) => {
-    let distance = 0;
-    for (let i=1; i<coordinates.length; i++) {
-        distance += L.latLng(coordinates[i - 1]).distanceTo(L.latLng(coordinates[i]));
-    }
-    return distance;
-}
+
+// Funktion calculateRouteDistance ausgelagert in polyline.js
+
 
 export async function drawUserMap(map) {//async 
-    const response = await api.get('routes/map/')
-    const routes = response.data
+    const [mapResponse, statsResponse] = await Promise.all([
+        api.get('routes/map/'),
+        api.get('routes/stats/')
+    ])
+    
+    const routes = mapResponse.data
     const numberOfRoutes = routes.length
     console.log("Routen aus Django:", routes)//Testausgabe, um API Call zu überprüfenw
     const featureGroup = L.featureGroup().addTo(map)
 
-    let totalDistanceMeters= 0
+    //let totalDistanceMeters= 0
 
 
 
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
-        totalDistanceMeters += calculateRouteDistance(coordinates)
+        //totalDistanceMeters += calculateRouteDistance(coordinates)
         // Initiale Farbe beim ersten Laden ermitteln
         let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
@@ -55,7 +54,7 @@ export async function drawUserMap(map) {//async
     });
 
     return {
-        rideCount: numberOfRoutes,
-        totalkm: Math.round(totalDistanceMeters/1000)
+        rideCount: statsResponse.data.rideCount, //numberOfRoutes,
+        totalkm: statsResponse.data.totalKm //Math.round(totalDistanceMeters/1000)
     }
 }

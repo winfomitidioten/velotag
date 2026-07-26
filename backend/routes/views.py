@@ -70,3 +70,11 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
 #         routes = Route.objects.filter(user=request.user)  # Nur Routen des eingeloggten Users
 #         serializer = RouteListSerializer(routes, many=True)  # Liste → many=True
 #         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# Einheitliche km-Statistik -> für Lasche, Profil, Bestenliste
+class RouteStatsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(Route.get_stats_for_user(request.user), status=status.HTTP_200_OK)

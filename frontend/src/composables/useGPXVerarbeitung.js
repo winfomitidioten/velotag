@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
+import { calculateRouteDistance } from '@/composables/polyline'
+
 
 export function useGPXVerarbeitung() {
 
@@ -96,6 +98,7 @@ export function useGPXVerarbeitung() {
             });
             console.log("Schleife beendet, extrahiere Geodaten...");
 
+            const distanceMeters = calculateRouteDistance(coordinates);
             const polylineMapString = encodePolyline(coordinates);
             console.log("Polyline komprimiert.");
 
@@ -103,6 +106,7 @@ export function useGPXVerarbeitung() {
               strecken_name: uploadedFile.name.replace('.gpx', ''), 
               group_id: selectedGroupIds.value, // Die aktuell ausgewählten IDs aus der ref ziehen
               polyline_map: polylineMapString,
+              distance_meters: distanceMeters,
               puls_stream: pulsStream,
               zeit_stream: zeitStream,
               watt_stream: wattStream

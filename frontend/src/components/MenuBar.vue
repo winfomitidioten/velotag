@@ -24,7 +24,7 @@
 
     <!-- Profil-Karte -->
     <div class="profile-card">
-      <RouterLink to="/profile" @click="closeMenu" class="nav-item">
+      <RouterLink :to="{ name: 'user-profile', params: { id: userStore.id } }" @click="closeMenu" class="nav-item">
         <div class="avatar">
           <img v-if="userProfileImage" :src="userProfileImage" alt="Profilbild" class="avatar-img"/>
           <span v-else>{{ userInitials }}</span>

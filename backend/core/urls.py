@@ -7,6 +7,8 @@ from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken
 from .views.strava import strava_connect, strava_callback, get_activities
+from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken, PublicUserProfileView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,7 +27,8 @@ urlpatterns = [
     path('api/groups/<int:pk>/invite/', GroupInviteAdmin.as_view(), name='group-invite-admin'),
     path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
     path('api/groups/<int:pk>/leave', GroupLeaveView.as_view(), name="group-leave"),
-    path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick")
+    path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick"),
+    path('api/users/<int:pk>/profile/', PublicUserProfileView.as_view(), name='user-public-profile')
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

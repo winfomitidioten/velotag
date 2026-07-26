@@ -8,6 +8,8 @@ import GroupView from '../components/GroupView.vue'
 import GroupDetailView from '../components/GroupDetailView.vue'
 import GroupInviteView from '../components/GroupInviteView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
+import PublicUserProfile from '../components/PublicUserProfile.vue'
+
 
 const routes = [
   {
@@ -68,7 +70,14 @@ const routes = [
     name: 'rides',
     component: () => import('../views/StreckenView.vue'),
     meta: { requiresAuth: true, showBack: true }
-  }
+  },
+  {
+  path: '/user/:id',
+  name: 'user-profile',
+  component: PublicUserProfile,
+  meta: { requiresAuth: true, showBack: true }
+},
+
 ];
 
 const router = createRouter({

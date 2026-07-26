@@ -4,6 +4,8 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from './HeaderButton.vue';
+import { useUserStore } from '@/store/userStore'
+
 
 const route = useRoute()
 const router = useRouter()
@@ -13,6 +15,12 @@ const group = ref(null)
 const loading = ref(false)
 const showPopup = ref(false)
 const newMemberMail = ref("")
+
+const userStore = useUserStore()
+
+const goToProfile = (member) => {
+    router.push({ name: 'user-profile', params: { id: member.id } })
+}
 
 const fetchGroup = async () => {
     try {
@@ -146,8 +154,9 @@ onMounted(() => {
                         <h4>Mitglieder</h4>
                         <ul class="member-list">
                             <li v-for="member in group.members" :key="member.id" class="member-item">
-                                <img v-if="member.profilbild" :src="member.profilbild" alt="Profilbild" class="member-avatar-img"/>
-                                <div v-else class="member-avatar">
+                                <img v-if="member.profilbild" :src="member.profilbild" alt="Profilbild" 
+                                    class="member-avatar-img" @click="goToProfile(member)"/>
+                                <div v-else class="member-avatar" @click="goToProfile(member)">
                                     {{ (member.first_name || member.email).charAt(0).toUpperCase() }}
                                 </div>
                                 
@@ -535,6 +544,12 @@ onMounted(() => {
         min-height: 100vh;
         color: var(--color-text-muted);
     }
+
+    .member-avatar-img,
+    .member-avatar {
+        cursor: pointer;
+    }
+
 
     @media (min-width: 480px) {
         header h3 {
