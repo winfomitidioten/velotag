@@ -46,7 +46,7 @@ const deleteMember = async (email) => {
     if (!confirm(`Möchtest du das Mitglied (${email}) wirklich aus der Gruppe entfernen?`)) return;
 
     try{
-        const response = await api.delete(`groups/${groupId.value}/kick`, {
+        const response = await api.delete(`groups/${groupId.value}/kick/`, {
             data: { email: email }
         });
         

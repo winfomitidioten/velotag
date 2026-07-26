@@ -33,6 +33,17 @@ const setupAndroidPush = async () =>{
       return;
     }
 
+    // Ohne eigenen Channel landet die Benachrichtigung nur im Verlauf (Shade),
+    // zeigt aber kein Heads-up-Banner auf dem Sperr-/Homebildschirm. importance: 5
+    // (IMPORTANCE_HIGH) ist dafür nötig. Die channel_id muss im Backend beim
+    // Versand exakt so referenziert werden (siehe notifications.py).
+    await PushNotifications.createChannel({
+      id: 'group_invitations',
+      name: 'Gruppeneinladungen',
+      description: 'Benachrichtigungen über neue Gruppeneinladungen',
+      importance: 5,
+    });
+
     // Listener MÜSSEN vor register() angehängt werden: Capacitor kann das
     // 'registration'-Event nativ nahezu sofort feuern, sobald register() aufgerufen
     // wird - wenn der Listener erst danach registriert wird, geht der Token verloren

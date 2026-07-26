@@ -37,6 +37,14 @@ def send_push_notifications(user, title, body, data_payload=None):
                 title=title,
                 body=body
             ),
+            # priority='high' + channel_id sorgen dafür, dass Android die Nachricht
+            # als Heads-up-Banner zeigt statt sie nur still im Verlauf abzulegen.
+            # Die channel_id muss exakt zu dem Channel passen, den die App per
+            # PushNotifications.createChannel() anlegt (siehe App.vue).
+            android=messaging.AndroidConfig(
+                priority='high',
+                notification=messaging.AndroidNotification(channel_id='group_invitations'),
+            ),
             data=data_payload,
             tokens=tokens
         )
