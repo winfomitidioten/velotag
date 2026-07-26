@@ -24,9 +24,19 @@ class GroupSerializer(serializers.ModelSerializer):
     members = serializers.SerializerMethodField()
 
     is_favorite = serializers.SerializerMethodField() #für Favoriten Stern in Gruppenansicht
+    profilbild = serializers.SerializerMethodField()
     class Meta:
         model = Group
-        fields = ['id', 'name', 'is_admin', 'member_count', 'members', 'admin_email', 'is_favorite']
+        fields = ['id', 'name', 'description', 'profilbild', 'is_admin', 'member_count', 'members', 'admin_email', 'is_favorite']
+
+    # Gleiches Muster wie GrouMemberSerializer.get_profilbild oben
+    def get_profilbild(self, obj):
+        if obj.profilbild:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profilbild.url)
+            return obj.profilbild.url
+        return None
 
     def get_is_admin(self, obj):
         request = self.context.get('request')

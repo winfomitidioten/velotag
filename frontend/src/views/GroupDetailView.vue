@@ -4,6 +4,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from '@/components/HeaderButton.vue';
+import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 
 const route = useRoute()
 const router = useRouter()
@@ -14,6 +15,15 @@ const loading = ref(false)
 const showPopup = ref(false)
 const newMemberMail = ref("")
 
+// Bearbeiten der Gruppe (Name/Beschreibung/Bild) - eigener Popup-Zustand,
+// getrennt vom Einladen-Popup oben.
+const showEditPopup = ref(false)
+const editName = ref("")
+const editDescription = ref("")
+const editSelectedFile = ref(null)
+const editPreviewImage = ref(null)
+const editRemoveProfilbild = ref(false)
+
 const fetchGroup = async () => {
     try {
         loading.value = true;
@@ -23,6 +33,53 @@ const fetchGroup = async () => {
         console.error('Fehler beim Laden der Gruppe: ', err)
     } finally {
         loading.value = false;
+    }
+}
+
+// Öffnet den Bearbeiten-Popup und füllt ihn mit den aktuellen Gruppendaten vor.
+const openEditPopup = () => {
+    editName.value = group.value.name;
+    editDescription.value = group.value.description || "";
+    editSelectedFile.value = null;
+    editPreviewImage.value = null;
+    editRemoveProfilbild.value = false;
+    showEditPopup.value = true;
+}
+
+const onEditPhotoAdded = (photos) => {
+    const photo = photos[0];
+    if (!photo) return;
+    editSelectedFile.value = photo.file;
+    editPreviewImage.value = photo.previewUrl;
+    editRemoveProfilbild.value = false;
+}
+
+// Entfernt das Bild ohne ein neues auszuwählen (Akzeptanzkriterium: löschen ohne Ersatz).
+const removeEditPicture = () => {
+    editSelectedFile.value = null;
+    editPreviewImage.value = null;
+    editRemoveProfilbild.value = true;
+}
+
+const updateGroup = async () => {
+    if (!editName.value.trim()) return;
+    try {
+        const formData = new FormData();
+        formData.append('name', editName.value);
+        formData.append('description', editDescription.value); // leerer String entfernt die Beschreibung
+
+        if (editSelectedFile.value) {
+            formData.append('profilbild', editSelectedFile.value);
+        } else if (editRemoveProfilbild.value) {
+            formData.append('remove_profilbild', 'true');
+        }
+
+        const response = await api.patch(`groups/${groupId.value}/`, formData);
+        group.value = response.data;
+        showEditPopup.value = false;
+    } catch (error) {
+        console.error("Fehler beim Bearbeiten der Gruppe:", error);
+        alert(error.response?.data?.error || "Es gab ein Problem beim Speichern der Änderungen.");
     }
 }
 
@@ -98,6 +155,12 @@ onMounted(() => {
 
         <template v-else-if="group">
             <PageHeader>
+                <HeaderButton v-if="group.is_admin" class="desktop-edit-btn" @click="openEditPopup">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                        <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                    </svg>
+                    <span>Bearbeiten</span>
+                </HeaderButton>
                 <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="deleteGroup">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
@@ -115,7 +178,8 @@ onMounted(() => {
             <main class="page-content">
                 <div class="group-card">
                     <div class="card-main-content">
-                        <div class="group-icon-box">
+                        <img v-if="group.profilbild" :src="group.profilbild" alt="Gruppenbild" class="group-icon-box group-icon-img">
+                        <div v-else class="group-icon-box">
                             <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px">
                                 <path d="M40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm720 0v-120q0-44-24.5-84.5T666-434q51 6 96 20.5t84 35.5q36 20 55 44.5t19 53.5v120H760ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47Zm466 0q-47 47-113 47-11 0-28-2.5t-28-5.5q27-32 41.5-71t14.5-81q0-42-14.5-81T544-792q14-5 28-6.5t28-1.5q66 0 113 47t47 113q0 66-47 113ZM120-240h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-240Zm0-400Z"/>
                             </svg>
@@ -124,7 +188,7 @@ onMounted(() => {
                             <h3>{{ group.name }}</h3>
                             <span>{{ group.member_count }} Mitglieder</span>
                         </div>
-                        
+
                         <div class="button-group">
                             <button v-if="group.is_admin" @click="showPopup = true" class="action-btn desktop-invite-btn">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
@@ -141,6 +205,8 @@ onMounted(() => {
                             </button>
                         </div>
                     </div>
+
+                    <p v-if="group.description" class="group-description">{{ group.description }}</p>
 
                     <div class="card-stats-area">
                         <h4>Mitglieder</h4>
@@ -185,6 +251,32 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
+
+            <div v-if="showEditPopup" @click.self="showEditPopup = false" id="popup-overlay">
+                <div id="popup-content">
+                    <h3>Gruppe bearbeiten</h3>
+                    <input v-model="editName" type="text" placeholder="Gruppenname">
+                    <textarea v-model="editDescription" placeholder="Beschreibung (optional)" rows="3"></textarea>
+
+                    <img v-if="editPreviewImage" :src="editPreviewImage" alt="Gruppenbild" class="group-photo-preview">
+                    <img v-else-if="group.profilbild && !editRemoveProfilbild" :src="group.profilbild" alt="Gruppenbild" class="group-photo-preview">
+
+                    <CameraGalleryPicker :multiple="false" :has-photos="!!editPreviewImage" @photos-added="onEditPhotoAdded" />
+                    <button
+                        v-if="(group.profilbild && !editRemoveProfilbild) || editPreviewImage"
+                        type="button"
+                        @click="removeEditPicture"
+                        id="remove-picture-btn"
+                    >
+                        Bild entfernen
+                    </button>
+
+                    <div id="popup-actions">
+                        <button @click="showEditPopup = false" id="cancel-btn">Abbrechen</button>
+                        <button @click="updateGroup" id="create-btn">Speichern</button>
+                    </div>
+                </div>
+            </div>
         </template>
     </div>
 </template>
@@ -225,6 +317,23 @@ onMounted(() => {
         border-radius: var(--radius-md);
         cursor: pointer;
         font-weight: 600;
+    }
+
+    .desktop-edit-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        background-color: var(--color-bg-page);
+        color: var(--color-text);
+        border: 1px solid var(--color-border);
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .desktop-edit-btn:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
     }
 
     .mobile-fab-btn {
@@ -325,7 +434,18 @@ onMounted(() => {
         height: 1.5rem;
         fill: var(--color-primary);
     }
-    
+    .group-icon-img {
+        object-fit: cover;
+    }
+
+    .group-description {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: var(--color-text-muted);
+        white-space: pre-wrap;
+    }
+
     .group-info {
         display: flex;
         flex-direction: column;
@@ -491,19 +611,44 @@ onMounted(() => {
         font-weight: 600;
         color: var(--color-text);
     }
-    #popup-content input[type="email"] {
+    #popup-content input[type="email"],
+    #popup-content input[type="text"],
+    #popup-content textarea {
         width: 100%;
         padding: 0.85rem 1rem;
         font-size: 1rem;
+        font-family: inherit;
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
         outline: none;
         color: var(--color-text);
         box-sizing: border-box;
         background-color: var(--color-bg-page);
+        resize: vertical;
     }
-    #popup-content input[type="email"]:focus {
+    #popup-content input[type="email"]:focus,
+    #popup-content input[type="text"]:focus,
+    #popup-content textarea:focus {
         border-color: var(--color-primary);
+    }
+    .group-photo-preview {
+        width: 5rem;
+        height: 5rem;
+        border-radius: var(--radius-md);
+        object-fit: cover;
+        align-self: center;
+    }
+    #remove-picture-btn {
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 0.85rem;
+        align-self: center;
+    }
+    #remove-picture-btn:hover {
+        color: #ef4444;
     }
     #popup-actions {
         display: flex;
