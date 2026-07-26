@@ -4,7 +4,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken
+from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken, DeviceView
 from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView, SetGroupFavoriteView, RemoveFavoriteView, GetGroupFavoriteView
 from django.conf.urls.static import static
 from django.conf import settings
@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/logout/', LogoutView.as_view()),
     path('api/profil/', ProfileView.as_view(), name='user-profile'),
     path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
+    path('api/user/save-push-token/', DeviceView.as_view(), name='user-save-push-token'),
 
     # Strava
     path('api/strava/status/', strava_status),

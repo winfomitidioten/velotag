@@ -18,7 +18,7 @@ const userStore = useUserStore();
 const { showStravaImport } = useStravaImport();
 
 const setupAndroidPush = async () =>{
-  if (!Capacitor.getPlatform() !== 'android') {
+  if (Capacitor.getPlatform() !== 'android') {
     return;
   }
   try{
@@ -33,9 +33,13 @@ const setupAndroidPush = async () =>{
       return;
     }
 
-    await PushNotifications.register();
-
-    await PushNotifications.addListener('register', async (token) =>{
+    // Listener MÜSSEN vor register() angehängt werden: Capacitor kann das
+    // 'registration'-Event nativ nahezu sofort feuern, sobald register() aufgerufen
+    // wird - wenn der Listener erst danach registriert wird, geht der Token verloren
+    // ("No listeners found for event registration" im Logcat).
+    // Wichtig: der Event-Name ist 'registration', NICHT 'register' (das ist nur der
+    // Methodenname von PushNotifications.register() weiter unten).
+    await PushNotifications.addListener('registration', async (token) =>{
       try{
         await apiClient.post('/user/save-push-token/', {
           token: token.value,
@@ -56,6 +60,8 @@ const setupAndroidPush = async () =>{
         router.push(`/group/${id}/leaderboard`)
       }
     });
+
+    await PushNotifications.register();
   } catch (error) {
       console.log("Fehler beim Push:", error)
   }
@@ -80,7 +86,6 @@ onMounted(async () => {
   await setupAndroidPush();
   await setupInAppNotifications();
   if (Capacitor.isNativePlatform()) {
-    apiClient.defaults.baseURL = 'http://167.233.33.166/api';
     await StatusBar.setOverlaysWebView({ overlay: true });
     // Style.Light => dunkle Uhr/Batterie-Icons, richtig für unseren hellen Hintergrund
     // (Style.Dark ist entgegen des Namens für dunkle Hintergründe mit hellen Icons gedacht)
