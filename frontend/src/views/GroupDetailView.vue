@@ -313,7 +313,10 @@ onMounted(() => {
         background-color: #ef4444;
         color: white;
         border: none;
-        padding: 0.5rem 1rem;
+        /* Auf schmalen Handys nur das Icon zeigen (padding gleich für beide Achsen),
+           damit zwei Header-Buttons nebeneinander nicht überlaufen. Text kommt erst
+           ab 480px zurück, siehe Media Query weiter unten. */
+        padding: 0.5rem;
         border-radius: var(--radius-md);
         cursor: pointer;
         font-weight: 600;
@@ -326,7 +329,7 @@ onMounted(() => {
         background-color: var(--color-bg-page);
         color: var(--color-text);
         border: 1px solid var(--color-border);
-        padding: 0.5rem 1rem;
+        padding: 0.5rem;
         border-radius: var(--radius-md);
         cursor: pointer;
         font-weight: 600;
@@ -334,6 +337,12 @@ onMounted(() => {
     .desktop-edit-btn:hover {
         border-color: var(--color-primary);
         color: var(--color-primary);
+    }
+
+    /* Text-Label der beiden Header-Buttons erst ab Tablet-Breite zeigen (siehe oben) */
+    .desktop-create-btn span,
+    .desktop-edit-btn span {
+        display: none;
     }
 
     .mobile-fab-btn {
@@ -444,6 +453,7 @@ onMounted(() => {
         line-height: 1.4;
         color: var(--color-text-muted);
         white-space: pre-wrap;
+        word-break: break-word;
     }
 
     .group-info {
@@ -693,6 +703,14 @@ onMounted(() => {
         }
         .mobile-fab-btn {
             display: none;
+        }
+        .desktop-create-btn,
+        .desktop-edit-btn {
+            padding: 0.5rem 1rem;
+        }
+        .desktop-create-btn span,
+        .desktop-edit-btn span {
+            display: inline;
         }
         .desktop-invite-btn {
             display: flex;
