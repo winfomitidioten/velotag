@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.DEV
-        ? '/api/'
-        : 'http://167.233.33.166/api/',
+    baseURL: import.meta.env.VITE_API_BASE_URL
+        ?? (import.meta.env.DEV ? '/api/' : 'http://167.233.33.166/api/'),
 });
 
 api.interceptors.request.use((config) => {
