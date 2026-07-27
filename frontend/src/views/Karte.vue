@@ -427,6 +427,15 @@ watch(selectedGroupId, (newGroupId) => {
     margin-left: 4px;
   }
 
+  /* Glow-Effekt für die personalisierte Standard-Heatmap (drawUserMap.js) - Klasse wird nur
+     dort vergeben, nie in der Puls/Tempo/Watt-Ansicht, bleibt also sauber auf sie beschränkt.
+     Farbe kommt aus --heatmap-glow-color (per Element gesetzt), da Leaflet nur `stroke` setzt
+     und `currentColor` daher nicht die Linienfarbe träfe. */
+  :deep(.heatmap-glow) {
+    filter: drop-shadow(0 0 3.2px var(--heatmap-glow-color, #ff0000))
+            drop-shadow(0 0 6.4px var(--heatmap-glow-color, #ff0000));
+  }
+
   :deep(.photo-pin-dot) {
     position: relative;
     width: 32px;

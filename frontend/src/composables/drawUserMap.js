@@ -4,6 +4,26 @@ import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
 import { clearPerformanceMap } from '@/composables/drawPerformanceMap.js'
 import { startDraw, isStaleDraw } from '@/composables/mapDrawGeneration.js'
+import { useHeatmapStyleStore } from '@/store/heatmapStyleStore.js'
+
+// Ermittelt die aktuell wirksame Linienfarbe: eigene Wahl des Nutzers hat Vorrang,
+// sonst greift die bisherige Auto-Logik (Blau auf Hybrid ist am besten sichtbar, sonst Rot)
+function resolveHeatmapColor(customColor, layerId) {
+    return customColor ?? (layerId === 'hybrid' ? 'blue' : 'red')
+}
+
+// Überträgt Farbe/Glow auf das erzeugte SVG-Element - rekursiv, da eine L.GeoJSON-Ebene
+// (Gruppenansicht) selbst keinen eigenen DOM-Knoten hat, sondern eine Gruppe von Pfaden ist.
+// CSS-Custom-Property statt currentColor, da Leaflet nur `stroke` setzt, nicht `color`.
+function applyHeatmapPathStyle(layer, color, glowOn) {
+    const el = layer.getElement?.()
+    if (el) {
+        el.style.setProperty('--heatmap-glow-color', color)
+        el.classList.toggle('heatmap-glow', glowOn)
+    } else if (typeof layer.eachLayer === 'function') {
+        layer.eachLayer((sub) => applyHeatmapPathStyle(sub, color, glowOn))
+    }
+}
 
 // Dekodiert den komprimierten String zurück in ein [Lat, Lng] Array
 const decodePolyline = (encoded) => {
@@ -37,7 +57,6 @@ const decodePolyline = (encoded) => {
 };
 
 let currentFeatureGroup = null;
-let unwatchColor = null;
 let colorWatchStarted = false;
 
 export function clearUserMap(map) {
@@ -51,11 +70,14 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     const myGeneration = startDraw(); // Erkennt veraltete Aufrufe, falls währenddessen umgeschaltet wird
     clearPerformanceMap(map); // Leistungs-Ansicht ausblenden, falls gerade aktiv
 
+    const heatmapStyle = useHeatmapStyleStore();
+
     let routes = [];
     let numberOfRoutes = 0;
     let geoJsonLayer = null;
 
-    const colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
+    const colourLine = resolveHeatmapColor(heatmapStyle.heatmapColor, activeLayerId.value);
+    const glowOn = heatmapStyle.heatmapGlowEnabled;
 
     if(isGroupViewStatus === false) {//Solo Ansicht
         const response = await api.get('routes/map/');
@@ -67,16 +89,17 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     else if (isGroupViewStatus === true) {
         if (!groupId) {
             console.error("Gruppenansicht aktiv, aber keine group_id übergeben!");
+            clearUserMap(map); // Sonst blieben die Solo-Routen der vorigen Ansicht stehen
             return;
         }
 
         try {
-            const response = await api.get(`groups/${groupId}/intersections/`);
+            const response = await api.get(`routes/intersections/${groupId}/`);
             const geojsonData = response.data;
             console.log(`Schnittmengen aus Django (Gruppe ${groupId}):`, geojsonData);
 
-            const numberOfGroupRoutes = (geojsonData.features && geojsonData.features.length) 
-                ? geojsonData.features.length 
+            const numberOfGroupRoutes = (geojsonData.features && geojsonData.features.length)
+                ? geojsonData.features.length
                 : 1;
 
             geoJsonLayer = L.geoJSON(geojsonData, {
@@ -95,6 +118,7 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
             });
         } catch (err) {
             console.error("Fehler beim Laden der Gruppen-Schnittmengen:", err);
+            clearUserMap(map); // Sonst blieben die Solo-Routen der vorigen Ansicht stehen
             return;
         }
     }
@@ -110,23 +134,23 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
 
     if (geoJsonLayer) {
         currentFeatureGroup.addLayer(geoJsonLayer);
+        applyHeatmapPathStyle(geoJsonLayer, colourLine, glowOn);
     }
 
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
-        // Initiale Farbe beim ersten Laden ermitteln
-        //let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
-        const polyline = L.polyline(coordinates, 
+        const polyline = L.polyline(coordinates,
             {color: colourLine,     // Grundfarbe
              weight: 4,            // Breite
-             opacity: Math.max(0.03, 1 / numberOfRoutes),//Logik der Heatmap: Addiert sich auf 
+             opacity: Math.max(0.03, 1 / numberOfRoutes),//Logik der Heatmap: Addiert sich auf
              // + relativ anhand der Routenanzahl vom Profil
              lineJoin: 'round',    // Weiche Kurven
              lineCap: 'round'//,     // Abgerundete Enden}
         }).addTo(map);//color: 'blue'
         currentFeatureGroup.addLayer(polyline);
+        applyHeatmapPathStyle(polyline, colourLine, glowOn);
         polyline.bindPopup(`<b>${route.strecken_name}</b>`);//Basis für spätere optionale Blog-Ansicht
     });
 
@@ -134,14 +158,17 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     // (z.B. nach einem Strava-Import) mehrere Watcher an
     if (!colorWatchStarted) {
         colorWatchStarted = true
-        watch(activeLayerId, (newLayerId) => {
-            // Neue Farbe basierend auf der neuen ID ermitteln
-            const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
+        watch(
+            [activeLayerId, () => heatmapStyle.heatmapColor, () => heatmapStyle.heatmapGlowEnabled],
+            ([newLayerId, customColor, newGlowOn]) => {
+                const newColor = resolveHeatmapColor(customColor, newLayerId);
 
-            // Immer auf der aktuellen FeatureGroup arbeiten, nicht auf der von der ersten Zeichnung
-            currentFeatureGroup?.eachLayer((layer) => {
-                layer.setStyle({ color: newColor });
-            });
-        });
+                // Immer auf der aktuellen FeatureGroup arbeiten, nicht auf der von der ersten Zeichnung
+                currentFeatureGroup?.eachLayer((layer) => {
+                    layer.setStyle({ color: newColor });
+                    applyHeatmapPathStyle(layer, newColor, newGlowOn);
+                });
+            }
+        );
     }
 }
