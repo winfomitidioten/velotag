@@ -102,14 +102,23 @@ export function useGPXVerarbeitung() {
             const polylineMapString = encodePolyline(coordinates);
             console.log("Polyline komprimiert.");
 
+            const startTime = zeitStream[0] ? new Date(zeitStream[0]).toISOString() : null;
+            const endTime = zeitStream[zeitStream.length - 1] ? new Date(zeitStream[zeitStream.length - 1]).toISOString() : null;
+            
+            const postgisCoordinates = coordinates.map(coord => [coord[1], coord[0]]);//Leaflet nutzt [Lat, Lng], PostGIS erwartet [Lng, Lat]
+            
             const payload = {
+      
               strecken_name: uploadedFile.name.replace('.gpx', ''), 
               group_id: selectedGroupIds.value, // Die aktuell ausgewählten IDs aus der ref ziehen
               polyline_map: polylineMapString,
               distance_meters: distanceMeters,
               puls_stream: pulsStream,
               zeit_stream: zeitStream,
-              watt_stream: wattStream
+              watt_stream: wattStream,
+              start_time: startTime,
+              end_time: endTime,
+              coordinates: postgisCoordinates
             };
             console.log("Paket geschnürt. Schicke an Django...", payload);
 

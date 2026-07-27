@@ -67,6 +67,8 @@ class ProfileView(APIView):
 
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
+        with open('debug_login.log', 'a', encoding='utf-8') as f:
+            f.write(f"content_type={request.content_type!r} data={dict(request.data)!r}\n")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']

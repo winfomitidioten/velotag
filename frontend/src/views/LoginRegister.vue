@@ -1,3 +1,17 @@
+<script setup>
+import { ref } from 'vue';
+import Login from '@/components/Login.vue';
+import Register from '@/components/Register.vue';
+
+const activeTab = ref('login'); // steuert welcher Tab aktiv ist  
+
+const registeredMessage = ref('');
+const onRegistered = () => {
+    registeredMessage.value = 'Ihre Registrierung war erfolgreich. Bitte melden Sie sich nun an.';
+    activeTab.value = 'login';
+}
+</script>
+
 <template>
     <div class="login-page">
         <div class="login-box">
@@ -20,29 +34,14 @@
                 >Registrierung</button>
               </div>
 
-              <RegisterView v-if="activeTab === 'register'" @registered="onRegistered" />
+              <Register v-if="activeTab === 'register'" @registered="onRegistered" />
               <p v-if="registeredMessage && activeTab === 'login'" class="success-message">
                 {{ registeredMessage }}
               </p>
-              <LoginView v-if="activeTab === 'login'" />
+              <Login v-if="activeTab === 'login'" />
         </div>
     </div>
 </template>
-
-<script setup>
-import { ref } from 'vue';
-import LoginView from '@/components/LoginView.vue';
-import RegisterView from '@/components/RegisterView.vue';
-
-const activeTab = ref('login'); // steuert welcher Tab aktiv ist  
-
-const registeredMessage = ref('');
-const onRegistered = () => {
-    registeredMessage.value = 'Ihre Registrierung war erfolgreich. Bitte melden Sie sich nun an.';
-    activeTab.value = 'login';
-}
-</script>
-
 
 <style scoped>
 /* --- Seite --- */
