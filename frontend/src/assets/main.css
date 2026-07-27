@@ -6,11 +6,26 @@
 :root {
   --color-primary:      #3db897;   /* Grün */
   --color-primary-dark: #35a684;   /* Grün dunkler (für hover) */
+  --color-primary-rgb:  61, 184, 151; /* Für rgba()-Verwendung (Schatten, Tints) */
+  --color-primary-soft: #e8f7f3;   /* Zarter Mint-Hintergrund für Icons/Badges */
+  --color-on-primary:   #ffffff;   /* Textfarbe auf grünen/roten Buttons, in beiden Themes gleich */
   --color-bg-page:      #f0f2f5;   /* Seitenhintergrund */
   --color-bg-card:      #ffffff;   /* Karten/Box Hintergrund */
+  --color-bg-card-rgb:  255, 255, 255; /* Für halbtransparente Karten-Flächen (z.B. Pillen auf der Karte) */
+  --color-bg-close-btn: #f1f5f9;   /* Hintergrund für den Schließ-Button */
+  --color-bg-hover:     #f1f5f9;   /* Hover-/Hintergrund für dezente Flächen (z.B. Listen-Items) */
+  --color-bg-input:     #f8fafc;   /* Hintergrund für Inputs/Dropzones */
   --color-text:         #1a1a1a;   /* Haupttext */
   --color-text-muted:   #888888;   /* grauer Text */
   --color-border:       #e5e7eb;   /* Input-Rahmen */
+
+  --color-danger:        #e53e3e;  /* Rot für Fehler/Löschen */
+  --color-danger-dark:   #c53030;  /* Rot dunkler (für hover) */
+  --color-danger-bg:     #fee2e2;  /* Zarter roter Hintergrund für Fehler-Badges */
+  --color-danger-border: #fca5a5;  /* Roter Rahmen für Fehler-Badges */
+  --color-success-bg:    #c6f6d5;  /* Zarter grüner Hintergrund für Erfolgs-Badges */
+  --color-success-text:  #2f6b2f;  /* Text auf Erfolgs-Badges */
+  --color-warning:       #f59e0b; /* Amber für Warnhinweise/Sterne */
 
   --radius-md: 8px;
   --radius-lg: 16px;
@@ -20,7 +35,59 @@
   /* Höhe der Inhaltszeile des globalen AppHeader (ohne --safe-top).
      Andere Komponenten (PageHeader, Karte-Controls, back-button) rechnen
      damit, um nicht unter dem fixierten Header zu verschwinden. */
-  --app-header-height: 72px;
+  --app-header-height: 56px;
+}
+
+/* Darkmode: Theme greift, wenn der Store data-theme="dark" gesetzt hat */
+/* --color-primary bleibt gleich - das Grün funktioniert auf beiden Hintergründen */
+:root[data-theme='dark'] {
+  --color-bg-page:      #121417;
+  --color-bg-card:      #1e2126;
+  --color-bg-card-rgb:  30, 33, 38;
+  --color-bg-close-btn: #39404d;
+  --color-bg-hover:     #262b32;
+  --color-bg-input:     #23272e;
+  --color-text:         #e6e8eb;
+  --color-text-muted:   #9aa0a6;
+  --color-border:       #333a42;
+
+  --color-primary-soft: rgba(61, 184, 151, 0.18);
+  --color-danger:        #f87171;
+  --color-danger-dark:   #ef4444;
+  --color-danger-bg:     rgba(239, 68, 68, 0.18);
+  --color-danger-border: rgba(239, 68, 68, 0.4);
+  --color-success-bg:    rgba(34, 197, 94, 0.18);
+  --color-success-text:  #86efac;
+  --color-warning:       #fbbf24;
+}
+
+/* System: übernimmt die Systemeinstellungen des Endgeräts aus dem OS (kein data-theme gesetzt) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg-page:      #121417;
+    --color-bg-card:      #1e2126;
+    --color-bg-card-rgb:  30, 33, 38;
+    --color-bg-close-btn: #39404d;
+    --color-bg-hover:     #262b32;
+    --color-bg-input:     #23272e;
+    --color-text:         #e6e8eb;
+    --color-text-muted:   #9aa0a6;
+    --color-border:       #333a42;
+
+    --color-primary-soft: rgba(61, 184, 151, 0.18);
+    --color-danger:        #f87171;
+    --color-danger-dark:   #ef4444;
+    --color-danger-bg:     rgba(239, 68, 68, 0.18);
+    --color-danger-border: rgba(239, 68, 68, 0.4);
+    --color-success-bg:    rgba(34, 197, 94, 0.18);
+    --color-success-text:  #86efac;
+    --color-warning:       #fbbf24;
+  }
+}
+
+/* weicher Übergang beim Wechseln der Themes */
+:root {
+  --theme-transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* --- Reset & Basis --- */
