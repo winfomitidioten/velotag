@@ -1,12 +1,35 @@
 <script setup>
 import { useMap } from '@/composables/useMap'
+import { usePerformanceView } from '@/composables/usePerformanceView'
+import { intensityGradientCss, METRIC_UNITS } from '@/utils/intensityColor'
+import BaseModal from '@/components/BaseModal.vue'
 
 defineEmits(['close'])
 
+const props = defineProps({
+  isGroupView: { type: Boolean, default: false }
+})
+
 const { availableLayers, activeLayerId, setLayer } = useMap()
+const { performanceMetric, performanceRange } = usePerformanceView()
 
 const selectLayer = (layerId) => {
   setLayer(layerId)
+}
+
+const performanceOptions = [
+  { id: null, name: 'Standard' },
+  { id: 'puls', name: 'Puls' },
+  { id: 'tempo', name: 'Tempo' },
+  { id: 'watt', name: 'Watt' },
+]
+
+// Leistungsdaten sind personenbezogen und ergeben in der Gruppen-Schnittmengen-Ansicht keinen Sinn
+const isPerformanceOptionDisabled = (option) => props.isGroupView && option.id !== null
+
+const selectPerformanceMode = (metric) => {
+  if (props.isGroupView && metric !== null) return
+  performanceMetric.value = metric
 }
 </script>
 
@@ -34,75 +57,42 @@ const selectLayer = (layerId) => {
           <span class="layer-name">{{ layer.name }}</span>
         </div>
       </div>
+
+      <h2 class="section-heading">Routendarstellung</h2>
+      <div class="performance-options">
+        <button
+          v-for="option in performanceOptions"
+          :key="option.name"
+          type="button"
+          class="performance-option"
+          :class="{ active: performanceMetric === option.id, disabled: isPerformanceOptionDisabled(option) }"
+          :disabled="isPerformanceOptionDisabled(option)"
+          :title="isPerformanceOptionDisabled(option) ? 'In der Gruppenansicht nicht verfügbar' : ''"
+          @click="selectPerformanceMode(option.id)"
+        >
+          {{ option.name }}
+        </button>
+      </div>
+      <p v-if="isGroupView" class="performance-hint">
+        Leistungsdaten sind an dein Profil gebunden und in der Gruppenansicht nicht verfügbar.
+      </p>
+
+      <div v-if="performanceMetric" class="performance-legend">
+        <template v-if="performanceRange.hasData">
+          <span class="performance-legend-label">{{ performanceRange.minValue }}</span>
+          <div class="performance-legend-bar" :style="{ background: intensityGradientCss(performanceMetric, performanceRange.minValue, performanceRange.maxValue) }"></div>
+          <span class="performance-legend-label">{{ performanceRange.maxValue }} {{ METRIC_UNITS[performanceMetric] }}</span>
+        </template>
+        <span v-else class="performance-legend-empty">Keine Daten für diese Ansicht (nur GPX-Uploads werden unterstützt).</span>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: flex-end; /* Element ganz nach unten setzen */
-  z-index: 1001;
-  animation: fadeIn 0.2s ease-out; /* Weiches Einblenden des Hintergrunds */
-}
-
-.popup-content {
-  background: white;
-  padding: 24px 24px 40px 24px; /* Mehr Platz unten, z.B. für Wischgesten auf dem Smartphone */
-  border-radius: 24px 24px 0 0; /* Nur die oberen Ecken abrunden */
-  text-align: center;
-  width: 100%;
-  max-width: 600px; /* Begrenzt die Breite auf großen Bildschirmen */
-  box-sizing: border-box;
-  box-shadow: 0 -5px 15px rgba(0,0,0,0.2); /* Schattenverlauf nach oben gerichtet */
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; /* Fährt von unten hoch */
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Overlay, Box, Radius/Schatten und Schließen-Button kommen aus BaseModal */
+.layers-modal-title {
   margin-bottom: 20px;
-  position: relative;
-}
-
-.header h2 {
-  margin: 0;
-  text-align: center;
-  flex-grow: 1;
-}
-
-.popup-close-button {
-  position: absolute;
-  top: -5px;
-  right: -5px; /* Etwas eingerückt, damit es bei 100% Breite nicht übersteht */
-  background-color: var(--color-primary, #3db897);
-  border: none;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  border-radius: 50%;
-  transition: background-color 0.15s;
-}
-
-.popup-close-button:hover {
-  background-color: var(--color-primary-dark, #35a684);
-}
-
-.popup-close-button svg {
-  width: 24px;
-  height: 24px;
 }
 
 .layers-container {
@@ -145,6 +135,87 @@ const selectLayer = (layerId) => {
 .layer-name {
   font-weight: 500;
   font-size: 14px;
+}
+
+.section-heading {
+  margin: 24px 0 12px 0;
+  text-align: left;
+  font-size: 1rem;
+}
+
+.performance-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.performance-option {
+  cursor: pointer;
+  border: 2px solid var(--color-border, #ccc);
+  border-radius: 20px;
+  padding: 8px 16px;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text, #2c3e50);
+  transition: all 0.2s ease-in-out;
+}
+
+.performance-option:hover {
+  border-color: var(--color-primary);
+}
+
+.performance-option.active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.performance-option.disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  border-color: var(--color-border, #ccc);
+  background: #f1f5f9;
+  color: var(--color-text-muted, #64748b);
+}
+
+.performance-option.disabled:hover {
+  border-color: var(--color-border, #ccc);
+}
+
+.performance-hint {
+  margin: 10px 0 0 0;
+  text-align: left;
+  font-size: 12px;
+  color: var(--color-text-muted, #64748b);
+}
+
+.performance-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border, #eee);
+}
+
+.performance-legend-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.performance-legend-label {
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted, #64748b);
+}
+
+.performance-legend-empty {
+  font-size: 12px;
+  text-align: left;
+  color: var(--color-text-muted, #64748b);
 }
 
 /* Animation für das Hochfahren */

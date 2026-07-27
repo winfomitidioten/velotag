@@ -1,6 +1,9 @@
 {
   "appId": "de.velotag.app",
   "appName": "velotag",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http"
+  }
 }
 
