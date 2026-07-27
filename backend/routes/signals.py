@@ -6,6 +6,16 @@ from .models import Route, GroupRideIntersection
 from groups.models import Group, Membership
 # WICHTIG: MultiLineString und LineString statt Polygon importieren
 from django.contrib.gis.geos import MultiLineString, LineString
+from .performance import persist_route_contributions
+
+
+@receiver(post_save, sender=Route)
+def update_user_performance_buckets(sender, instance, created, **kwargs):
+    # Nur bei neu angelegten Routen ausführen: Die Bucket-Summen werden additiv erhöht, ein
+    # nachträgliches Bearbeiten derselben Route könnte sie nicht mehr korrekt "rückgängig machen".
+    if not created:
+        return
+    persist_route_contributions(instance)
 
 @receiver(post_save, sender=Route)
 def update_group_intersections(sender, instance, created, **kwargs):

@@ -1,10 +1,12 @@
 <script setup>
 
 import { onMounted, onUnmounted, ref, computed, watch, shallowRef } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
+import velotagLogo from '@/assets/velotag-logo.png'
 import api from '@/api/api'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
 import velotagLogo from '@/assets/velotag-logo.png'
 import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
+import { drawPerformanceMap } from '@/composables/drawPerformanceMap.js'
 import LayersSelectionModal from '@/components/layersSelectionModal.vue'
 import { usePinMode } from '@/composables/usePinMode.js'
 import PhotoPinUploadModal from '@/components/PhotoPinUploadModal.vue';
@@ -13,6 +15,8 @@ import PhotoPinGalleryModal from '@/components/PhotoPinGalleryModal.vue';
 import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
 import { useFavorite } from '@/composables/useFavorite.js'
+import { usePerformanceView } from '@/composables/usePerformanceView.js'
+import api from '@/api/api';
 import L from 'leaflet'
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
@@ -62,6 +66,8 @@ watch(showStravaImport, (isOpen, wasOpen) => {
 const isGroupView = ref(false);
 const { favoriteGroupId } = useFavorite()
 
+const { performanceMetric, performanceRange } = usePerformanceView();
+
 const groups = ref([]); // Alle Gruppen des Users, für das Dropdown zur Gruppenauswahl
 const selectedGroupId = ref(null); // Aktuell auf der Karte angezeigte Gruppe (nur temporäre Auswahl, kein Favorit-Update)
 const showGroupDropdown = ref(false);
@@ -98,6 +104,33 @@ const handleClickOutside = (event) => {
 };
 
 const map = shallowRef(null);//shallowRef überwacht nur .value von Map und nicht alle internen Eigenschaften => Performance
+
+const loadPerformanceView = async (metric, forceRefresh = false) => {
+  performanceRange.value = await drawPerformanceMap(map.value, metric, { forceRefresh });
+};
+
+// Karte wird per <keep-alive> am Leben gehalten, onMounted läuft also nur einmal.
+// Nach einem Strava-Import (Picker schließt) müssen die neuen Routen daher aktiv nachgeladen werden
+watch(showStravaImport, (isOpen, wasOpen) => {
+  if (!isOpen && wasOpen && map.value) {
+    if (performanceMetric.value) {
+      // Neue Route(n) könnten importiert worden sein - zwischengespeicherten Stand verwerfen
+      loadPerformanceView(performanceMetric.value, true);
+    } else {
+      drawUserMap(map.value);
+    }
+  }
+});
+
+// Leistungs-Ansicht ist unabhängig vom Solo/Group-Toggle (zeigt immer die eigenen Daten);
+// bei Rückkehr zu "Standard" wird wieder die aktuelle Solo-/Gruppen-Ansicht gezeichnet
+watch(performanceMetric, (metric) => {
+  if (metric) {
+    loadPerformanceView(metric);
+  } else {
+    drawUserMap(map.value, isGroupView.value, isGroupView.value ? selectedGroupId.value : undefined);
+  }
+});
 
 const activeLayerPreview = computed(() => {
   const active = availableLayers.find(l => l.id === activeLayerId.value);
@@ -165,6 +198,8 @@ onUnmounted(() => {
 watch(isGroupView, async (newValue) => {
   console.log("isGroupView geändert:", newValue, favoriteGroupId.value);
   if (newValue) {
+    // Leistungsdaten sind personenbezogen und in der Gruppenansicht nicht verfügbar
+    performanceMetric.value = null;
     //Hier DB aufruf, um die Routen für die ausgewählte Ansicht zu laden; Problem: favoriteGroupId wird aktuell nicht aus DB geladen
     const response = await api.get('groups/favorite/');
     if (response.status === 200) {
@@ -174,17 +209,21 @@ watch(isGroupView, async (newValue) => {
     }
     // Beim Wechsel in die Gruppenansicht wird standardmäßig der Favorit ausgewählt
     selectedGroupId.value = favoriteGroupId.value;
-    drawUserMap(map.value, true, selectedGroupId.value)
-    drawPhotoPins(map.value, true, selectedGroupId.value)
+    if (!performanceMetric.value) {
+      drawUserMap(map.value, true, selectedGroupId.value)
+      drawPhotoPins(map.value, true, selectedGroupId.value)
+    }
   } else {
-    drawUserMap(map.value, false)
-    drawPhotoPins(map.value, false)
+    if (!performanceMetric.value) {
+      drawUserMap(map.value, false)
+      drawPhotoPins(map.value, false)
+    }
   }
 });
 
 // Auswahl einer anderen Gruppe im Dropdown: nur temporäre Kartenansicht, Favorit bleibt unverändert
 watch(selectedGroupId, (newGroupId) => {
-  if (isGroupView.value) {
+  if (isGroupView.value && !performanceMetric.value) {
     drawUserMap(map.value, true, newGroupId)
     drawPhotoPins(map.value, true, newGroupId)
   }
@@ -296,7 +335,7 @@ watch(selectedGroupId, (newGroupId) => {
     </ul>
   </div>
 
-  <LayersSelectionModal v-if="showLayers" @close="showLayers = false"/>
+  <LayersSelectionModal v-if="showLayers" :is-group-view="isGroupView" @close="showLayers = false"/>
 
 </template>
 
