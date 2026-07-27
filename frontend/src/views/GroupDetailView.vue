@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
-import HeaderButton from './HeaderButton.vue';
+import HeaderButton from '@/components/HeaderButton.vue';
 
 const route = useRoute()
 const router = useRouter()

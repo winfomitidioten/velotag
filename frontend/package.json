@@ -11,12 +11,14 @@
   "dependencies": {
     "@capacitor/android": "^8.4.0",
     "@capacitor/app": "^8.0.2",
+    "@capacitor/camera": "^8.2.0",
     "@capacitor/cli": "^8.4.0",
     "@capacitor/core": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
     "@capacitor/status-bar": "^8.0.2",
     "@turf/turf": "^7.3.5",
     "axios": "^1.16.1",
+    "framework7": "^9.1.1",
     "leaflet": "^1.9.4",
     "pinia": "^3.0.4",
     "vue": "^3.5.32",
@@ -24,8 +26,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.6",
-    "vite": "^8.0.8",
-    "vite-plugin-vue-devtools": "^8.1.1"
+    "vite": "^8.1.4",
+    "vite-plugin-vue-devtools": "^8.1.5"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
