@@ -4,7 +4,6 @@ import { onMounted, onUnmounted, ref, computed, watch, shallowRef } from 'vue' /
 import velotagLogo from '@/assets/velotag-logo.png'
 import api from '@/api/api'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
-import velotagLogo from '@/assets/velotag-logo.png'
 import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
 import { drawPerformanceMap } from '@/composables/drawPerformanceMap.js'
 import LayersSelectionModal from '@/components/layersSelectionModal.vue'
@@ -16,7 +15,6 @@ import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
 import { useFavorite } from '@/composables/useFavorite.js'
 import { usePerformanceView } from '@/composables/usePerformanceView.js'
-import api from '@/api/api';
 import L from 'leaflet'
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
