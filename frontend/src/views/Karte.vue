@@ -16,9 +16,15 @@ import { useStravaImport } from '@/composables/useStravaImport'
 import { useFavorite } from '@/composables/useFavorite.js'
 import { usePerformanceView } from '@/composables/usePerformanceView.js'
 import L from 'leaflet'
+//import StreckenView from './StreckenView.vue'
+import LascheModal from '@/components/LascheModal.vue'
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
 const showLayers = ref(false);
+const showRides= ref(false);
+
+const rideCount= ref(0);
+const totalkm = ref(0);
 const { showStravaImport } = useStravaImport();
 
 const { initializeMap, availableLayers, activeLayerId, isAttributionVisible, toggleAttribution, closeAttribution, isAttributionTarget } = useMap();
@@ -179,14 +185,19 @@ onMounted(() => {
     map.value.invalidateSize()
   })
 
+
   // Routen und Foto-Pins aus dem Backend abfragen
-  drawUserMap(map.value, isGroupView.value, favoriteGroupId.value) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
+  drawUserMap(map.value, isGroupView.value, favoriteGroupId.value).then(stats => {  
+    rideCount.value = stats.rideCount
+    totalkm.value = stats.totalkm
+  }) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
   drawPhotoPins(map.value, isGroupView.value, favoriteGroupId.value)
   console.log("übergebene Gruppen-ID in Karte.vue:", favoriteGroupId.value)
 
   fetchGroups(); // Gruppenliste für das Auswahl-Dropdown laden
 
   document.addEventListener('click', handleClickOutside);
+
 })
 
 onUnmounted(() => {
@@ -229,6 +240,8 @@ watch(selectedGroupId, (newGroupId) => {
 </script>
 
 <template>
+  <div id="map"></div>
+  <button v-if="!showRides && !showLayers" class="btn_popup" @click="showModal = true">+</button>
   <div id="map" :class="{ 'pin-mode-active': isPinMode }"></div>
 
   <div v-if="isPinMode" class="pin-mode-banner">
@@ -334,6 +347,9 @@ watch(selectedGroupId, (newGroupId) => {
   </div>
 
   <LayersSelectionModal v-if="showLayers" :is-group-view="isGroupView" @close="showLayers = false"/>
+
+  <button v-if="!showRides && !showLayers" class="btn_lasche" @click="showRides = true">{{ rideCount }} Rides · {{ totalkm }} km</button>
+  <LascheModal v-if="showRides" @close="showRides = false" />
 
 </template>
 
@@ -769,6 +785,49 @@ watch(selectedGroupId, (newGroupId) => {
     transition: background-color 0.15s ease;
   }
 
+  /* Übersichtslasche "^" */
+  .btn_lasche {
+    position: absolute;
+    bottom: 0px;
+    z-index: 9999; /* Button mit höchstem z-Index => garantiert immer sichtbar */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    color: #e8e8e8;
+    font-size: 16px;
+    font-weight: 600;
+    
+    background-color: var(--color-primary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px 16px 0 0;
+    
+    height: 34px;
+    width: calc(100% - 1000px);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.15s ease;
+  }
+
+  @media (max-width: 480px) {
+      .btn_lasche {
+        width: calc(100% - 100px);
+        font-size: 14px;
+        height: 32px;
+    }
+  }
+
+  .btn_lasche:hover {
+    background-color: var(--color-primary-dark);
+  }
+
+  .btn_lasche:active {
+    background-color: var(--color-primary);
+  }
   .group-dropdown-item:hover {
     background-color: var(--color-bg-hover);
   }

@@ -2,6 +2,7 @@ import { watch } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
+import { decodePolyline } from './polyline'
 import { clearPerformanceMap } from '@/composables/drawPerformanceMap.js'
 import { startDraw, isStaleDraw } from '@/composables/mapDrawGeneration.js'
 import { useHeatmapStyleStore } from '@/store/heatmapStyleStore.js'
@@ -25,39 +26,19 @@ function applyHeatmapPathStyle(layer, color, glowOn) {
     }
 }
 
-// Dekodiert den komprimierten String zurück in ein [Lat, Lng] Array
-const decodePolyline = (encoded) => {
-    const coordinates = [];
-    let index = 0, len = encoded.length;
-    let lat = 0, lng = 0;
-
-    while (index < len) {
-        let b, shift = 0, result = 0;
-        do {
-            b = encoded.charCodeAt(index++) - 63;
-            result |= (b & 0x1f) << shift;
-            shift += 5;
-        } while (b >= 0x20);
-        let dlat = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
-        lat += dlat;
-
-        shift = 0;
-        result = 0;
-        do {
-            b = encoded.charCodeAt(index++) - 63;
-            result |= (b & 0x1f) << shift;
-            shift += 5;
-        } while (b >= 0x20);
-        let dlng = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
-        lng += dlng;
-
-        coordinates.push([lat / 1e5, lng / 1e5]);
+// Summiert die Punktabstände einer Polyline in Metern
+const calculateRouteDistance = (coordinates) => {
+    let distance = 0;
+    for (let i=1; i<coordinates.length; i++) {
+        distance += L.latLng(coordinates[i - 1]).distanceTo(L.latLng(coordinates[i]));
     }
-    return coordinates;
-};
+    return distance;
+}
 
 let currentFeatureGroup = null;
 let colorWatchStarted = false;
+
+    let totalDistanceMeters= 0
 
 export function clearUserMap(map) {
     if (currentFeatureGroup) {
@@ -140,6 +121,9 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
+        totalDistanceMeters += calculateRouteDistance(coordinates)
+        // Initiale Farbe beim ersten Laden ermitteln
+        //let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
         const polyline = L.polyline(coordinates,
             {color: colourLine,     // Grundfarbe
@@ -170,5 +154,10 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                 });
             }
         );
+    }
+
+    return {
+        rideCount: numberOfRoutes,
+        totalkm: Math.round(totalDistanceMeters/1000)
     }
 }
