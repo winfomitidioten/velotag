@@ -4,6 +4,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from '@/components/HeaderButton.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const route = useRoute()
 const router = useRouter()
@@ -42,44 +43,96 @@ const inviteMember = async () => {
     }
 }
 
-const deleteMember = async (email) => {
-    if (!confirm(`Möchtest du das Mitglied (${email}) wirklich aus der Gruppe entfernen?`)) return;
+// Bestätigungs-Dialoge
+const confirmAction = ref(null);
+const memberToDelete = ref(null);
+const actionBusy = ref(false);
 
+const askDeleteMember = (email) => {
+    memberToDelete.value = email;
+    confirmAction.value = 'deleteMember';
+};
+
+const askDeleteGroup = () => { confirmAction.value = 'deleteGroup' };
+const askLeaveGroup = () => { confirmAction.value = 'leaveGroup' };
+
+const cancleConfirm = () => {
+    confirmAction.value = null;
+    memberToDelete.value = null;
+};
+
+const confirmConfig = computed(() => {
+    switch (confirmAction.value) {
+        case 'deleteMember':
+            return {
+                title: 'Mitglied entfernen?',
+                message: `Möchtest du ${memberToDelete.value} wirklich aus der Gruppe entfernen?`,
+                confirmLabel: 'Entfernen'
+            };
+        case 'deleteGroup':
+            return {
+                title: 'Gruppe löschen?',
+                message: 'Die Gruppe wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
+                confirmLabel: 'Löschen'
+            };
+        case 'leaveGroup':
+            return {
+                title: 'Gruppe verlassen?',
+                message: 'Möchtest du diese Gruppe wirklich verlassen?',
+                confirmLabel: 'Verlassen'
+            };
+        default:
+            return {};
+    }
+});
+
+const handleConfirm = () => {
+    if (confirmAction.value === 'deleteMember') return deleteMember();
+    if (confirmAction.value === 'deleteGroup') return deleteGroup();
+    if (confirmAction.value === 'leaveGroup') return leaveGroup();
+};
+
+
+const deleteMember = async () => {
     try{
+        actionBusy.value = true;
         const response = await api.delete(`groups/${groupId.value}/kick`, {
-            data: { email: email }
+            data: { email: memberToDelete.value }
         });
-        
+    
         group.value = response.data;
+        cancleConfirm();
     } catch (error) {
         console.error("Fehler beim Löschen des Mitglieds:", error);
         alert(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.");
+    } finally {
+        actionBusy.value = false;
     }
-}
+};
 
 const deleteGroup = async () =>{
-    if(!confirm("Möchtest du diese Gruppe wirklich dauerhaft löschen?")) return;
     try{
+        actionBusy.value = true;
         await api.delete(`groups/${groupId.value}/`);
-        alert("Gruppe wurde erfolgreich gelöscht");
         router.push("/group");
     } catch (error) {
         console.error("Fehler beim Löschen der Gruppe:", error);
         alert(error.response?.data?.error || "Es gab ein Problem beim Löschen der Gruppe.");
+        actionBusy.value = false;
     }
-}
+};
 
 const leaveGroup = async () =>{
-    if(!confirm("Möchtest du diese Gruppe wirklich verlassen?")) return;
     try{
+        actionBusy.value = true;
         await api.post(`groups/${groupId.value}/leave`);
-        alert("Gruppe wurde erfolgreich verlassen");
         router.push("/group");
     } catch (error) {
         console.error("Fehler beim Verlassen der Gruppe:", error);
         alert(error.response?.data?.error || "Es gab ein Problem beim Verlassen der Gruppe.");
+        actionBusy.value = false;
     }
-}
+};
 
 watch(() => route.params.id, (newId) => {
     if (newId) fetchGroup();
@@ -98,7 +151,7 @@ onMounted(() => {
 
         <template v-else-if="group">
             <PageHeader>
-                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="deleteGroup">
+                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="askDeleteGroup">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
                     </svg>
@@ -133,7 +186,7 @@ onMounted(() => {
                                 <span>Einladen</span>
                             </button>
 
-                            <button @click="leaveGroup" class="leave-btn">
+                            <button @click="askLeaveGroup" class="leave-btn">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
                                     <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z"/>
                                 </svg>
@@ -164,7 +217,7 @@ onMounted(() => {
                                     <span class="member-email">{{ member.email }}</span>
                                 </div>
 
-                                <div v-if="group.is_admin && member.email !== group.admin_email" class="delete-member" @click="deleteMember(member.email)">
+                                <div v-if="group.is_admin && member.email !== group.admin_email" class="delete-member" @click="askDeleteMember(member.email)">
                                     <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px">
                                         <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
                                     </svg>
@@ -185,6 +238,16 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
+            <ConfirmDialog
+                v-if="confirmAction"
+                :title="confirmConfig.title"
+                :message="confirmConfig.message"
+                :confirm-label="confirmConfig.confirmLabel"
+                danger
+                :busy="actionBusy"
+                @confirm="handleConfirm"
+                @cancel="cancleConfirm"
+            />
         </template>
     </div>
 </template>
@@ -218,8 +281,8 @@ onMounted(() => {
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        background-color: #ef4444;
-        color: white;
+        background-color: var(--color-danger);
+        color: var(--color-on-primary);
         border: none;
         padding: 0.5rem 1rem;
         border-radius: var(--radius-md);
@@ -233,7 +296,7 @@ onMounted(() => {
         right: 1.5rem;
         z-index: 90;
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-on-primary);
         border: none;
         cursor: pointer;
         width: 3.5rem;
@@ -243,7 +306,7 @@ onMounted(() => {
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
+        box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.4);
         transition: all 0.2s ease;
     }
     .mobile-fab-btn:active {
@@ -265,8 +328,8 @@ onMounted(() => {
         align-items: center;
         gap: 0.5rem;
         background-color: transparent;
-        border: 1px solid #ef4444;
-        color: #ef4444;
+        border: 1px solid var(--color-danger);
+        color: var(--color-danger);
         cursor: pointer;
         border-radius: var(--radius-md);
         padding: 0.6em 1.2em;
@@ -276,7 +339,7 @@ onMounted(() => {
         white-space: nowrap;
     }
     .leave-btn:hover {
-        background-color: #fee2e2;
+        background-color: var(--color-danger-bg);
     }
 
     .page-content {
@@ -316,7 +379,7 @@ onMounted(() => {
         align-items: center;
         width: 3rem;          
         height: 3rem;
-        background-color: #e8f7f3; 
+        background-color: var(--color-primary-soft);
         border-radius: var(--radius-md);     
         flex-shrink: 0;            
     }
@@ -394,7 +457,7 @@ onMounted(() => {
         align-items: center;
         width: 2.2rem;
         height: 2.2rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         color: var(--color-primary);
         font-weight: 600;
         font-size: 0.95rem;
@@ -428,7 +491,7 @@ onMounted(() => {
 
     .admin-badge {
         font-size: 0.7rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         color: var(--color-primary);
         padding: 0.1rem 0.4rem;
         border-radius: var(--radius-sm);
@@ -448,13 +511,13 @@ onMounted(() => {
         flex-shrink: 0;
     }
     .delete-member svg {
-        fill: #94a3b8; 
+        fill: var(--color-text-muted);
     }
     .delete-member:hover {
-        background-color: #fee2e2; 
+        background-color: var(--color-danger-bg);
     }
     .delete-member:hover svg {
-        fill: #ef4444; 
+        fill: var(--color-danger);
     }
 
     #popup-overlay {
@@ -520,12 +583,12 @@ onMounted(() => {
         flex: 1;
     }
     #cancel-btn {
-        background-color: #f1f5f9;
-        color: #64748b;
+        background-color: var(--color-bg-hover);
+        color: var(--color-text-muted);
     }
     #create-btn {
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-on-primary);
     }
 
     .loading-state {
@@ -554,7 +617,7 @@ onMounted(() => {
             align-items: center;
             gap: 0.5rem;
             background-color: var(--color-primary);
-            color: white;
+            color: var(--color-on-primary);
             border: none;
             cursor: pointer;
             border-radius: var(--radius-md);
