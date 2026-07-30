@@ -2,24 +2,16 @@ import { watch } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
-import { decodePolyline } from './polyline'
+import { decodePolyline } from './polyline' //calculateRouteDistance
 import { clearPerformanceMap } from '@/composables/drawPerformanceMap.js'
 import { startDraw, isStaleDraw } from '@/composables/mapDrawGeneration.js'
 
-// Summiert die Punktabstände einer Polyline in Metern
-const calculateRouteDistance = (coordinates) => {
-    let distance = 0;
-    for (let i=1; i<coordinates.length; i++) {
-        distance += L.latLng(coordinates[i - 1]).distanceTo(L.latLng(coordinates[i]));
-    }
-    return distance;
-}
+
+// Funktion calculateRouteDistance ausgelagert in polyline.js
 
 let currentFeatureGroup = null;
 let unwatchColor = null;
 let colorWatchStarted = false;
-
-    let totalDistanceMeters= 0
 
 export function clearUserMap(map) {
     if (currentFeatureGroup) {
@@ -31,6 +23,10 @@ export function clearUserMap(map) {
 export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async
     const myGeneration = startDraw(); // Erkennt veraltete Aufrufe, falls währenddessen umgeschaltet wird
     clearPerformanceMap(map); // Leistungs-Ansicht ausblenden, falls gerade aktiv
+
+    // Parallel zum Routen-/Intersections-Fetch abrufen, damit die Statistik-Anzeige
+    // (rideCount/totalkm, siehe Karte.vue) nicht zusätzlich blockiert
+    const statsPromise = api.get('routes/stats/');
 
     let routes = [];
     let numberOfRoutes = 0;
@@ -96,7 +92,7 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
-        totalDistanceMeters += calculateRouteDistance(coordinates)
+        //totalDistanceMeters += calculateRouteDistance(coordinates)
         // Initiale Farbe beim ersten Laden ermitteln
         //let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
@@ -125,10 +121,11 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                 layer.setStyle({ color: newColor });
             });
         });
-    });
+    }
 
+    const statsResponse = await statsPromise;
     return {
-        rideCount: numberOfRoutes,
-        totalkm: Math.round(totalDistanceMeters/1000)
+        rideCount: statsResponse.data.rideCount,
+        totalkm: statsResponse.data.totalKm
     }
 }

@@ -1,3 +1,5 @@
+import L from 'leaflet'
+
 // Dekodiert den komprimierten String zurück in ein [Lat, Lng] Array
 export const decodePolyline = (encoded) => {
     const coordinates = [];
@@ -27,4 +29,13 @@ export const decodePolyline = (encoded) => {
         coordinates.push([lat / 1e5, lng / 1e5]);
     }
     return coordinates;
+};
+
+// Summiert die Punktabstände einer Koordinatenliste in Metern
+export const calculateRouteDistance = (coordinates) => {
+    let distance = 0;
+    for (let i = 1; i < coordinates.length; i++) {
+        distance += L.latLng(coordinates[i - 1]).distanceTo(L.latLng(coordinates[i]));
+    }
+    return distance;
 };

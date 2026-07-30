@@ -231,7 +231,7 @@ onUnmounted(() => {
 
         <ul v-if="showProfileMenu" class="profile-dropdown-list">
           <li>
-            <RouterLink to="/profile" class="profile-dropdown-item" @click="closeMenus">Zum Profil</RouterLink>
+            <RouterLink :to="{ name: 'user-profile', params: { id: userStore.id } }" class="profile-dropdown-item" @click="closeMenus">Zum Profil</RouterLink>
           </li>
           <li class="profile-dropdown-divider" role="separator"></li>
           <li>

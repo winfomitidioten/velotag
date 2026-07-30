@@ -185,19 +185,19 @@ onMounted(() => {
     map.value.invalidateSize()
   })
 
-
   // Routen und Foto-Pins aus dem Backend abfragen
-  drawUserMap(map.value, isGroupView.value, favoriteGroupId.value).then(stats => {  
-    rideCount.value = stats.rideCount
-    totalkm.value = stats.totalkm
-  }) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
+  drawUserMap(map.value, isGroupView.value, favoriteGroupId.value).then(stats => {  //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
+    if (stats) {
+      rideCount.value = stats.rideCount
+      totalkm.value = stats.totalkm
+    }
+  })
   drawPhotoPins(map.value, isGroupView.value, favoriteGroupId.value)
   console.log("übergebene Gruppen-ID in Karte.vue:", favoriteGroupId.value)
 
   fetchGroups(); // Gruppenliste für das Auswahl-Dropdown laden
 
   document.addEventListener('click', handleClickOutside);
-
 })
 
 onUnmounted(() => {
@@ -240,8 +240,6 @@ watch(selectedGroupId, (newGroupId) => {
 </script>
 
 <template>
-  <div id="map"></div>
-  <button v-if="!showRides && !showLayers" class="btn_popup" @click="showModal = true">+</button>
   <div id="map" :class="{ 'pin-mode-active': isPinMode }"></div>
 
   <div v-if="isPinMode" class="pin-mode-banner">
@@ -289,7 +287,7 @@ watch(selectedGroupId, (newGroupId) => {
     </svg>
   </button>
 
-  <div v-if="!showStravaImport" class="map_controls_pill">
+  <div v-if="!showStravaImport && !showRides && !showLayers" class="map_controls_pill">
     <button class="btn_pin_mode" :class="{ active: isPinMode }" @click="setPinMode(!isPinMode)" title="Foto anpinnen">
       <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
         <path d="M440-440ZM120-120q-33 0-56.5-23.5T40-200v-480q0-33 23.5-56.5T120-760h126l74-80h240v80H355l-73 80H120v480h640v-360h80v360q0 33-23.5 56.5T760-120H120Zm640-560v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM440-260q75 0 127.5-52.5T620-440q0-75-52.5-127.5T440-620q-75 0-127.5 52.5T260-440q0 75 52.5 127.5T440-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Z"/>
@@ -718,6 +716,49 @@ watch(selectedGroupId, (newGroupId) => {
     transition: border-radius 0.15s ease;
   }
 
+  /* Übersichtslasche "^" */
+  .btn_lasche {
+    position: absolute;
+    bottom: 0px;
+    z-index: 9999; /* Button mit höchstem z-Index => garantiert immer sichtbar */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    color: #e8e8e8;
+    font-size: 16px;
+    font-weight: 600;
+    
+    background-color: var(--color-primary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px 16px 0 0;
+    
+    height: 34px;
+    width: calc(100% - 1000px);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.15s ease;
+  }
+
+  @media (max-width: 480px) {
+      .btn_lasche {
+        width: calc(100% - 100px);
+        font-size: 14px;
+        height: 32px;
+    }
+  }
+
+  .btn_lasche:hover {
+    background-color: var(--color-primary-dark);
+  }
+
+  .btn_lasche:active {
+    background-color: var(--color-primary);
+  }
   .group-dropdown-trigger.open {
     border-radius: 16px 16px 0 0;
   }

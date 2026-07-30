@@ -201,7 +201,15 @@ class RouteDetailView(APIView):
         
         route.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
+
+# Einheitliche km-Statistik -> für Lasche, Profil, Bestenliste
+class RouteStatsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(Route.get_stats_for_user(request.user), status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
