@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useSettingsStore } from '@/store/settingsStore.js';
 import PageHeader from '@/components/PageHeader.vue';
 
@@ -11,10 +11,13 @@ const themes = [
     { value: 'dark', label: 'Dunkel'},
 ];
 
-const activeIndex = computed(() => 
+const activeIndex = computed(() =>
     themes.findIndex(t => t.value === settings.theme)
 );
 
+onMounted(() => {
+    settings.loadGroupInvitesSetting();
+});
 </script>
 
 <template>

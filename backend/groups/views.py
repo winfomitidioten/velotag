@@ -7,7 +7,7 @@ from .serializers import GroupSerializer
 from .models import Group, Membership
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from users.models import User
+from users.models import User, UserProfile
 # Create your views here.
 
 class GroupView(APIView):
@@ -169,6 +169,14 @@ class GroupInviteAdmin(APIView):
                         {"error": "Dieser Nutzer ist bereits aktives Mitglied der Gruppe"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
+
+            target_profile, _ = UserProfile.objects.get_or_create(user=user_to_add)
+            if not target_profile.group_invites_enabled:
+                return Response(
+                    {"error": "Dieser Nutzer hat Gruppeneinladungen deaktiviert."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             Membership.objects.create(user=user_to_add, group=group)
             serializer = GroupSerializer(group, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)

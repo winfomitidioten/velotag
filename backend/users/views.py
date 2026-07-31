@@ -39,6 +39,7 @@ class ProfileView(APIView):
         mail = request.data.get('user.email')
         password = request.data.get('password')
         profilbild = request.data.get('profilbild')
+        group_invites_enabled = request.data.get('group_invites_enabled')
 
         if firstname is not None:
             user.first_name = firstname
@@ -59,7 +60,13 @@ class ProfileView(APIView):
 
         if profilbild and not isinstance(profilbild, str):
             profile.profilbild = profilbild
-        
+
+        if group_invites_enabled is not None:
+            if isinstance(group_invites_enabled, str):
+                profile.group_invites_enabled = group_invites_enabled.lower() == 'true'
+            else:
+                profile.group_invites_enabled = bool(group_invites_enabled)
+
         profile.save()
 
         serializer = UserProfileSerializer(profile, context={'request': request})
