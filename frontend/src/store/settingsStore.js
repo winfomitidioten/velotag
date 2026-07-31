@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch } from 'vue';
 import api from '@/api/api';
 
 const THEME_STORAGE_KEY = 'velotag_theme';
@@ -32,29 +32,26 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // Ob niemand mehr diesen Nutzer in eine Gruppe einladen darf, wird serverseitig
     // durchgesetzt (GroupInviteAdmin) - localStorage ist hier nur ein schneller
-    // Anzeige-Cache, die eigentliche Quelle ist immer der Server.
-    let applyingServerValue = false;
-    watch(groupInvitesEnabled, async (v) => {
-        localStorage.setItem(INVITE_KEY, JSON.stringify(v));
-        if (applyingServerValue) return;
+    // Anzeige-Cache, die eigentliche Quelle ist immer der Server. Bewusst kein watch()
+    // fuer den Server-Sync (Klick -> setGroupInvitesEnabled() ruft die API direkt und
+    // unmittelbar auf, statt indirekt ueber einen Watcher zu laufen).
+    async function setGroupInvitesEnabled(value) {
+        groupInvitesEnabled.value = value;
+        localStorage.setItem(INVITE_KEY, JSON.stringify(value));
         try {
-            await api.patch('profil/', { group_invites_enabled: v });
+            await api.patch('profil/', { group_invites_enabled: value });
         } catch (err) {
             console.error('Fehler beim Speichern der Gruppeneinladungen-Einstellung:', err);
         }
-    });
+    }
 
     async function loadGroupInvitesSetting() {
         try {
             const response = await api.get('profil/');
-            applyingServerValue = true;
             groupInvitesEnabled.value = response.data.group_invites_enabled;
-            await nextTick(); // Watcher (oben) muss zuerst laufen, bevor das Flag zurückgesetzt wird -
-                               // sonst würde der frisch geladene Wert gleich wieder ans Backend zurückgepatcht.
+            localStorage.setItem(INVITE_KEY, JSON.stringify(groupInvitesEnabled.value));
         } catch (err) {
             console.error('Fehler beim Laden der Gruppeneinladungen-Einstellung:', err);
-        } finally {
-            applyingServerValue = false;
         }
     }
 
@@ -69,7 +66,7 @@ export const useSettingsStore = defineStore('settings', () => {
         if (VALID_THEMES.includes(value)) theme.value = value;
     }
 
-    return { theme, setTheme, notificationsEnabled, groupInvitesEnabled, loadGroupInvitesSetting };
+    return { theme, setTheme, notificationsEnabled, groupInvitesEnabled, loadGroupInvitesSetting, setGroupInvitesEnabled };
 });
 
 
