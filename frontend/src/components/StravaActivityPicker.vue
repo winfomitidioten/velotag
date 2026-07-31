@@ -86,7 +86,7 @@ onMounted(loadActivities)
   justify-content: space-between;
   padding: calc(var(--safe-top, 0px) + 1rem) 1.25rem 1rem;
   flex-shrink: 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .picker-header h2 {
@@ -104,7 +104,7 @@ onMounted(loadActivities)
   border: none;
   border-radius: var(--radius-lg, 10px);
   background: var(--color-primary, #3db897);
-  color: white;
+  color: var(--color-on-primary);
   cursor: pointer;
   transition: background-color 0.15s;
 }
@@ -136,7 +136,7 @@ onMounted(loadActivities)
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: #f5f7fa;
+  background: var(--color-bg-hover);
   border-radius: 12px;
 }
 
@@ -150,7 +150,7 @@ onMounted(loadActivities)
 .activity-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -158,12 +158,12 @@ onMounted(loadActivities)
 
 .activity-meta {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--color-text-muted);
 }
 
 .import-button {
   background-color: var(--color-primary, #3db897);
-  color: white;
+  color: var(--color-on-primary);
   border: none;
   border-radius: 8px;
   padding: 8px 14px;
@@ -180,7 +180,7 @@ onMounted(loadActivities)
 
 .already-imported {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--color-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }

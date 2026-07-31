@@ -87,8 +87,8 @@
 
 <style scoped>
   .error-message {
-    background-color: #fee2e2;
-    color: #e53e3e;
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
     padding: 10px;
     border-radius: 8px;
     margin-bottom: 15px;
@@ -96,8 +96,8 @@
   }
 
   .erfolgs-message{
-    background-color: #c6f6d5;
-    color: #385e38;
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
     padding: 10px;
     border-radius: 8px;
     margin-bottom: 15px;
@@ -108,7 +108,7 @@
   .divider::after {
     content: '';
     flex: 1;
-    border-bottom: 1px solid #e2e8f0; /* Zarte graue Linien links und rechts */
+    border-bottom: 1px solid var(--color-border); /* Zarte graue Linien links und rechts */
   }
 
   .divider::before { margin-right: 16px; }
@@ -117,11 +117,11 @@
   /* --- DROPZONE --- */
   .dropzone-box {
     padding: 32px 20px;
-    border: 2px dashed #cbd5e1; 
+    border: 2px dashed var(--color-border);
     border-radius: 16px;
-    background-color: #f8fafc;
+    background-color: var(--color-bg-input);
     cursor: pointer;
-    transition: all 0.2s ease; 
+    transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -130,12 +130,12 @@
   }
 
   .dropzone-box:hover {
-    border-color: #94a3b8;
-    background-color: #f1f5f9;
+    border-color: var(--color-text-muted);
+    background-color: var(--color-bg-hover);
   }
 
   .dz-message {
-    color: #64748b;
+    color: var(--color-text-muted);
     font-size: 0.95rem;
     line-height: 1.5;
     display: flex;
@@ -147,7 +147,7 @@
   .upload-icon {
     width: 40px;
     height: 40px;
-    color: #94a3b8;
+    color: var(--color-text-muted);
     transition: color 0.2s ease;
   }
 
@@ -157,9 +157,9 @@
 
   /* Aktiver Status (Drag & Drop) */
   .dropzone-box.active {
-    border-color: var(--color-primary, #3db897); 
-    background-color: rgba(61, 184, 151, 0.05); /* Zarter Velotag-Grüner Hintergrund */
-    transform: scale(1.02); 
+    border-color: var(--color-primary, #3db897);
+    background-color: rgba(var(--color-primary-rgb), 0.05); /* Zarter Velotag-Grüner Hintergrund */
+    transform: scale(1.02);
   }
   
   .dropzone-box.active .upload-icon {
