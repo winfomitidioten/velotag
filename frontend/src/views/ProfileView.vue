@@ -320,7 +320,7 @@
     input:focus {
         outline: none;
         border-color: var(--color-primary);
-        box-shadow: 0 0 0 2px rgba(61, 184, 151, 0.2);
+        box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
     }
 
     h3, label, #save {
@@ -332,7 +332,7 @@
     #save {
         background-color: var(--color-primary);
         border: none;
-        color: #ffffff;
+        color: var(--color-on-primary);
         border-radius: var(--radius-md);
         display: flex;
         justify-content: center;

@@ -18,7 +18,8 @@ const onRegistered = () => {
 
             <!-- Logo & Tagline -->
              <div class="header">
-                <img src="@/assets/logo.png" alt="velotag logo" class="logo" />
+                <img src="@/assets/logo-light.png" alt="velotag logo" class="logo logo--light" />
+                <img src="@/assets/logo-dark.png" alt="velotag logo" class="logo logo--dark" />
                 <p class="tagline">Deine Touren - alle auf einen Blick</p>
              </div>
              
@@ -91,16 +92,37 @@ const onRegistered = () => {
     height: 100px;
     margin-bottom: 0.5rem;
 }
+
+/* Wortmarke ist dunkel eingefärbt -> im Dunkel-Modus die helle Variante zeigen,
+   sonst wäre der Schriftzug auf dunklem Karten-Hintergrund unlesbar */
+.logo--dark {
+    display: none;
+}
+:root[data-theme='dark'] .logo--light {
+    display: none;
+}
+:root[data-theme='dark'] .logo--dark {
+    display: inline;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .logo--light {
+        display: none;
+    }
+    :root:not([data-theme]) .logo--dark {
+        display: inline;
+    }
+}
+
 .tagline {
     font-size: 14px;
-    color: #888;
+    color: var(--color-text-muted);
     margin: 0;
 }
 
 /* --- Tabs --- */
 .tabs {
     display: flex;
-    background: #f0f2f5;   /* grauer Hintergrund für inaktive Seite */
+    background: var(--color-bg-page);   /* grauer Hintergrund für inaktive Seite */
     border-radius: 10px;
     padding: 4px;
     margin-bottom: 1.75rem;
@@ -113,19 +135,19 @@ const onRegistered = () => {
     background: transparent;
     font-size: 14px;
     font-weight: 500;
-    color: #888;
+    color: var(--color-text-muted);
     cursor: pointer;
     transition: all 0.2s;
 }
 .tab--active {
     background: var(--color-primary);   /* Grün wenn aktiv */
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(61, 184, 151, 0.3);
+    color: var(--color-on-primary);
+    box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.3);
 }
 .success-message {
-    background: rgba(61, 184, 151, 0.1);
+    background: rgba(var(--color-primary-rgb), 0.1);
     color: var(--color-primary);
-    border: 1px solid rgba(61, 184, 151, 0.3);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
     border-radius: 8px;
     padding: 10px 14px;
     font-size: 13px;

@@ -6,6 +6,10 @@ import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from '@/components/HeaderButton.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useToast } from '@/composables/useToast';
+import { useUserStore } from '@/store/userStore'
+
+
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const route = useRoute()
 const router = useRouter()
@@ -36,6 +40,10 @@ const handleConfirm = async () => {
         confirmBusy.value = false;
         pendingConfirm.value = null;
     }
+const userStore = useUserStore()
+
+const goToProfile = (member) => {
+    router.push({ name: 'user-profile', params: { id: member.id } })
 }
 
 const fetchGroup = async () => {
@@ -99,19 +107,73 @@ const confirmTransferAdmin = (member) => {
 }
 
 const deleteMember = async (member) => {
-    try{
-        const response = await api.delete(`groups/${groupId.value}/kick`, {
-            data: { email: member.email }
-        });
+// Bestätigungs-Dialoge
+const confirmAction = ref(null);
+const memberToDelete = ref(null);
+const actionBusy = ref(false);
 
+const askDeleteMember = (email) => {
+    memberToDelete.value = email;
+    confirmAction.value = 'deleteMember';
+};
+
+const askDeleteGroup = () => { confirmAction.value = 'deleteGroup' };
+const askLeaveGroup = () => { confirmAction.value = 'leaveGroup' };
+
+const cancleConfirm = () => {
+    confirmAction.value = null;
+    memberToDelete.value = null;
+};
+
+const confirmConfig = computed(() => {
+    switch (confirmAction.value) {
+        case 'deleteMember':
+            return {
+                title: 'Mitglied entfernen?',
+                message: `Möchtest du ${memberToDelete.value} wirklich aus der Gruppe entfernen?`,
+                confirmLabel: 'Entfernen'
+            };
+        case 'deleteGroup':
+            return {
+                title: 'Gruppe löschen?',
+                message: 'Die Gruppe wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
+                confirmLabel: 'Löschen'
+            };
+        case 'leaveGroup':
+            return {
+                title: 'Gruppe verlassen?',
+                message: 'Möchtest du diese Gruppe wirklich verlassen?',
+                confirmLabel: 'Verlassen'
+            };
+        default:
+            return {};
+    }
+});
+
+const handleConfirm = () => {
+    if (confirmAction.value === 'deleteMember') return deleteMember();
+    if (confirmAction.value === 'deleteGroup') return deleteGroup();
+    if (confirmAction.value === 'leaveGroup') return leaveGroup();
+};
+
+
+const deleteMember = async () => {
+    try {
+        actionBusy.value = true;
+        const response = await api.delete(`groups/${groupId.value}/kick`, {
+            data: { email: memberToDelete.value }
+        });
         group.value = response.data;
-        showToast(`${displayMemberName(member)} wurde aus der Gruppe entfernt.`);
+        cancleConfirm();
+        showToast("Mitglied wurde aus der Gruppe entfernt.");
     } catch (error) {
         console.error("Fehler beim Löschen des Mitglieds:", error);
         showToast(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.", 'error');
+    } finally {
+        actionBusy.value = false;
     }
-}
-
+};
+  
 const confirmDeleteMember = (member) => {
     askConfirm({
         title: 'Mitglied entfernen?',
@@ -124,6 +186,7 @@ const confirmDeleteMember = (member) => {
 
 const deleteGroup = async () =>{
     try{
+        actionBusy.value = true;
         await api.delete(`groups/${groupId.value}/`);
         showToast("Gruppe wurde erfolgreich gelöscht");
         router.push("/group");
@@ -131,7 +194,7 @@ const deleteGroup = async () =>{
         console.error("Fehler beim Löschen der Gruppe:", error);
         showToast(error.response?.data?.error || "Es gab ein Problem beim Löschen der Gruppe.", 'error');
     }
-}
+};
 
 const confirmDeleteGroup = () => {
     askConfirm({
@@ -145,6 +208,7 @@ const confirmDeleteGroup = () => {
 
 const leaveGroup = async () =>{
     try{
+        actionBusy.value = true;
         await api.post(`groups/${groupId.value}/leave`);
         showToast("Gruppe wurde erfolgreich verlassen");
         router.push("/group");
@@ -152,7 +216,7 @@ const leaveGroup = async () =>{
         console.error("Fehler beim Verlassen der Gruppe:", error);
         showToast(error.response?.data?.error || "Es gab ein Problem beim Verlassen der Gruppe.", 'error');
     }
-}
+};
 
 const confirmLeaveGroup = () => {
     askConfirm({
@@ -229,8 +293,9 @@ onMounted(() => {
                         <h4>Mitglieder</h4>
                         <ul class="member-list">
                             <li v-for="member in group.members" :key="member.id" class="member-item">
-                                <img v-if="member.profilbild" :src="member.profilbild" alt="Profilbild" class="member-avatar-img"/>
-                                <div v-else class="member-avatar">
+                                <img v-if="member.profilbild" :src="member.profilbild" alt="Profilbild" 
+                                    class="member-avatar-img" @click="goToProfile(member)"/>
+                                <div v-else class="member-avatar" @click="goToProfile(member)">
                                     {{ (member.first_name || member.email).charAt(0).toUpperCase() }}
                                 </div>
                                 
@@ -319,8 +384,8 @@ onMounted(() => {
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        background-color: #ef4444;
-        color: white;
+        background-color: var(--color-danger);
+        color: var(--color-on-primary);
         border: none;
         padding: 0.5rem 1rem;
         border-radius: var(--radius-md);
@@ -334,7 +399,7 @@ onMounted(() => {
         right: 1.5rem;
         z-index: 90;
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-on-primary);
         border: none;
         cursor: pointer;
         width: 3.5rem;
@@ -344,7 +409,7 @@ onMounted(() => {
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
+        box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.4);
         transition: all 0.2s ease;
     }
     .mobile-fab-btn:active {
@@ -366,8 +431,8 @@ onMounted(() => {
         align-items: center;
         gap: 0.5rem;
         background-color: transparent;
-        border: 1px solid #ef4444;
-        color: #ef4444;
+        border: 1px solid var(--color-danger);
+        color: var(--color-danger);
         cursor: pointer;
         border-radius: var(--radius-md);
         padding: 0.6em 1.2em;
@@ -377,7 +442,7 @@ onMounted(() => {
         white-space: nowrap;
     }
     .leave-btn:hover {
-        background-color: #fee2e2;
+        background-color: var(--color-danger-bg);
     }
 
     .page-content {
@@ -417,7 +482,7 @@ onMounted(() => {
         align-items: center;
         width: 3rem;          
         height: 3rem;
-        background-color: #e8f7f3; 
+        background-color: var(--color-primary-soft);
         border-radius: var(--radius-md);     
         flex-shrink: 0;            
     }
@@ -495,7 +560,7 @@ onMounted(() => {
         align-items: center;
         width: 2.2rem;
         height: 2.2rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         color: var(--color-primary);
         font-weight: 600;
         font-size: 0.95rem;
@@ -530,7 +595,7 @@ onMounted(() => {
 
     .admin-badge {
         font-size: 0.7rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         color: var(--color-primary);
         padding: 0.1rem 0.4rem;
         border-radius: var(--radius-sm);
@@ -633,12 +698,12 @@ onMounted(() => {
         flex: 1;
     }
     #cancel-btn {
-        background-color: #f1f5f9;
-        color: #64748b;
+        background-color: var(--color-bg-hover);
+        color: var(--color-text-muted);
     }
     #create-btn {
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-on-primary);
     }
 
     .loading-state {
@@ -648,6 +713,12 @@ onMounted(() => {
         min-height: 100vh;
         color: var(--color-text-muted);
     }
+
+    .member-avatar-img,
+    .member-avatar {
+        cursor: pointer;
+    }
+
 
     @media (min-width: 480px) {
         header h3 {
@@ -667,7 +738,7 @@ onMounted(() => {
             align-items: center;
             gap: 0.5rem;
             background-color: var(--color-primary);
-            color: white;
+            color: var(--color-on-primary);
             border: none;
             cursor: pointer;
             border-radius: var(--radius-md);

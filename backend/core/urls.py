@@ -9,9 +9,13 @@ from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvit
 from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken
+
+from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken, PublicUserProfileView
+
 from .views.strava import strava_status, strava_connect, strava_callback, get_activities, import_activity
 
-urlpatterns = [
+
+urlpatterns = [ 
     path('admin/', admin.site.urls),
 
     # Includes
@@ -42,6 +46,7 @@ urlpatterns = [
     path('api/groups/<int:pk>/leave', GroupLeaveView.as_view(), name="group-leave"),
     path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick"),
     path('api/groups/<int:pk>/transfer-admin/', GroupTransferAdminView.as_view(), name="group-transfer-admin"),
+    path('api/users/<int:pk>/profile/', PublicUserProfileView.as_view(), name='user-public-profile'),
     path('api/groups/remove_favorite/', RemoveFavoriteView.as_view(), name="group-remove-favorite"),
     path('api/groups/favorite/', GetGroupFavoriteView.as_view(), name="group-get-favorite"),
     path('api/groups/<int:pk>/favorite/', SetGroupFavoriteView.as_view(), name="group-set-favorite")
