@@ -65,8 +65,7 @@ onMounted(() => {
                     <span class="switch">
                         <input
                             type="checkbox"
-                            :checked="settings.groupInvitesEnabled"
-                            @change="settings.setGroupInvitesEnabled($event.target.checked)"
+                            v-model="settings.groupInvitesEnabled"
                         />
                         <span class="track"></span>
                     </span>
