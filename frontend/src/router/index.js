@@ -7,6 +7,9 @@ import GroupDetailView from '../views/GroupDetailView.vue'
 import GroupLeaderboardView from '../components/GroupLeaderboardView.vue'
 import GroupInviteView from '../views/GroupInviteView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
+import PublicUserProfile from '../components/PublicUserProfile.vue'
+
+import SettingsView from '@/views/SettingsView.vue';
 
 const routes = [
   {
@@ -65,7 +68,7 @@ const routes = [
   {
     path: '/settings',
     name: 'settings',
-    component: ComingSoon,
+    component: SettingsView,
     meta: { requiresAuth: true, showBack: true, title: 'Einstellungen' }
   },
   {
@@ -73,7 +76,14 @@ const routes = [
     name: 'rides',
     component: () => import('../views/StreckenView.vue'),
     meta: { requiresAuth: true, showBack: true }
-  }
+  },
+  {
+  path: '/user/:id',
+  name: 'user-profile',
+  component: PublicUserProfile,
+  meta: { requiresAuth: true, showBack: true }
+},
+
 ];
 
 const router = createRouter({

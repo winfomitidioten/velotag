@@ -6,13 +6,14 @@ from rest_framework.response import Response
 from .serializers import GroupSerializer
 from .models import Group, Membership
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from users.models import User
-from utils.notifications import send_push_notifications
 # Create your views here.
 
 class GroupView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]  # für den optionalen Bild-Upload
 
     def get(self, request):
         user = request.user
@@ -21,17 +22,23 @@ class GroupView(APIView):
         serializer = GroupSerializer(groups, many=True, context={'request': request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def post(self, request):
         group_name = request.data.get('name')
 
         if not group_name:
             return Response(
-                {"error": "Ein Gruppenname wird benötigt."}, 
+                {"error": "Ein Gruppenname wird benötigt."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        profilbild = request.data.get('profilbild')
         new_group = Group.objects.create(
             name = group_name,
+            description = request.data.get('description') or '',
+            # profilbild kommt nur als echte Datei an, nie als String - so wird ein versehentlich
+            # mitgeschicktes Textfeld (z.B. die bisherige Bild-URL) nie fälschlich übernommen.
+            profilbild = profilbild if profilbild and not isinstance(profilbild, str) else None,
             admin = request.user
         )
         Membership.objects.create(user=request.user, group=new_group, status='Joined')
@@ -42,6 +49,7 @@ class GroupView(APIView):
 class GroupDetailView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]  # für den optionalen Bild-Upload
 
     def get(self, request, pk):
         try:
@@ -80,10 +88,55 @@ class GroupDetailView(APIView):
             )
         except Group.DoesNotExist:
             return Response(
-                {"error": "Gruppe wurde nicht gefunden."}, 
+                {"error": "Gruppe wurde nicht gefunden."},
                 status=status.HTTP_404_NOT_FOUND
-            )            
-        
+            )
+
+    def patch(self, request, pk):
+        """
+        Bearbeitet Name, Beschreibung und Profilbild einer Gruppe (nur Admin).
+        Alle Felder sind optional und werden nur übernommen, wenn sie im Request
+        vorkommen - so kann man z.B. nur das Bild ändern, ohne den Namen mitzuschicken.
+        Löschen ohne Ersatz: description="" leert die Beschreibung, remove_profilbild="true"
+        entfernt das Bild (beides ohne dass etwas Neues mitgeschickt werden muss).
+        """
+        try:
+            group = Group.objects.get(pk=pk)
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if request.user != group.admin:
+            return Response(
+                {"error": "Nur der Admin darf die Gruppe bearbeiten."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        name = request.data.get('name')
+        if name is not None:
+            if not name.strip():
+                return Response(
+                    {"error": "Ein Gruppenname wird benötigt."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            group.name = name
+
+        description = request.data.get('description')
+        if description is not None:
+            group.description = description
+
+        profilbild = request.data.get('profilbild')
+        if profilbild and not isinstance(profilbild, str):
+            group.profilbild = profilbild
+        elif str(request.data.get('remove_profilbild', '')).lower() == 'true':
+            group.profilbild = None
+
+        group.save()
+        serializer = GroupSerializer(group, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class GroupInviteAdmin(APIView):
     authentication_classes = [TokenAuthentication]
@@ -118,14 +171,6 @@ class GroupInviteAdmin(APIView):
                     )
             Membership.objects.create(user=user_to_add, group=group)
             serializer = GroupSerializer(group, context={'request': request})
-            send_push_notifications(
-                user=user_to_add,
-                title="Neue Gruppeneinladung",
-                body=f"{request.user.username} hat dich in eine Gruppe eingeladen",
-                data_payload={
-                    "type": "group_invitation"
-                }
-            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Group.DoesNotExist:
             return Response(
@@ -259,6 +304,58 @@ class GroupKickView(APIView):
                 {"error": "Du bist kein aktives Mitglied dieser Gruppe."}, 
                 status=status.HTTP_403_FORBIDDEN
             )
+
+class GroupTransferAdminView(APIView):
+    """
+    Übergibt die Adminrolle einer Gruppe an ein anderes, bereits aktives Mitglied.
+    `is_admin` im GroupSerializer wird direkt aus `group.admin == request.user` berechnet
+    (siehe GroupSerializer.get_is_admin) - ein reiner Wechsel von `group.admin` reicht deshalb
+    aus, um die Rechte beim neuen Admin zu aktivieren UND beim bisherigen Admin zu deaktivieren.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+
+            if group.admin != request.user:
+                return Response(
+                    {"error": "Nur der Admin darf seine Rolle übertragen."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            new_admin_mail = request.data.get('email')
+            if not new_admin_mail:
+                return Response(
+                    {"error": "Eine Benutzermail wird benötigt."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            new_admin = User.objects.get(email=new_admin_mail)
+            if not Membership.objects.filter(user=new_admin, group=group, status='Joined').exists():
+                return Response(
+                    {"error": "Dieser Nutzer ist kein aktives Mitglied der Gruppe."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            group.admin = new_admin
+            group.save()
+
+            serializer = GroupSerializer(group, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
 
 class RemoveFavoriteView(APIView):
     authentication_classes = [TokenAuthentication]

@@ -3,9 +3,12 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
 import api from '@/api/api';
+import CreateGroupModal from '@/components/CreateGroupModal.vue';
 
 const userStore = useUserStore();
 const router = useRouter();
+
+const showCreateGroup = ref(false);
 
 const userInitials = computed(() => userStore.initials || '?');
 const userProfileImage = computed(() => userStore.profileImage || '');
@@ -32,6 +35,16 @@ const fetchGroups = async () => {
 const closeMenus = () => {
   showGroupsMenu.value = false;
   showProfileMenu.value = false;
+};
+
+const openCreateGroup = () => {
+  closeMenus();
+  showCreateGroup.value = true;
+};
+
+const handleGroupCreated = (newGroup) => {
+  groups.value.push(newGroup);
+  showCreateGroup.value = false;
 };
 
 // Berechnet die Bildschirmposition des Dropdowns aus der tatsächlichen Position
@@ -120,7 +133,8 @@ onUnmounted(() => {
   <header class="app-header">
     <div class="app-header-inner">
       <RouterLink to="/map" class="app-logo" @click="closeMenus">
-        <img src="@/assets/logo.png" alt="velotag logo" />
+        <img src="@/assets/logo-light.png" alt="velotag logo" class="logo-img logo-img--light" />
+        <img src="@/assets/logo-dark.png" alt="velotag logo" class="logo-img logo-img--dark" />
       </RouterLink>
 
       <nav class="app-nav">
@@ -183,9 +197,9 @@ onUnmounted(() => {
               <RouterLink to="/group" class="nav-dropdown-item" @click="closeMenus">Zu den Gruppen</RouterLink>
             </li>
             <li>
-              <RouterLink to="/group" class="nav-dropdown-item nav-dropdown-item--create" @click="closeMenus">
+              <button type="button" class="nav-dropdown-item nav-dropdown-item--create" @click="openCreateGroup">
                 + Neue Gruppe erstellen
-              </RouterLink>
+              </button>
             </li>
           </ul>
         </Teleport>
@@ -217,7 +231,7 @@ onUnmounted(() => {
 
         <ul v-if="showProfileMenu" class="profile-dropdown-list">
           <li>
-            <RouterLink to="/profile" class="profile-dropdown-item" @click="closeMenus">Zum Profil</RouterLink>
+            <RouterLink :to="{ name: 'user-profile', params: { id: userStore.id } }" class="profile-dropdown-item" @click="closeMenus">Zum Profil</RouterLink>
           </li>
           <li class="profile-dropdown-divider" role="separator"></li>
           <li>
@@ -226,6 +240,12 @@ onUnmounted(() => {
         </ul>
       </div>
     </div>
+
+    <CreateGroupModal
+      v-if="showCreateGroup"
+      @close="showCreateGroup = false"
+      @created="handleGroupCreated"
+    />
   </header>
 </template>
 
@@ -261,6 +281,26 @@ onUnmounted(() => {
   height: 60px;
   width: auto;
   object-fit: contain;
+}
+
+/* Wortmarke ist dunkel eingefärbt -> im Dunkel-Modus die helle Variante zeigen,
+   sonst wäre der Schriftzug auf dunklem Hintergrund unlesbar */
+.logo-img--dark {
+  display: none;
+}
+:root[data-theme='dark'] .logo-img--light {
+  display: none;
+}
+:root[data-theme='dark'] .logo-img--dark {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .logo-img--light {
+    display: none;
+  }
+  :root:not([data-theme]) .logo-img--dark {
+    display: block;
+  }
 }
 
 /* Mittlerer Navigationsbereich: scrollt horizontal, statt umzubrechen,
@@ -306,7 +346,7 @@ onUnmounted(() => {
 .nav-link.router-link-active,
 .nav-link.open {
   color: var(--color-primary);
-  background-color: rgba(61, 184, 151, 0.1);
+  background-color: rgba(var(--color-primary-rgb), 0.1);
 }
 
 .chevron {
@@ -371,7 +411,7 @@ onUnmounted(() => {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 .nav-dropdown-empty {
@@ -403,7 +443,7 @@ onUnmounted(() => {
   height: 42px;
   border-radius: 50%;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   font-weight: 600;
   font-size: 0.95rem;
   display: flex;
@@ -422,7 +462,7 @@ onUnmounted(() => {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  width: 280px;
+  width: 150px;
   margin: 0;
   padding: 8px;
   list-style: none;
@@ -450,7 +490,7 @@ onUnmounted(() => {
   background-color: var(--color-bg-page, #f0f2f5);
 }
 .profile-dropdown-item--danger {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .profile-dropdown-divider {

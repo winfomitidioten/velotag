@@ -7,14 +7,14 @@ from .serializers import RouteListSerializer
 from .models import Route
 
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import api_view, permission_classes 
+from rest_framework.decorators import api_view, permission_classes
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.gis.geos import LineString
 
 from django.http import HttpResponse
 from django.core.serializers import serialize
-from .models import Route, GroupRideIntersection 
+from .models import Route, GroupRideIntersection, UserPerformanceBucket
 from groups.models import Group, Membership
 
 
@@ -112,6 +112,50 @@ class RouteMapView(APIView):
         serializer = RouteSerializer(routes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+class RoutePerformanceView(APIView):
+    """Liefert die Puls-/Tempo-/Watt-Rasterzellen (siehe routes/performance.py) für die
+    Leistungs-Ansicht auf der Karte. Die eigentliche Berechnung passiert bereits beim Hochladen
+    jeder Route (routes/signals.py) und wird inkrementell in UserPerformanceBucket gespeichert -
+    hier wird nur noch gelesen, unabhängig von der Anzahl der Routen des Users."""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        buckets = UserPerformanceBucket.objects.filter(user=request.user)
+
+        segments = []
+        metric_values = {'puls': [], 'tempo': [], 'watt': []}
+
+        for bucket in buckets:
+            coords = list(bucket.geom.coords)  # [(lng, lat), (lng, lat)]
+            entry = {'coordinates': [[c[1], c[0]] for c in coords]}
+            has_any = False
+            for m in ('puls', 'tempo', 'watt'):
+                count = getattr(bucket, f'{m}_count')
+                if count > 0:
+                    avg_value = getattr(bucket, f'{m}_sum') / count
+                    entry[m] = {'value': round(avg_value, 1), 'count': count}
+                    metric_values[m].append(avg_value)
+                    has_any = True
+                else:
+                    entry[m] = None
+            if has_any:
+                segments.append(entry)
+
+        metrics_meta = {
+            m: {
+                'min_value': round(min(vals), 1) if vals else None,
+                'max_value': round(max(vals), 1) if vals else None,
+            }
+            for m, vals in metric_values.items()
+        }
+
+        return Response({
+            'metrics': metrics_meta,
+            'segments': segments,
+        }, status=status.HTTP_200_OK)
+
+
 #Für die Fahrten Anzeige
 class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom Frontend,
     #holt alle Strecken des eingeloggten Users aus der DB, serialisiert sie und schickt sie zurück
@@ -129,6 +173,43 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
         # 3. Die JSON-Daten zurück an das Frontend schicken
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+class RouteDetailView(APIView): 
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    # teilweise Update: schickt nut die Felder, die geändert werden können, nicht das ges. Objekt wie bei put
+    def patch(self, request, strecken_id): 
+        try:
+            route = Route.objects.get(pk=strecken_id, user=request.user)
+        except Route.DoesNotExist:
+            return Response({"error": "Strecke nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if 'strecken_name' in request.data:
+            route.strecken_name = request.data['strecken_name']
+        if 'group_id' in request.data:
+            route.group_id = request.data['group_id']
+        route.save()
+
+        serializer = RouteListSerializer(route)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def delete(self, request, strecken_id):
+        try:
+            route = Route.objects.get(pk=strecken_id, user=request.user)
+        except Route.DoesNotExist:
+            return Response({"error": "Strecke nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
+        
+        route.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# Einheitliche km-Statistik -> für Lasche, Profil, Bestenliste
+class RouteStatsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(Route.get_stats_for_user(request.user), status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
