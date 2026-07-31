@@ -7,13 +7,11 @@ export const useUserStore = defineStore('user', () => {
     const lastname = ref('');
     const mail = ref('');
     const profileImage = ref('');
-    const id = ref(null);
 
     const initials = computed(() => `${firstname.value[0] ?? ''}${lastname.value[0] ?? ''}`.toUpperCase());
 
     async function fetchProfile() {
         const response = await api.get('profil/');
-        id.value = response.data.id;
         firstname.value = response.data.firstname;
         lastname.value = response.data.lastname;
         mail.value = response.data.mail;
@@ -22,12 +20,11 @@ export const useUserStore = defineStore('user', () => {
     };
 
     function clearUser() {
-        id.value = null;
         firstname.value = '';
         lastname.value = '';
         mail.value = '';
         profileImage.value = '';
     }
 
-    return { id, firstname, lastname, mail, initials, profileImage, fetchProfile, clearUser };
+    return { firstname, lastname, mail, initials, profileImage, fetchProfile, clearUser };
 });

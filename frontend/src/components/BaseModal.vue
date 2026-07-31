@@ -57,10 +57,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
     backdrop-filter: blur(4px); /* Schicker Blur-Effekt für den Hintergrund */
     display: flex;
     justify-content: center;
-    /* Über allen schwebenden Elementen: AppHeader (10000/10001), Karte-Controls
-       wie Solo/Group-TabSwitch und Gruppen-Dropdown (9999). Sonst liegen diese
-       trotz offenem Modal im Vordergrund. */
-    z-index: 10002;
+    z-index: 1001;
     animation: fadeIn 0.2s ease-out;
 }
 
@@ -72,9 +69,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
     align-items: flex-end; /* Box klebt am unteren Bildschirmrand */
 }
 
-/* definiert das Aussehen des modalen Fensters */
 .popup-content {
-    background-color: var(--color-bg-card);
+    background-color: white;
     padding: 40px 32px;
     border-radius: 20px; /* Schön abgerundet, einheitlich mit dem GPX-Upload-Modal */
     text-align: center;
@@ -85,26 +81,10 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
-/* Abgerundete Scrollbar, passend zu den runden Fenster-Ecken */
-.popup-content::-webkit-scrollbar {
-    width: 8px;
-}
-.popup-content::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 20px 0; /* damit der Track nicht in die runden Ecken läuft */
-}
-.popup-content::-webkit-scrollbar-thumb {
-    background-color: var(--color-border);
-    border-radius: 8px;
-}
-.popup-content::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-text-muted);
-}
-
 /* Slot-Inhalt: Überschrift einheitlich stylen, ohne dass jedes Modal sie selbst definieren muss */
 :slotted(h2) {
     margin: 0;
-    color: var(--color-text);
+    color: #1e293b;
     font-size: 1.5rem;
     font-weight: 700;
     text-align: center;
@@ -122,8 +102,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
     position: absolute;
     top: 20px;
     right: 20px;
-    background-color: var(--color-bg-close-btn);
-    color: var(--color-text-muted);
+    background-color: #f1f5f9; /* Dezentes Grau statt auffälligem Grün */
+    color: #64748b;
     border: none;
     width: 36px;
     height: 36px;
@@ -137,15 +117,15 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 }
 
 .popup-close-button:hover {
-    background-color: var(--color-bg-close-btn);
-    color: var(--color-text);
+    background-color: #e2e8f0;
+    color: #0f172a;
     transform: rotate(90deg); /* Kleine, spielerische Animation beim Hover */
 }
 
 .popup-close-button svg {
     width: 20px;
     height: 20px;
-    color: var(--color-primary);
+    color: #3db897;
 }
 
 @keyframes slideUp {

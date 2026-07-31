@@ -56,7 +56,7 @@ const route = useRoute();
         flex-direction: column;
         align-items: center;
         gap: 1.2rem;
-        background-color: var(--color-bg-card);
+        background-color: #ffffff;
         padding: 3rem 2.5rem;
         border-radius: 1rem;
         box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.05);
@@ -72,42 +72,42 @@ const route = useRoute();
         align-items: center;
         width: 4.5rem;
         height: 4.5rem;
-        background-color: var(--color-primary-soft);
+        background-color: #e8f7f3;
         border-radius: 50%;
         flex-shrink: 0;
     }
     .icon-box svg {
-        fill: var(--color-primary);
+        fill: #3db897;
     }
 
     h1 {
         margin: 0;
         font-size: 2rem;
         font-weight: 700;
-        color: var(--color-text);
+        color: #2c3e50;
     }
 
     .subtitle {
         margin: 0;
         font-size: 1rem;
-        color: var(--color-text-muted);
+        color: #7f8c8d;
     }
 
     .joke {
         margin: 0;
         font-size: 0.95rem;
-        color: var(--color-text-muted);
+        color: #64748b;
         line-height: 1.6;
-        background-color: var(--color-bg-input);
+        background-color: #f8fafc;
         border-radius: 0.6rem;
         padding: 0.8rem 1rem;
-        border-left: 3px solid var(--color-primary);
+        border-left: 3px solid #3db897;
     }
 
     .progress-bar-wrap {
         width: 100%;
         height: 0.5rem;
-        background-color: var(--color-border);
+        background-color: #e2e8f0;
         border-radius: 999px;
         overflow: hidden;
         margin-top: 0.4rem;
@@ -116,7 +116,7 @@ const route = useRoute();
     .progress-bar {
         height: 100%;
         width: 62%;
-        background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
+        background: linear-gradient(90deg, #3db897, #2da081);
         border-radius: 999px;
         animation: pulse 2s ease-in-out infinite;
     }
@@ -128,7 +128,7 @@ const route = useRoute();
 
     .progress-label {
         font-size: 0.78rem;
-        color: var(--color-text-muted);
+        color: #94a3b8;
         font-style: italic;
     }
 </style>
