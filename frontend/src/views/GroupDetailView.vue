@@ -2,12 +2,13 @@
 import { useRoute, useRouter } from 'vue-router'
 import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
-import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from '@/components/HeaderButton.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { usePageTitle } from '@/composables/usePageTitle';
 
 const route = useRoute()
 const router = useRouter()
+const { setPageTitle } = usePageTitle()
 
 const groupId = computed(() => route.params.id)
 const group = ref(null)
@@ -20,6 +21,7 @@ const fetchGroup = async () => {
         loading.value = true;
         const response = await api.get(`groups/${groupId.value}/`);
         group.value = response.data;
+        setPageTitle(group.value.name);
     } catch(err) {
         console.error('Fehler beim Laden der Gruppe: ', err)
     } finally {
@@ -150,15 +152,15 @@ onMounted(() => {
         </div>
 
         <template v-else-if="group">
-            <PageHeader>
+            <Teleport to="#app-header-actions">
                 <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="askDeleteGroup">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
                     </svg>
                     <span>Gruppe Löschen</span>
                 </HeaderButton>
-            </PageHeader>
-            
+            </Teleport>
+
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                     <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
@@ -261,9 +263,12 @@ onMounted(() => {
     }
     .page-container {
         min-height: 100vh;
+        padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+        padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
         background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }
 
     header h3 {
@@ -292,7 +297,7 @@ onMounted(() => {
 
     .mobile-fab-btn {
         position: fixed;
-        bottom: 2rem;
+        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 1rem);
         right: 1.5rem;
         z-index: 90;
         background-color: var(--color-primary);

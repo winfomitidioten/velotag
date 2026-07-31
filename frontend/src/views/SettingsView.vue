@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue';
 import { useSettingsStore } from '@/store/settingsStore.js';
-import PageHeader from '@/components/PageHeader.vue';
 
 const settings = useSettingsStore();
 
@@ -19,7 +18,6 @@ const activeIndex = computed(() =>
 
 <template>
     <div class="page-container">
-        <PageHeader title="Einstellungen" />
         <main class="settings-content">
 
             <!-- Darstellung -->
@@ -100,12 +98,15 @@ const activeIndex = computed(() =>
 <style scoped>
 .page-container {
     min-height: 100vh;
+    padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+    padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
     background-color: var(--color-bg-page);
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
 }
 
-/* Inhalt zentriert, mit Abstand nach dem stickenden PageHeader */
+/* Inhalt zentriert */
 .settings-content {
     width: 100%;
     max-width: 600px;

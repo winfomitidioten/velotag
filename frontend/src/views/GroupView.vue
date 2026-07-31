@@ -3,7 +3,6 @@
     import api from '@/api/api';
     import { useRouter } from 'vue-router'
     import { useFavorite } from '@/composables/useFavorite.js'
-    import PageHeader from '@/components/PageHeader.vue';
     import HeaderButton from '@/components/HeaderButton.vue';
     import CreateGroupModal from '@/components/CreateGroupModal.vue';
 
@@ -67,10 +66,9 @@
 
 <template>
     <div class="page-container">
-        <PageHeader title="Meine Gruppen">
+        <Teleport to="#app-header-actions">
             <HeaderButton @click="showPopup = true ">+ Neue Gruppe</HeaderButton>
-        </PageHeader>
-
+        </Teleport>
 
         <button class="mobile-fab-btn" @click="showPopup = true">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
@@ -147,15 +145,18 @@
 <style scoped>
     .page-container {
         min-height: 100vh;
+        padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+        padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
         background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }
 
     /* --- MOBILE BUTTON (FLOATING ACTION BUTTON) --- */
     .mobile-fab-btn {
         position: fixed;
-        bottom: 2rem;
+        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 1rem);
         right: 1.5rem;
         z-index: 90;
         background-color: var(--color-primary);

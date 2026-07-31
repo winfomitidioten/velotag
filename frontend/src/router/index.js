@@ -13,20 +13,20 @@ const routes = [
     path: '/map',
     name: 'map',
     component: Karte,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Karte' }
   },
   {
       path: '/profile',
       name: 'profile',
       component: ProfileView,
-      meta: { requiresAuth: true, showBack: true }
-  }, 
-  { 
+      meta: { requiresAuth: true, showBack: true, title: 'Profil' }
+  },
+  {
     path: '/',
     redirect: '/login',
     meta: { hideMenu: true }
   },
-  {   
+  {
     path: '/login',
     name: 'login',
     component: LoginRegister,
@@ -42,31 +42,31 @@ const routes = [
     path: '/group',
     name: 'group',
     component: GroupView,
-    meta: { requiresAuth: true, showBack: true }
+    meta: { requiresAuth: true, title: 'Meine Gruppen' }
   },
   {
     path: '/group/:id',
     name: 'group-detail',
     component: GroupDetailView,
-    meta: { requiresAuth: true, showBack: true, backTo: '/group' }
+    meta: { requiresAuth: true, showBack: true, backTo: '/group', title: 'Gruppe' }
   },
   {
     path: '/group/invites',
     name: 'group-invites',
     component: GroupInviteView,
-    meta: { requiresAuth: true, showBack: true }
+    meta: { requiresAuth: true, title: 'Einladungen' }
   },
   {
     path: '/settings',
     name: 'settings',
     component: SettingsView,
-    meta: { requiresAuth: true, showBack: true, title: 'Einstellungen' }
+    meta: { requiresAuth: true, showBack: true, backTo: '/profile', title: 'Einstellungen' }
   },
   {
     path: '/rides',
     name: 'rides',
     component: () => import('../views/StreckenView.vue'),
-    meta: { requiresAuth: true, showBack: true }
+    meta: { requiresAuth: true, title: 'Fahrten' }
   }
 ];
 

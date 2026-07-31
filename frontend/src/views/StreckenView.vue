@@ -1,7 +1,9 @@
 <script setup>
     import { ref, onMounted } from 'vue'
     import api from '@/api/api'
-    import PageHeader from '@/components/PageHeader.vue'
+    import { usePageTitle } from '@/composables/usePageTitle'
+
+    const { setPageTitle } = usePageTitle()
 
     const strecken = ref([])       // Array der Strecken vom Backend
     const loading = ref(false)     // Ladeindikator
@@ -34,6 +36,7 @@
     })}
 
     onMounted(() => {
+        setPageTitle('Meine Strecken')
         fetchStrecken()
     })
 
@@ -42,9 +45,9 @@
 
 <template>
     <div class="page-container">
-        <PageHeader title="Meine Strecken">
+        <div class="strecken-meta-row">
             <span class="count-badge">{{ strecken.length }} Strecken</span>
-        </PageHeader>
+        </div>
 
         <main class="page-content">
 
@@ -92,9 +95,22 @@
 <style scoped>
 .page-container {
   min-height: 100vh;
+  padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+  padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
   background-color: var(--color-bg-page);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Sitzt direkt unter dem fixierten AppHeader - kein eigener top-Offset nötig,
+   da .page-container bereits per --app-header-height genau bis dorthin
+   Platz macht und diese Zeile einfach im normalen Fluss direkt danach folgt.
+   Ändert sich die Header-Höhe, verschiebt sich das automatisch mit. */
+.strecken-meta-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem 2rem 0;
 }
 
 .count-badge {

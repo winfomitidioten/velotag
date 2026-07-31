@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api/api';
-import PageHeader from '@/components/PageHeader.vue';
+import { usePageTitle } from '@/composables/usePageTitle';
+
+const { setPageTitle } = usePageTitle();
 
 const loading = ref(false);
 const invites = ref([]);
@@ -31,6 +33,7 @@ const answerInvite = async (groupId, action) => {
 }
 
 onMounted(() => {
+    setPageTitle('Gruppen Einladungen');
     fetchInvites();
 })
 </script>
@@ -42,8 +45,6 @@ onMounted(() => {
         </div>
 
         <template v-else>
-            <PageHeader title="Gruppen Einladungen" />
-            
             <main class="page-content">
                 <div v-if="invites.length === 0" class="empty-state">
                     <p>Du hast aktuell keine offenen Einladungen.</p>
@@ -85,9 +86,12 @@ onMounted(() => {
     /* Grundlayout & Container */
     .page-container {
         min-height: 100vh;
+        padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+        padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
         background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }
 
     .page-content {
