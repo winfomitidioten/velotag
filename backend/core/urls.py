@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken
-from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView, SetGroupFavoriteView, RemoveFavoriteView, GetGroupFavoriteView, GroupTransferAdminView
+from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView, SetGroupFavoriteView, RemoveFavoriteView, GetGroupFavoriteView, GroupTransferAdminView, GroupLeaderboardView
 from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken
@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick"),
     path('api/users/<int:pk>/profile/', PublicUserProfileView.as_view(), name='user-public-profile'),
     path('api/groups/<int:pk>/transfer-admin/', GroupTransferAdminView.as_view(), name="group-transfer-admin"),
+    path('api/groups/<int:pk>/leaderboard/', GroupLeaderboardView.as_view(), name="group-leaderboard"),
     path('api/groups/remove_favorite/', RemoveFavoriteView.as_view(), name="group-remove-favorite"),
     path('api/groups/favorite/', GetGroupFavoriteView.as_view(), name="group-get-favorite"),
     path('api/groups/<int:pk>/favorite/', SetGroupFavoriteView.as_view(), name="group-set-favorite")

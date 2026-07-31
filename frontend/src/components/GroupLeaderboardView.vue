@@ -15,65 +15,26 @@ const group = ref(null)
 const leaderboard = ref([])
 const loading = ref(false)
 
-/**
- * TODO: Sobald der echte Endpoint für "alle Aktivitäten eines Users" steht,
- * diese Funktion ersetzen. Erwartetes Verhalten:
- *
- *   const res = await api.get(`users/${memberId}/activities/`)
- *   const totalKm = res.data.reduce((sum, activity) => sum + activity.distance_km, 0)
- *
- * Wichtig laut Anforderung: hier müssen ALLE Aktivitäten der Person rein,
- * nicht nur die in dieser Gruppe (also auch privat + andere Gruppen).
- * Falls die API stattdessen bereits eine aggregierte km-Summe pro User
- * zurückgibt (z.B. über /users/{id}/stats/), kann man direkt das Feld
- * nehmen statt selbst zu summieren.
- */
-const fetchTotalKmForMember = async (memberId) => {
-    // ---- MOCK START ----
-    // Simuliert Netzwerk-Latenz + zufällige, aber stabile km-Werte pro Mitglied,
-    // damit das Leaderboard beim Reload nicht wild durcheinander springt.
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const seed = String(memberId).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    const pseudoRandom = (seed * 9301 + 49297) % 233280 / 233280;
-    return Math.round(pseudoRandom * 950 + 15); // 15 - 965 km
-    // ---- MOCK END ----
-}
-
-// Lädt die Gruppe (inkl. Mitgliederliste) und baut danach die Bestenliste.
+// Lädt die Gruppe (für Name/Admin-Badge im Header) und die Bestenliste parallel.
 // `loading` steuert nur den Ladezustand INNERHALB der Leaderboard-Karte
 // (siehe Template) - Header und Tabs bleiben davon unberührt, damit sie
 // nicht bei jedem Reload mit verschwinden/neu aufbauen.
 const fetchGroup = async () => {
     try {
         loading.value = true;
-        const response = await api.get(`groups/${groupId.value}/`);
-        group.value = response.data;
-        await buildLeaderboard();
+        const [groupResponse, leaderboardResponse] = await Promise.all([
+            api.get(`groups/${groupId.value}/`),
+            api.get(`groups/${groupId.value}/leaderboard/`),
+        ]);
+        group.value = groupResponse.data;
+        // Bestenliste kommt bereits sortiert + gerankt vom Backend (Gesamt-km über
+        // ALLE Fahrten des Mitglieds, nicht nur die in dieser Gruppe).
+        leaderboard.value = leaderboardResponse.data;
     } catch (err) {
-        console.error('Fehler beim Laden der Gruppe: ', err)
+        console.error('Fehler beim Laden der Bestenliste: ', err)
     } finally {
         loading.value = false;
     }
-}
-
-// Holt für jedes Mitglied die Gesamt-km (aktuell gemockt, siehe oben)
-// und sortiert die Mitglieder absteigend danach, um die Ränge zu vergeben.
-const buildLeaderboard = async () => {
-    if (!group.value?.members) return;
-
-    const withKm = await Promise.all(
-        group.value.members.map(async (member) => ({
-            ...member,
-            totalKm: await fetchTotalKmForMember(member.id),
-        }))
-    );
-
-    leaderboard.value = withKm
-        .sort((a, b) => b.totalKm - a.totalKm)
-        .map((member, index) => ({
-            ...member,
-            rank: index + 1,
-        }));
 }
 
 // Rang 1-3 bekommen eine Medaille statt einer Rang-Zahl im Template.
