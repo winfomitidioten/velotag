@@ -5,16 +5,12 @@
     import { useFavorite } from '@/composables/useFavorite.js'
     import PageHeader from '@/components/PageHeader.vue';
     import HeaderButton from '@/components/HeaderButton.vue';
-    import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
+    import CreateGroupModal from '@/components/CreateGroupModal.vue';
 
 
     const groups = ref([])
     const loading = ref(false)
     const showPopup = ref(false)
-    const newGroupName = ref("")
-    const newGroupDescription = ref("")
-    const selectedFile = ref(null)
-    const previewImage = ref(null)
     const router = useRouter()
     const { favoriteGroupId } = useFavorite()
     const toggleFavorite = (id) => {
@@ -59,33 +55,9 @@
         }
     }
 
-    const onGroupPhotoAdded = (photos) => {
-        const photo = photos[0];
-        if (!photo) return;
-        selectedFile.value = photo.file;
-        previewImage.value = photo.previewUrl;
-    }
-
-    const createNewGroup = async () => {
-        if (!newGroupName.value.trim()) return;
-        try {
-            const formData = new FormData();
-            formData.append('name', newGroupName.value);
-            if (newGroupDescription.value) formData.append('description', newGroupDescription.value);
-            if (selectedFile.value) formData.append('profilbild', selectedFile.value);
-
-            const response = await api.post('groups/', formData);
-
-            const newGroup = response.data;
-            groups.value.push(newGroup);
-            showPopup.value = false;
-            newGroupName.value = ""
-            newGroupDescription.value = ""
-            selectedFile.value = null
-            previewImage.value = null
-        } catch(error) {
-            console.error("Fehler beim Erstellen der Gruppe:", error.response?.data || error.message);
-        }
+    const handleGroupCreated = (newGroup) => {
+        groups.value.push(newGroup);
+        showPopup.value = false;
     }
 
     onMounted(() => {
@@ -165,21 +137,11 @@
             </div>
         </main>
 
-        <div v-if="showPopup" @click.self="showPopup = false" id="popup-overlay">
-            <div id="popup-content">
-                <h3>Neue Gruppe erstellen</h3>
-                <input v-model="newGroupName" type="text" placeholder="Name deiner Gruppe..." @keyup.enter="createNewGroup">
-                <textarea v-model="newGroupDescription" placeholder="Beschreibung (optional)" rows="3"></textarea>
-
-                <img v-if="previewImage" :src="previewImage" alt="Gruppenbild" class="group-photo-preview">
-                <CameraGalleryPicker :multiple="false" :has-photos="!!previewImage" @photos-added="onGroupPhotoAdded" />
-
-                <div id="popup-actions">
-                    <button @click="showPopup = false" id="cancle-btn">Abbrechen</button>
-                    <button @click="createNewGroup" id="create-btn">Erstellen</button>
-                </div>
-            </div>
-        </div>
+        <CreateGroupModal
+            v-if="showPopup"
+            @close="showPopup = false"
+            @created="handleGroupCreated"
+        />
     </div>
 </template>
 
@@ -191,16 +153,6 @@
         flex-direction: column;
     }
 
-    
-    header h3 {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin: 0;
-        /* Schiebt den Text mobil weiter nach rechts wegen der Menübar */
-        padding-left: 130px; 
-        color: var(--color-text);
-    }
-    
     /* --- MOBILE BUTTON (FLOATING ACTION BUTTON) --- */
     .mobile-fab-btn {
         position: fixed;
@@ -208,20 +160,20 @@
         right: 1.5rem;
         z-index: 90;
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-on-primary);
         border: none;
         cursor: pointer;
-        
+
         /* Macht den Button mobil kreisrund */
         width: 3.5rem;
         height: 3.5rem;
         border-radius: 50%;
         padding: 0;
-        
+
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 14px rgba(61, 184, 151, 0.4);
+        box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.4);
         transition: all 0.2s ease;
     }
 
@@ -233,12 +185,6 @@
     .mobile-fab-btn svg {
         width: 1.75rem;
         height: 1.75rem;
-    }
-
-    /* --- DESKTOP BUTTON --- */
-    .desktop-create-btn {
-        /* Standardmäßig auf mobilen Geräten komplett ausblenden */
-        display: none; 
     }
 
     .page-content {
@@ -277,7 +223,7 @@
     
     .group-card:hover {
         border-color: var(--color-primary);              
-        box-shadow: 0 0.6rem 1.8rem rgba(61, 184, 151, 0.08); 
+        box-shadow: 0 0.6rem 1.8rem rgba(var(--color-primary-rgb), 0.08);
     }
     
     .group-card:hover .forward-icon svg {
@@ -297,9 +243,9 @@
         align-items: center;
         width: 3rem;          
         height: 3rem;
-        background-color: #e8f7f3; 
-        border-radius: var(--radius-md);     
-        flex-shrink: 0;            
+        background-color: var(--color-primary-soft);
+        border-radius: var(--radius-md);
+        flex-shrink: 0;
     }
     .group-icon-img {
         object-fit: cover;
@@ -340,142 +286,15 @@
     }
     
     .forward-icon svg {
-        fill: #94a3b8;
+        fill: var(--color-text-muted);
         transition: fill 0.2s ease;
-    }
-
-    #popup-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(44, 62, 80, 0.4); 
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 999;
-        backdrop-filter: blur(4px); 
-        padding: 1rem;
-        box-sizing: border-box;
-    }
-
-    #popup-content {
-        background: var(--color-bg-card);
-        padding: 1.5rem;
-        border-radius: var(--radius-lg);
-        width: 100%;
-        max-width: 28rem;
-        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1);
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-        box-sizing: border-box;
-    }
-    #popup-content h3 {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--color-text);
-    }
-    #popup-content input[type="text"],
-    #popup-content textarea {
-        width: 100%;
-        padding: 0.85rem 1rem;
-        font-size: 1rem;
-        font-family: inherit;
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        outline: none;
-        color: var(--color-text);
-        transition: all 0.2s ease;
-        box-sizing: border-box;
-        background-color: var(--color-bg-page);
-        resize: vertical;
-    }
-    .group-photo-preview {
-        width: 5rem;
-        height: 5rem;
-        border-radius: var(--radius-md);
-        object-fit: cover;
-        align-self: center;
-    }
-    #popup-content input[type="text"]:focus,
-    #popup-content textarea:focus {
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px rgba(61, 184, 151, 0.15);
-    }
-    #popup-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-    }
-    #popup-actions button {
-        border: none;
-        cursor: pointer;
-        border-radius: var(--radius-md);
-        padding: 0.85rem 1.5rem;
-        font-size: 0.95rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        flex: 1;
-    }
-    #cancle-btn {
-        background-color: #f1f5f9;
-        color: #64748b;
-    }
-    #cancle-btn:hover {
-        background-color: #e2e8f0;
-    }
-    #create-btn {
-        background-color: var(--color-primary);
-        color: white;
-    }
-    #create-btn:hover {
-        background-color: var(--color-primary-dark);
     }
 
     /* --- TABLET / DESKTOP OPTIMIERUNGEN --- */
     @media (min-width: 480px) {
-        header {
-            padding: 1.2rem 2rem;
-        }
-
-        header h3 {
-            font-size: 1.25rem;
-            /* Auf Desktop reicht das ursprüngliche Standard-Padding */
-            padding-left: 95px; 
-        }
-
         /* Schwebenden Mobile-Button auf Desktop unsichtbar machen */
         .mobile-fab-btn {
             display: none;
-        }
-
-        /* Desktop-Button im Header oben rechts einblenden und stylen */
-        .desktop-create-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            background-color: var(--color-primary);
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: var(--radius-md);
-            padding: 0.6em 1.4em;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            box-shadow: none;
-        }
-
-        .desktop-create-btn:hover {
-            background-color: var(--color-primary-dark);
-        }
-
-        .desktop-create-btn svg {
-            width: 1.2rem;
-            height: 1.2rem;
         }
 
         #group-grid {
@@ -490,15 +309,6 @@
 
         .page-content {
             padding: 3rem 2rem;
-        }
-
-        #popup-content {
-            padding: 2.5rem;
-            gap: 1.5rem;
-        }
-
-        #popup-actions button {
-            flex: none;
         }
     }
 
@@ -515,17 +325,17 @@
 
 .selector-label {
     font-size: 0.9rem;
-    color: #64748b;
+    color: var(--color-text-muted);
     font-weight: 500;
 }
 .clean-select {
     appearance: none;
-    background-color: #f8f9fa;
-    border: 1px solid #e2e8f0;
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border);
     border-radius: 0.4rem;
     padding: 0.5rem 2rem 0.5rem 0.8rem;
     font-size: 0.9rem;
-    color: #2c3e50;
+    color: var(--color-text);
     font-weight: 500;
     cursor: pointer;
     outline: none;
@@ -537,7 +347,7 @@
 }
 .clean-select:focus,
 .clean-select:hover {
-    border-color: #3db897;
+    border-color: var(--color-primary);
 }
 .group-card {
     /* ... deine bisherigen Styles ... */
@@ -560,16 +370,16 @@
 }
 
 .star-btn:hover {
-    background-color: #f1f5f9;
+    background-color: var(--color-bg-hover);
 }
 
 .star-btn svg {
-    fill: #cbd5e1; 
+    fill: var(--color-border);
     transition: fill 0.2s ease, transform 0.2s ease;
 }
 
 .star-btn.is-favorite svg {
-    fill: #f59e0b;
-    transform: scale(1.15); 
+    fill: var(--color-warning);
+    transform: scale(1.15);
 }
 </style>

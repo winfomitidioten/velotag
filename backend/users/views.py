@@ -10,7 +10,12 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .serializers import UserProfileSerializer
-from .models import UserProfile, UserDevice
+from .models import UserProfile
+
+from groups.models import Membership
+from routes.models import Route
+from routes.serializers import RouteListSerializer
+
 
 
 User = get_user_model()
@@ -123,20 +128,32 @@ class LogoutView(APIView):
         request.user.auth_token.delete();
         return Response(status=204);
 
-class DeviceView(APIView):
+#Für die Profilansicht anderer Leute 
+class PublicUserProfileView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
-        token = request.data.get('token')
-        platform = request.data.get('platform', 'android')
+    def get(self, request, pk):
+        try:
+            target_user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "Nutzer wurde nicht gefunden."}, status=status.HTTP_404_NOT_FOUND)
 
-        if not token:
-            return Response({'error': 'Token fehlt'}, status=400)
+        if target_user != request.user:
+            shared_group_exists = Membership.objects.filter(
+                user=request.user, status='Joined',
+                group_id__in=Membership.objects.filter(user=target_user, status='Joined').values('group_id')
+            ).exists()
+            if not shared_group_exists:
+                return Response({"error": "Du hast keine Berechtigung, dieses Profil anzusehen."}, status=status.HTTP_403_FORBIDDEN)
 
-        device, created = UserDevice.objects.update_or_create(
-            push_token = token,
-            defaults={'user': request.user, 'platform': platform}
-        )
+        profile, _ = UserProfile.objects.get_or_create(user=target_user)
+        profile_data = UserProfileSerializer(profile, context={'request': request}).data
 
-        return Response({'status': 'success', 'created': created})
+        last_three = Route.objects.filter(user=target_user).order_by('-created_at')[:3]
+
+        return Response({
+            "profile": profile_data,
+            "stats": Route.get_stats_for_user(target_user),
+            "recentRides": RouteListSerializer(last_three, many=True).data
+        }, status=status.HTTP_200_OK)

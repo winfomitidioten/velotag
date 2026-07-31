@@ -90,17 +90,6 @@ onMounted(() => {
         flex-direction: column;
     }
 
-    header h3 {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin: 0;
-        padding-left: 130px; /* Synchroner Abstand für die mobile Sidebar */
-        color: var(--color-text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
     .page-content {
         flex: 1;
         width: 100%;
@@ -158,7 +147,7 @@ onMounted(() => {
         align-items: center;
         width: 2.8rem;          
         height: 2.8rem;
-        background-color: #e8f7f3; /* Dezenter Mint-Hintergrund fürs Icon */
+        background-color: var(--color-primary-soft); /* Dezenter Mint-Hintergrund fürs Icon */
         border-radius: var(--radius-md);     
         flex-shrink: 0;            
     }
@@ -209,8 +198,8 @@ onMounted(() => {
     /* Annehmen-Button */
     .btn-accept {
         background-color: var(--color-primary);
-        color: white;
-        box-shadow: 0 2px 4px rgba(61, 184, 151, 0.15);
+        color: var(--color-on-primary);
+        box-shadow: 0 2px 4px rgba(var(--color-primary-rgb), 0.15);
     }
     .btn-accept:hover {
         background-color: var(--color-primary-dark);
@@ -223,9 +212,9 @@ onMounted(() => {
         border: 1px solid var(--color-border) !important;
     }
     .btn-decline:hover {
-        background-color: #fee2e2;
-        color: #ef4444;
-        border-color: #fca5a5 !important;
+        background-color: var(--color-danger-bg);
+        color: var(--color-danger);
+        border-color: var(--color-danger-border) !important;
     }
 
     .invite-actions button:active {
@@ -251,13 +240,6 @@ onMounted(() => {
 
     /* --- TABLET / DESKTOP OPTIMIERUNGEN --- */
     @media (min-width: 580px) {
-        header {
-            padding: 1.2rem 2rem;
-        }
-        header h3 {
-            font-size: 1.25rem;
-            padding-left: 95px; /* Synchroner Desktop-Abstand */
-        }
         .page-content {
             padding: 2rem 0rem; /* Mehr Luft nach oben/unten im Desktop-Grid */
         }

@@ -224,12 +224,28 @@ if platform.system() == "Windows":
                 gdal_files = [f for f in os.listdir(path) if 'gdal' in f.lower() and f.endswith('.dll')]
                 if gdal_files:
                     GDAL_LIBRARY_PATH = os.path.join(path, gdal_files[0])
-                
+
                 # 2. GEOS-Pfad setzen (sucht nach geos_c.dll oder libgeos_c.dll)
                 geos_files = [f for f in os.listdir(path) if 'geos_c' in f.lower() and f.endswith('.dll')]
                 if geos_files:
                     GEOS_LIBRARY_PATH = os.path.join(path, geos_files[0])
             except Exception:
                 pass
-                
+
+            break
+
+# AUTOMATISCHER GDAL/GEOS-LOADER FÜR macOS (Homebrew)
+# Django findet die Homebrew-Bibliotheken nicht immer selbst, v. a. auf Apple Silicon
+# (/opt/homebrew) statt Intel (/usr/local). Der eigene Pfad aus der .env hat Vorrang.
+elif platform.system() == "Darwin":
+    brew_lib_dirs = [
+        os.getenv("MACOS_GDAL_LIB_PATH"),  # 1. Prio: Eigener Pfad aus lokaler .env
+        "/opt/homebrew/lib",               # 2. Prio: Apple Silicon (M1/M2/...)
+        "/usr/local/lib",                  # 3. Prio: Intel-Macs
+    ]
+
+    for lib_dir in brew_lib_dirs:
+        if lib_dir and os.path.exists(os.path.join(lib_dir, "libgdal.dylib")):
+            GDAL_LIBRARY_PATH = os.path.join(lib_dir, "libgdal.dylib")
+            GEOS_LIBRARY_PATH = os.path.join(lib_dir, "libgeos_c.dylib")
             break
