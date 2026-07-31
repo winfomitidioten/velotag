@@ -4,20 +4,12 @@ import api from '@/api/api'
 
 //hier die Logik zur Gruppenabfrage an die DB für den eingelogten User, damit die Gruppen in der Dropdown-Liste angezeigt werden können
 
-// modelValue erlaubt das Vorbelegen der Auswahl (z.B. beim Bearbeiten eines Fotos).
-// Beim Upload ohne Wert bleibt es leer.
-const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
-  // Beim Bearbeiten wird nur das reine Dropdown gebraucht (ohne Trennlinie + "Optional"-Label)
-  showHeader: { type: Boolean, default: true }
-})
-
 const emit = defineEmits(['update:selectedGroup'])
 
 const groups = ref([])
 const loading = ref(false)
 // Definieren der Variable für das v-model im Template (als Array für das 'multiple' Select)
-const selectedGroup = ref([...props.modelValue])
+const selectedGroup = ref([])
 
 const isOpen = ref(false)
 const dropdownRef = ref(null)
@@ -67,15 +59,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <template v-if="showHeader">
-    <hr>
-    <div class="group-selection-info">
-      <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="var(--color-text-muted)">
-        <path d="M440-280h80v-240h-80v240Zm68.5-331.5Q520-623 520-640t-11.5-28.5Q497-680 480-680t-28.5 11.5Q440-657 440-640t11.5 28.5Q463-600 480-600t28.5-11.5ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
-      </svg>
-      <p aria-label="Gruppenauswahl" title="Bitte wähle optional eine Gruppe aus, der du die Strecke zuordnen möchtest.">Optional - Gruppenauswahl:</p>
-    </div>
-  </template>
+  <hr>
+  <div class="group-selection-info">
+    <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="var(--color-text-muted)">
+      <path d="M440-280h80v-240h-80v240Zm68.5-331.5Q520-623 520-640t-11.5-28.5Q497-680 480-680t-28.5 11.5Q440-657 440-640t11.5 28.5Q463-600 480-600t28.5-11.5ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
+    </svg>
+    <p aria-label="Gruppenauswahl" title="Bitte wähle optional eine Gruppe aus, der du die Strecke zuordnen möchtest.">Optional - Gruppenauswahl:</p>
+  </div>
 
   <div class="custom-dropdown-container">
     <div class="custom-dropdown" ref="dropdownRef">
@@ -158,10 +148,10 @@ hr {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 32px;
-  padding: 4px 10px;
-  background-color: var(--color-bg-input);
-  border: 1px solid var(--color-border);
+  min-height: 38px;
+  padding: 6px 10px;
+  background-color: var(--color-background-soft, #f9f9f9);
+  border: 1px solid var(--color-border, #ccc);
   border-radius: 8px;
   cursor: pointer;
   transition: border-color 0.2s;
@@ -169,7 +159,7 @@ hr {
 }
 
 .dropdown-header:hover {
-  border-color: var(--color-text-muted);
+  border-color: var(--color-border-hover, #888);
 }
 
 .placeholder {
@@ -187,8 +177,8 @@ hr {
 .badge {
   display: flex;
   align-items: center;
-  background-color: var(--color-primary); /* Velotag Grün als Akzentfarbe */
-  color: var(--color-on-primary);
+  background-color: var(--color-primary, #3db897); /* Velotag Grün als Akzentfarbe */
+  color: white;
   padding: 3px 8px;
   border-radius: 35px;
   font-size: 0.8rem;
@@ -197,7 +187,7 @@ hr {
 .remove-btn {
   background: none;
   border: none;
-  color: var(--color-on-primary);
+  color: white;
   margin-left: 6px;
   cursor: pointer;
   font-size: 1.1rem;
@@ -233,10 +223,10 @@ hr {
   margin: 4px 0 0 0;
   padding: 0;
   list-style: none;
-  background-color: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  background-color: var(--color-background, #fff);
+  border: 1px solid var(--color-border, #ccc);
   border-radius: 8px;
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
   z-index: 1000; /* Damit es über anderen Elementen liegt */
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -256,7 +246,7 @@ hr {
 .dropdown-list li {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 8px 12px;
   cursor: pointer;
   /* border-bottom: 1px solid var(--color-border, #eee); */
   transition: background-color 0.2s;
@@ -267,18 +257,18 @@ hr {
 }
 
 .dropdown-list li:hover {
-  background-color: var(--color-bg-hover);
+  background-color: var(--color-background-mute, #f1f1f1);
 }
 
 .dropdown-list li.selected {
-  background-color: rgba(var(--color-primary-rgb), 0.15); /* Helles Velotag-Grün als Hintergrund */
+  background-color: rgba(61, 184, 151, 0.15); /* Helles Velotag-Grün als Hintergrund */
 }
 
 .dropdown-list input[type="checkbox"] {
-  margin-right: 8px;
+  margin-right: 10px;
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: var(--color-primary); /* Velotag Grün */
+  accent-color: var(--color-primary, #3db897); /* Velotag Grün */
 }
 </style>

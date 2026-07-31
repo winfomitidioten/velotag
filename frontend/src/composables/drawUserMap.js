@@ -2,35 +2,53 @@ import { watch } from 'vue'
 import api from '@/api/api'
 import L from 'leaflet'
 import { activeLayerId } from '@/composables/useMap.js'
-import { decodePolyline } from './polyline' //calculateRouteDistance
-import { clearPerformanceMap } from '@/composables/drawPerformanceMap.js'
-import { startDraw, isStaleDraw } from '@/composables/mapDrawGeneration.js'
 
+// Dekodiert den komprimierten String zurück in ein [Lat, Lng] Array
+const decodePolyline = (encoded) => {
+    const coordinates = [];
+    let index = 0, len = encoded.length;
+    let lat = 0, lng = 0;
 
-// Funktion calculateRouteDistance ausgelagert in polyline.js
+    while (index < len) {
+        let b, shift = 0, result = 0;
+        do {
+            b = encoded.charCodeAt(index++) - 63;
+            result |= (b & 0x1f) << shift;
+            shift += 5;
+        } while (b >= 0x20);
+        let dlat = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+        lat += dlat;
+
+        shift = 0;
+        result = 0;
+        do {
+            b = encoded.charCodeAt(index++) - 63;
+            result |= (b & 0x1f) << shift;
+            shift += 5;
+        } while (b >= 0x20);
+        let dlng = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+        lng += dlng;
+
+        coordinates.push([lat / 1e5, lng / 1e5]);
+    }
+    return coordinates;
+};
 
 let currentFeatureGroup = null;
 let unwatchColor = null;
 let colorWatchStarted = false;
 
-export function clearUserMap(map) {
+export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
     if (currentFeatureGroup) {
-        map.removeLayer(currentFeatureGroup);
-        currentFeatureGroup = null;
+        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
     }
-}
-
-export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async
-    const myGeneration = startDraw(); // Erkennt veraltete Aufrufe, falls währenddessen umgeschaltet wird
-    clearPerformanceMap(map); // Leistungs-Ansicht ausblenden, falls gerade aktiv
-
-    // Parallel zum Routen-/Intersections-Fetch abrufen, damit die Statistik-Anzeige
-    // (rideCount/totalkm, siehe Karte.vue) nicht zusätzlich blockiert
-    const statsPromise = api.get('routes/stats/');
-
-    let routes = [];
+    if (unwatchColor) {//Watcher für Layer-Farbänderungen 
+        unwatchColor();//sonst zu viele watcher => performanceprobleme
+    }
+    let routes = []; 
+    // ---> GEÄNDERTE ZUWEISUNG:
+    currentFeatureGroup = L.featureGroup().addTo(map);
     let numberOfRoutes = 0;
-    let geoJsonLayer = null;
 
     const colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
@@ -56,7 +74,7 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                 ? geojsonData.features.length 
                 : 1;
 
-            geoJsonLayer = L.geoJSON(geojsonData, {
+            const geoJsonLayer = L.geoJSON(geojsonData, {
                 style: {
                     color: colourLine,
                     weight: 4,          // Zeichnet genau EINE 4px dicke Linie in der Mitte!
@@ -70,29 +88,21 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                     }
                 }
             });
+
+            currentFeatureGroup.addLayer(geoJsonLayer);
+
+            
         } catch (err) {
             console.error("Fehler beim Laden der Gruppen-Schnittmengen:", err);
-            return;
         }
     }
 
-    // Veraltete Anfrage: Während des Fetches wurde bereits eine neuere Zeichenanfrage gestartet
-    // (z.B. schnelles Umschalten Solo/Group/Leistung) - nichts mehr an der Karte ändern.
-    if (isStaleDraw(myGeneration)) return;
 
-    if (currentFeatureGroup) {
-        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
-    }
-    currentFeatureGroup = L.featureGroup().addTo(map);
 
-    if (geoJsonLayer) {
-        currentFeatureGroup.addLayer(geoJsonLayer);
-    }
 
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
-        //totalDistanceMeters += calculateRouteDistance(coordinates)
         // Initiale Farbe beim ersten Laden ermitteln
         //let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
@@ -121,11 +131,5 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                 layer.setStyle({ color: newColor });
             });
         });
-    }
-
-    const statsResponse = await statsPromise;
-    return {
-        rideCount: statsResponse.data.rideCount,
-        totalkm: statsResponse.data.totalKm
     }
 }

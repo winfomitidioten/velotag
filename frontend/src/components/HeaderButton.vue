@@ -8,7 +8,7 @@
 .header-btn {
     display: none;
     background-color: var(--color-primary);
-    color: var(--color-on-primary);
+    color: white;
     border: none;
     cursor: pointer;
     border-radius: var(--radius-md);

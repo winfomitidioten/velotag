@@ -1,16 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api/api'
-import GroupSelectionUploadModal from '@/components/GroupSelectionUploadModal.vue'
 
 defineEmits(['close'])
 
 const activities = ref([])
 const importing = ref(null)
 const loading = ref(true)
-// Gilt für alle Aktivitäten, die in dieser Sitzung importiert werden (gleiches Prinzip wie
-// beim GPX-Upload in GpxUploadModal.vue)
-const selectedGroupIds = ref([])
 
 const loadActivities = async () => {
   loading.value = true
@@ -24,7 +20,6 @@ const importActivity = async (activity) => {
   try {
     await api.post(`strava/activities/${activity.id}/import/`, {
       strecken_name: activity.name,
-      group_id: selectedGroupIds.value,
     })
     activity.already_imported = true
   } finally {
@@ -50,8 +45,6 @@ onMounted(loadActivities)
     </div>
 
     <div class="picker-body">
-      <GroupSelectionUploadModal @update:selectedGroup="selectedGroupIds = $event" />
-
       <p v-if="loading">Aktivitäten werden geladen…</p>
       <p v-else-if="activities.length === 0">Keine Strava-Aktivitäten gefunden.</p>
 
@@ -93,7 +86,7 @@ onMounted(loadActivities)
   justify-content: space-between;
   padding: calc(var(--safe-top, 0px) + 1rem) 1.25rem 1rem;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #f0f2f5;
 }
 
 .picker-header h2 {
@@ -111,7 +104,7 @@ onMounted(loadActivities)
   border: none;
   border-radius: var(--radius-lg, 10px);
   background: var(--color-primary, #3db897);
-  color: var(--color-on-primary);
+  color: white;
   cursor: pointer;
   transition: background-color 0.15s;
 }
@@ -143,7 +136,7 @@ onMounted(loadActivities)
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: var(--color-bg-hover);
+  background: #f5f7fa;
   border-radius: 12px;
 }
 
@@ -157,7 +150,7 @@ onMounted(loadActivities)
 .activity-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: #1a1a1a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -165,12 +158,12 @@ onMounted(loadActivities)
 
 .activity-meta {
   font-size: 0.8rem;
-  color: var(--color-text-muted);
+  color: #888;
 }
 
 .import-button {
   background-color: var(--color-primary, #3db897);
-  color: var(--color-on-primary);
+  color: white;
   border: none;
   border-radius: 8px;
   padding: 8px 14px;
@@ -187,7 +180,7 @@ onMounted(loadActivities)
 
 .already-imported {
   font-size: 0.8rem;
-  color: var(--color-text-muted);
+  color: #888;
   white-space: nowrap;
   flex-shrink: 0;
 }

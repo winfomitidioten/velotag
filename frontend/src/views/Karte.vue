@@ -1,11 +1,10 @@
 <script setup>
 
 import { onMounted, onUnmounted, ref, computed, watch, shallowRef } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
-import velotagLogo from '@/assets/velotag-logo.png'
 import api from '@/api/api'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
+import velotagLogo from '@/assets/velotag-logo.png'
 import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
-import { drawPerformanceMap } from '@/composables/drawPerformanceMap.js'
 import LayersSelectionModal from '@/components/layersSelectionModal.vue'
 import { usePinMode } from '@/composables/usePinMode.js'
 import PhotoPinUploadModal from '@/components/PhotoPinUploadModal.vue';
@@ -14,17 +13,10 @@ import PhotoPinGalleryModal from '@/components/PhotoPinGalleryModal.vue';
 import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
 import { useFavorite } from '@/composables/useFavorite.js'
-import { usePerformanceView } from '@/composables/usePerformanceView.js'
 import L from 'leaflet'
-//import StreckenView from './StreckenView.vue'
-import LascheModal from '@/components/LascheModal.vue'
 
 const showModal = ref(false);//ref packt eine "dumme" HTML Variable in eine "Überwachungsbox", damit Vue weiß, wenn sich der Wert durch Anklicken des Buttons ändert
 const showLayers = ref(false);
-const showRides= ref(false);
-
-const rideCount= ref(0);
-const totalkm = ref(0);
 const { showStravaImport } = useStravaImport();
 
 const { initializeMap, availableLayers, activeLayerId, isAttributionVisible, toggleAttribution, closeAttribution, isAttributionTarget } = useMap();
@@ -70,8 +62,6 @@ watch(showStravaImport, (isOpen, wasOpen) => {
 const isGroupView = ref(false);
 const { favoriteGroupId } = useFavorite()
 
-const { performanceMetric, performanceRange } = usePerformanceView();
-
 const groups = ref([]); // Alle Gruppen des Users, für das Dropdown zur Gruppenauswahl
 const selectedGroupId = ref(null); // Aktuell auf der Karte angezeigte Gruppe (nur temporäre Auswahl, kein Favorit-Update)
 const showGroupDropdown = ref(false);
@@ -108,33 +98,6 @@ const handleClickOutside = (event) => {
 };
 
 const map = shallowRef(null);//shallowRef überwacht nur .value von Map und nicht alle internen Eigenschaften => Performance
-
-const loadPerformanceView = async (metric, forceRefresh = false) => {
-  performanceRange.value = await drawPerformanceMap(map.value, metric, { forceRefresh });
-};
-
-// Karte wird per <keep-alive> am Leben gehalten, onMounted läuft also nur einmal.
-// Nach einem Strava-Import (Picker schließt) müssen die neuen Routen daher aktiv nachgeladen werden
-watch(showStravaImport, (isOpen, wasOpen) => {
-  if (!isOpen && wasOpen && map.value) {
-    if (performanceMetric.value) {
-      // Neue Route(n) könnten importiert worden sein - zwischengespeicherten Stand verwerfen
-      loadPerformanceView(performanceMetric.value, true);
-    } else {
-      drawUserMap(map.value);
-    }
-  }
-});
-
-// Leistungs-Ansicht ist unabhängig vom Solo/Group-Toggle (zeigt immer die eigenen Daten);
-// bei Rückkehr zu "Standard" wird wieder die aktuelle Solo-/Gruppen-Ansicht gezeichnet
-watch(performanceMetric, (metric) => {
-  if (metric) {
-    loadPerformanceView(metric);
-  } else {
-    drawUserMap(map.value, isGroupView.value, isGroupView.value ? selectedGroupId.value : undefined);
-  }
-});
 
 const activeLayerPreview = computed(() => {
   const active = availableLayers.find(l => l.id === activeLayerId.value);
@@ -186,12 +149,7 @@ onMounted(() => {
   })
 
   // Routen und Foto-Pins aus dem Backend abfragen
-  drawUserMap(map.value, isGroupView.value, favoriteGroupId.value).then(stats => {  //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
-    if (stats) {
-      rideCount.value = stats.rideCount
-      totalkm.value = stats.totalkm
-    }
-  })
+  drawUserMap(map.value, isGroupView.value, favoriteGroupId.value) //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
   drawPhotoPins(map.value, isGroupView.value, favoriteGroupId.value)
   console.log("übergebene Gruppen-ID in Karte.vue:", favoriteGroupId.value)
 
@@ -207,8 +165,6 @@ onUnmounted(() => {
 watch(isGroupView, async (newValue) => {
   console.log("isGroupView geändert:", newValue, favoriteGroupId.value);
   if (newValue) {
-    // Leistungsdaten sind personenbezogen und in der Gruppenansicht nicht verfügbar
-    performanceMetric.value = null;
     //Hier DB aufruf, um die Routen für die ausgewählte Ansicht zu laden; Problem: favoriteGroupId wird aktuell nicht aus DB geladen
     const response = await api.get('groups/favorite/');
     if (response.status === 200) {
@@ -218,21 +174,17 @@ watch(isGroupView, async (newValue) => {
     }
     // Beim Wechsel in die Gruppenansicht wird standardmäßig der Favorit ausgewählt
     selectedGroupId.value = favoriteGroupId.value;
-    if (!performanceMetric.value) {
-      drawUserMap(map.value, true, selectedGroupId.value)
-      drawPhotoPins(map.value, true, selectedGroupId.value)
-    }
+    drawUserMap(map.value, true, selectedGroupId.value)
+    drawPhotoPins(map.value, true, selectedGroupId.value)
   } else {
-    if (!performanceMetric.value) {
-      drawUserMap(map.value, false)
-      drawPhotoPins(map.value, false)
-    }
+    drawUserMap(map.value, false)
+    drawPhotoPins(map.value, false)
   }
 });
 
 // Auswahl einer anderen Gruppe im Dropdown: nur temporäre Kartenansicht, Favorit bleibt unverändert
 watch(selectedGroupId, (newGroupId) => {
-  if (isGroupView.value && !performanceMetric.value) {
+  if (isGroupView.value) {
     drawUserMap(map.value, true, newGroupId)
     drawPhotoPins(map.value, true, newGroupId)
   }
@@ -287,7 +239,7 @@ watch(selectedGroupId, (newGroupId) => {
     </svg>
   </button>
 
-  <div v-if="!showStravaImport && !showRides && !showLayers" class="map_controls_pill">
+  <div v-if="!showStravaImport" class="map_controls_pill">
     <button class="btn_pin_mode" :class="{ active: isPinMode }" @click="setPinMode(!isPinMode)" title="Foto anpinnen">
       <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
         <path d="M440-440ZM120-120q-33 0-56.5-23.5T40-200v-480q0-33 23.5-56.5T120-760h126l74-80h240v80H355l-73 80H120v480h640v-360h80v360q0 33-23.5 56.5T760-120H120Zm640-560v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM440-260q75 0 127.5-52.5T620-440q0-75-52.5-127.5T440-620q-75 0-127.5 52.5T260-440q0 75 52.5 127.5T440-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Z"/>
@@ -344,23 +296,24 @@ watch(selectedGroupId, (newGroupId) => {
     </ul>
   </div>
 
-  <LayersSelectionModal v-if="showLayers" :is-group-view="isGroupView" @close="showLayers = false"/>
-
-  <button v-if="!showRides && !showLayers" class="btn_lasche" @click="showRides = true">{{ rideCount }} Rides · {{ totalkm }} km</button>
-  <LascheModal v-if="showRides" @close="showRides = false" />
+  <LayersSelectionModal v-if="showLayers" @close="showLayers = false"/>
 
 </template>
 
 <style scoped>
-  /* Karte füllt den vom Flex-Container (#app) verbleibenden Platz exakt aus.
-     flex:1 statt fester 100dvh/100vh vermeidet die Höhen-Diskrepanz, die sonst
-     rechts/unten Scroll-Leisten erzeugt hat; overflow:hidden fängt Rest-Überlauf ab.
-     (Der AppHeader ist position:fixed und belegt daher keinen Flex-Platz.) */
-  #map {
-    flex: 1;
-    min-height: 0;
+/* Wrapper als Container für die Karte*/
+  .map-wrapper {
+    position: relative; 
+    height: 100vh;
     width: 100%;
-    overflow: hidden;
+  }
+
+  /* Karte füllt Container komplett aus, bis an den unteren Bildschirmrand
+     (kein Abzug von safe-area-inset-bottom mehr - die Buttons haben ihren eigenen
+     Sicherheitsabstand schon über --safe-bottom, die Karte selbst darf bis ganz unten laufen) */
+  #map {
+    height: 100dvh;
+    width: 100%;
   }
   
 
@@ -382,11 +335,11 @@ watch(selectedGroupId, (newGroupId) => {
     width: auto !important; /* ignoriert Leaflets dynamische Breite, die den "Lineal"-Effekt erzeugt */
     border: none;
     border-radius: 12px;
-    background: rgba(var(--color-bg-card-rgb), 0.92) !important; /* !important gegen Leaflets eigene .leaflet-control-attribution-Regel (gleiche Spezifität) */
+    background: rgba(255, 255, 255, 0.92);
     padding: 4px 10px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text) !important;
+    color: var(--color-text, #1a1a1a);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   }
 
@@ -406,8 +359,8 @@ watch(selectedGroupId, (newGroupId) => {
     max-width: calc(100vw - 20px); /* nie über den Bildschirmrand hinaus, aber sonst textbreit */
     display: flex;
     align-items: center;
-    background: var(--color-bg-card) !important; /* !important gegen Leaflets eigene .leaflet-control-attribution-Regel (gleiche Spezifität) */
-    color: var(--color-text-muted) !important;
+    background: var(--color-bg-card, #ffffff);
+    color: var(--color-text-muted, #666);
     font-size: 12px;
     padding: 0 16px 0 42px; /* links Platz für den Button (34px + 8px Abstand), vertikal zentriert per flex */
     border-radius: 17px; /* halbe Höhe = Pillenform, passend zur 34px-Höhe */
@@ -446,13 +399,13 @@ watch(selectedGroupId, (newGroupId) => {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background-color: var(--color-primary);
-    color: var(--color-on-primary);
+    background-color: var(--color-primary, #3db897);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-    border: 2px solid var(--color-bg-card);
+    border: 2px solid white;
     cursor: pointer;
   }
 
@@ -464,8 +417,8 @@ watch(selectedGroupId, (newGroupId) => {
     height: 16px;
     padding: 0 3px;
     border-radius: 8px;
-    background-color: var(--color-danger);
-    color: var(--color-on-primary);
+    background-color: #e53e3e;
+    color: white;
     font-size: 10px;
     font-weight: 700;
     display: flex;
@@ -523,8 +476,8 @@ watch(selectedGroupId, (newGroupId) => {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
+  background-color: var(--color-primary, #3db897);
+  color: white;
   padding: 10px 14px;
   border-radius: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -538,7 +491,7 @@ watch(selectedGroupId, (newGroupId) => {
     border: none;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.25);
-    color: var(--color-on-primary);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -563,7 +516,7 @@ watch(selectedGroupId, (newGroupId) => {
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    background-color: var(--color-bg-card);
+    background-color: white;
   }
 
   .btn_ebenen_preview,
@@ -581,7 +534,7 @@ watch(selectedGroupId, (newGroupId) => {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background-color: var(--color-bg-card);
+    background-color: white;
     color: var(--color-primary);
     transition: color 0.2s ease;
   }
@@ -614,8 +567,8 @@ watch(selectedGroupId, (newGroupId) => {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background-color: rgba(var(--color-bg-card-rgb), 0.92);
-    color: var(--color-text-muted);
+    background-color: rgba(255, 255, 255, 0.92);
+    color: var(--color-text-muted, #888888);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
   }
@@ -626,18 +579,18 @@ watch(selectedGroupId, (newGroupId) => {
 
   .btn_map_info.active {
     background-color: var(--color-primary);
-    color: var(--color-on-primary);
-    box-shadow: 0 2px 10px rgba(var(--color-primary-rgb), 0.5);
+    color: white;
+    box-shadow: 0 2px 10px rgba(61, 184, 151, 0.5);
   }
 
   .pill-divider {
     width: 24px;
     height: 1px;
-    background: var(--color-border);
+    background: rgba(0,0,0,0.12);
   }
 
   .btn_pin_mode.active {
-    color: var(--color-text-muted);
+    color: #9a9a9a;
   }
 
   /* --- NEUES STYLING FÜR DEN TOGGLE SWITCH --- */
@@ -646,7 +599,7 @@ watch(selectedGroupId, (newGroupId) => {
     top: calc(var(--safe-top) + var(--app-header-height) + 12px); /* unter dem fixierten AppHeader */
     right: 10px; /* Ganz am rechten Bildschirmrand, wie die übrigen Karten-Buttons */
     z-index: 9999;
-    background-color: var(--color-bg-card);
+    background-color: white;
     border-radius: 30px;
     display: flex;
     align-items: center;
@@ -663,13 +616,13 @@ watch(selectedGroupId, (newGroupId) => {
     text-align: center;
     font-size: 14px;
     font-weight: 600;
-    color: var(--color-text-muted);
+    color: #555;
     z-index: 2; /* Hält den Text über dem grünen Slider */
     transition: color 0.3s ease;
   }
 
   .toggle-option.active {
-    color: var(--color-on-primary); /* Schrift wird weiß, wenn der farbige Slider darunter liegt */
+    color: white; /* Schrift wird weiß, wenn der farbige Slider darunter liegt */
   }
 
   .toggle-slider {
@@ -705,60 +658,17 @@ watch(selectedGroupId, (newGroupId) => {
     height: 40px;
     padding: 0 10px;
     gap: 6px;
-    background-color: var(--color-bg-card);
+    background-color: white;
     border: none;
     border-radius: 20px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text);
+    color: var(--color-text, #2c3e50);
     cursor: pointer;
     transition: border-radius 0.15s ease;
   }
 
-  /* Übersichtslasche "^" */
-  .btn_lasche {
-    position: absolute;
-    bottom: 0px;
-    z-index: 9999; /* Button mit höchstem z-Index => garantiert immer sichtbar */
-    left: 50%;
-    transform: translateX(-50%);
-    
-    color: #e8e8e8;
-    font-size: 16px;
-    font-weight: 600;
-    
-    background-color: var(--color-primary);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px 16px 0 0;
-    
-    height: 34px;
-    width: calc(100% - 1000px);
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.15s ease;
-  }
-
-  @media (max-width: 480px) {
-      .btn_lasche {
-        width: calc(100% - 100px);
-        font-size: 14px;
-        height: 32px;
-    }
-  }
-
-  .btn_lasche:hover {
-    background-color: var(--color-primary-dark);
-  }
-
-  .btn_lasche:active {
-    background-color: var(--color-primary);
-  }
   .group-dropdown-trigger.open {
     border-radius: 16px 16px 0 0;
   }
@@ -775,7 +685,7 @@ watch(selectedGroupId, (newGroupId) => {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
-    fill: var(--color-text-muted);
+    fill: #94a3b8;
     transition: transform 0.2s ease;
   }
 
@@ -787,7 +697,7 @@ watch(selectedGroupId, (newGroupId) => {
     width: 15px;
     height: 15px;
     flex-shrink: 0;
-    fill: var(--color-warning);
+    fill: #f59e0b;
   }
 
   .group-dropdown-list {
@@ -800,7 +710,7 @@ watch(selectedGroupId, (newGroupId) => {
     margin: 0;
     padding: 4px 0;
     list-style: none;
-    background-color: var(--color-bg-card);
+    background-color: white;
     border-radius: 0 0 16px 16px;
     box-shadow: 0 6px 14px rgba(0,0,0,0.25);
   }
@@ -812,60 +722,17 @@ watch(selectedGroupId, (newGroupId) => {
     padding: 8px 10px;
     font-size: 13px;
     font-weight: 500;
-    color: var(--color-text);
+    color: var(--color-text, #2c3e50);
     cursor: pointer;
     transition: background-color 0.15s ease;
   }
 
-  /* Übersichtslasche "^" */
-  .btn_lasche {
-    position: absolute;
-    bottom: 0px;
-    z-index: 9999; /* Button mit höchstem z-Index => garantiert immer sichtbar */
-    left: 50%;
-    transform: translateX(-50%);
-    
-    color: #e8e8e8;
-    font-size: 16px;
-    font-weight: 600;
-    
-    background-color: var(--color-primary);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px 16px 0 0;
-    
-    height: 34px;
-    width: calc(100% - 1000px);
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.15s ease;
-  }
-
-  @media (max-width: 480px) {
-      .btn_lasche {
-        width: calc(100% - 100px);
-        font-size: 14px;
-        height: 32px;
-    }
-  }
-
-  .btn_lasche:hover {
-    background-color: var(--color-primary-dark);
-  }
-
-  .btn_lasche:active {
-    background-color: var(--color-primary);
-  }
   .group-dropdown-item:hover {
-    background-color: var(--color-bg-hover);
+    background-color: #f1f5f9;
   }
 
   .group-dropdown-item.selected {
-    background-color: var(--color-primary-soft);
+    background-color: #e8f7f3;
     color: var(--color-primary);
     font-weight: 600;
   }

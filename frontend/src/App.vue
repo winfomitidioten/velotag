@@ -1,26 +1,73 @@
 <script setup>
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
-import apiClient from '@/api/client'
-
 import AppHeader from '@/components/AppHeader.vue'
+import AppToast from '@/components/AppToast.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
-
 import { useUserStore } from '@/store/userStore'
-import { useSettingsStore } from './store/settingsStore'
-
 import { useStravaImport } from '@/composables/useStravaImport'
-
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
+import apiClient from '@/api/client'
+import { PushNotifications } from '@capacitor/push-notifications'
 
-useSettingsStore(); // legt den Store an, der Konstruktor wendet gespeichertes Theme sofort an
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const { showStravaImport } = useStravaImport();
+
+const setupAndroidPush = async () =>{
+  if (!Capacitor.getPlatform() !== 'android') {
+    return;
+  }
+  try{
+    let permStatus = await PushNotifications.checkPermissions();
+
+    if(permStatus.receive === 'prompt'){
+      permStatus = await PushNotifications.requestPermissions();
+    }
+
+    if(permStatus.receive !== 'granted') {
+      console.log("Nutzer hat Benachrichtigungen blockiert");
+      return;
+    }
+
+    await PushNotifications.register();
+
+    await PushNotifications.addListener('register', async (token) =>{
+      try{
+        await apiClient.post('/user/save-push-token/', {
+          token: token.value,
+          platform: 'android'
+        });
+      } catch (err){
+        console.error("Fehler beim Senden des Tokens an Backend: ", err);
+      }
+    });
+
+    await PushNotifications.addListener('pushNotificationActionPerformed', (action) =>{
+      console.log("Nutzer hat Benachrichtigung geklickt", action.notification);
+      const data = action.notification.data;
+
+      if (data && data.type == 'group_invitation') {
+        router.push('group/invitations');
+      } else if (data && data.type == 'leaderboard_overtaken') {
+        router.push(`/group/${id}/leaderboard`)
+      }
+    });
+  } catch (error) {
+      console.log("Fehler beim Push:", error)
+  }
+}
+const setupInAppNotifications = async () => {
+  if(!Capacitor.isNativePlatform()) return;
+    await PushNotifications.addListener('pushNotificationReceived', (notification) =>{
+      console.log("Push erhalten", notification);
+      alert(`${notification.title}, ${notification.body}`)
+    });
+}
 
 const goBack = () => {
   router.push(route.meta.backTo ?? '/map');
@@ -31,6 +78,8 @@ const setAppHeight = () => {
 };
 
 onMounted(async () => {
+  await setupAndroidPush();
+  await setupInAppNotifications();
   if (Capacitor.isNativePlatform()) {
     apiClient.defaults.baseURL = 'http://167.233.33.166/api';
     await StatusBar.setOverlaysWebView({ overlay: true });
@@ -80,6 +129,7 @@ onMounted(async () => {
   </button>
 
   <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
+  <AppToast />
 </template>
 
 <style>
@@ -90,11 +140,7 @@ html, body, #app {
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: var(--color-bg-page);
-  /* Basis-Textfarbe: greift für alle Texte ohne eigene color-Regel (sonst
-     bleiben sie beim UA-Standard schwarz und sind im Dunkel-Modus unlesbar) */
-  color: var(--color-text);
-  transition: var(--theme-transition);
+  background-color: #f5f7f8;
   font-family: sans-serif;
   box-sizing: border-box;
 }
