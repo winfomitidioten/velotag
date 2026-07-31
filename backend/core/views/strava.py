@@ -7,7 +7,6 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from routes.models import Route
-from django.contrib.gis.geos import LineString
 from datetime import datetime, timedelta, timezone as dt_timezone
 from urllib.parse import urlencode
 from users.models import StravaToken
@@ -158,38 +157,17 @@ def import_activity(request, activity_id):
         headers=headers,
     ).json()
 
-    # WICHTIG: 'latlng' zusätzlich anfragen - liefert die Positionsdaten auf demselben
-    # Zeitraster wie 'heartrate'/'watts'/'time' (index-synchron, wie bei GPX-Uploads).
-    # Die Polylinie in detail['map'] ist dagegen von Strava vereinfacht (weniger Punkte) und
-    # würde beim Aufbau von geom zu falsch zugeordneten Puls-/Watt-/Tempo-Werten führen.
     streams = requests.get(
         f'https://www.strava.com/api/v3/activities/{activity_id}/streams',
         headers=headers,
-        params={'keys': 'time,heartrate,watts,latlng', 'key_by_type': 'true'},
+        params={'keys': 'time,heartrate,watts', 'key_by_type': 'true'},
     ).json()
 
     start = datetime.strptime(detail['start_date'], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt_timezone.utc)
-    time_data = streams.get('time', {}).get('data', [])
     zeit_stream = [
         (start + timedelta(seconds=s)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        for s in time_data
+        for s in streams.get('time', {}).get('data', [])
     ]
-    end_time = start + timedelta(seconds=time_data[-1]) if time_data else start
-
-    # geom aus dem latlng-Stream aufbauen (PostGIS erwartet (Longitude, Latitude), Strava
-    # liefert (Latitude, Longitude) - siehe decode_polyline_to_postgis in routes/views.py für
-    # dieselbe Konvention beim GPX-Upload). Ohne latlng-Daten bleibt geom None (z.B. bei sehr
-    # alten Aktivitäten oder Privacy-Zonen) - die Route wird dann wie bisher aus Gruppen- und
-    # Fitness-Heatmap ausgeschlossen, taucht aber weiterhin in der Solo-Ansicht auf.
-    latlng_data = streams.get('latlng', {}).get('data', [])
-    line_geom = None
-    if len(latlng_data) >= 2:
-        coords = [(lng, lat) for lat, lng in latlng_data]
-        line_geom = LineString(coords, srid=4326)
-
-    # Optionale Gruppenauswahl beim Import (gleiches Feld/Format wie beim GPX-Upload, siehe
-    # useGPXVerarbeitung.js: group_id ist eine Liste von Gruppen-IDs)
-    group_id = request.data.get('group_id')
 
     route = Route.objects.create(
         strecken_name=request.data.get('strecken_name', detail.get('name', 'Strava-Fahrt')),
@@ -199,10 +177,6 @@ def import_activity(request, activity_id):
         zeit_stream=zeit_stream,
         watt_stream=streams.get('watts', {}).get('data'),
         strava_activity_id=activity_id,
-        geom=line_geom,
-        start_time=start,
-        end_time=end_time,
-        group_id=group_id,
     )
 
     return Response({'message': 'Route importiert', 'strecken_id': route.strecken_id}, status=201)

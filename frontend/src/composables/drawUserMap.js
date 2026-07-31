@@ -31,19 +31,44 @@ const calculateRouteDistance = (coordinates) => {
     let distance = 0;
     for (let i=1; i<coordinates.length; i++) {
         distance += L.latLng(coordinates[i - 1]).distanceTo(L.latLng(coordinates[i]));
+
+// Dekodiert den komprimierten String zurück in ein [Lat, Lng] Array
+const decodePolyline = (encoded) => {
+    const coordinates = [];
+    let index = 0, len = encoded.length;
+    let lat = 0, lng = 0;
+
+    while (index < len) {
+        let b, shift = 0, result = 0;
+        do {
+            b = encoded.charCodeAt(index++) - 63;
+            result |= (b & 0x1f) << shift;
+            shift += 5;
+        } while (b >= 0x20);
+        let dlat = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+        lat += dlat;
+
+        shift = 0;
+        result = 0;
+        do {
+            b = encoded.charCodeAt(index++) - 63;
+            result |= (b & 0x1f) << shift;
+            shift += 5;
+        } while (b >= 0x20);
+        let dlng = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+        lng += dlng;
+
+        coordinates.push([lat / 1e5, lng / 1e5]);
     }
-    return distance;
-}
+    return coordinates;
+};
 
 let currentFeatureGroup = null;
 let colorWatchStarted = false;
 
-    let totalDistanceMeters= 0
-
-export function clearUserMap(map) {
+export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//async 
     if (currentFeatureGroup) {
-        map.removeLayer(currentFeatureGroup);
-        currentFeatureGroup = null;
+        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
     }
 }
 
@@ -54,8 +79,13 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     const heatmapStyle = useHeatmapStyleStore();
 
     let routes = [];
+    if (unwatchColor) {//Watcher für Layer-Farbänderungen 
+        unwatchColor();//sonst zu viele watcher => performanceprobleme
+    }
+    let routes = []; 
+    // ---> GEÄNDERTE ZUWEISUNG:
+    currentFeatureGroup = L.featureGroup().addTo(map);
     let numberOfRoutes = 0;
-    let geoJsonLayer = null;
 
     const colourLine = resolveHeatmapColor(heatmapStyle.heatmapColor, activeLayerId.value);
     const glowOn = heatmapStyle.heatmapGlowEnabled;
@@ -83,7 +113,7 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                 ? geojsonData.features.length
                 : 1;
 
-            geoJsonLayer = L.geoJSON(geojsonData, {
+            const geoJsonLayer = L.geoJSON(geojsonData, {
                 style: {
                     color: colourLine,
                     weight: 4,          // Zeichnet genau EINE 4px dicke Linie in der Mitte!
@@ -97,6 +127,10 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                     }
                 }
             });
+
+            currentFeatureGroup.addLayer(geoJsonLayer);
+
+            
         } catch (err) {
             console.error("Fehler beim Laden der Gruppen-Schnittmengen:", err);
             clearUserMap(map); // Sonst blieben die Solo-Routen der vorigen Ansicht stehen
@@ -104,14 +138,7 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
         }
     }
 
-    // Veraltete Anfrage: Während des Fetches wurde bereits eine neuere Zeichenanfrage gestartet
-    // (z.B. schnelles Umschalten Solo/Group/Leistung) - nichts mehr an der Karte ändern.
-    if (isStaleDraw(myGeneration)) return;
 
-    if (currentFeatureGroup) {
-        map.removeLayer(currentFeatureGroup);//Entfernt alte Routen bevor neue geladen werden
-    }
-    currentFeatureGroup = L.featureGroup().addTo(map);
 
     if (geoJsonLayer) {
         currentFeatureGroup.addLayer(geoJsonLayer);
@@ -121,7 +148,6 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     routes.forEach(route => {
         const polylineEncoded = route.polyline_map;
         const coordinates = decodePolyline(polylineEncoded);
-        totalDistanceMeters += calculateRouteDistance(coordinates)
         // Initiale Farbe beim ersten Laden ermitteln
         //let colourLine = activeLayerId.value === 'hybrid' ? 'blue' : 'red';
 
@@ -159,5 +185,14 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
     return {
         rideCount: numberOfRoutes,
         totalkm: Math.round(totalDistanceMeters/1000)
+        watch(activeLayerId, (newLayerId) => {
+            // Neue Farbe basierend auf der neuen ID ermitteln
+            const newColor = newLayerId === 'hybrid' ? 'blue' : 'red';
+
+            // Immer auf der aktuellen FeatureGroup arbeiten, nicht auf der von der ersten Zeichnung
+            currentFeatureGroup?.eachLayer((layer) => {
+                layer.setStyle({ color: newColor });
+            });
+        });
     }
 }

@@ -5,15 +5,38 @@ import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from '@/components/HeaderButton.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { useToast } from '@/composables/useToast';
 
 const route = useRoute()
 const router = useRouter()
+const { showToast } = useToast()
 
 const groupId = computed(() => route.params.id)
 const group = ref(null)
 const loading = ref(false)
 const showPopup = ref(false)
 const newMemberMail = ref("")
+
+// Ersatz für window.confirm(): statt eines blockierenden Browser-Dialogs merken wir uns
+// hier, WELCHE Aktion gerade eine Bestätigung braucht (Text + die eigentliche Funktion),
+// und rendern dafür unten im Template einen einzigen <ConfirmDialog>.
+const pendingConfirm = ref(null) // { title, message, confirmLabel, danger, action }
+const confirmBusy = ref(false)
+
+const askConfirm = (options) => {
+    pendingConfirm.value = options;
+}
+
+const handleConfirm = async () => {
+    if (!pendingConfirm.value) return;
+    confirmBusy.value = true;
+    try {
+        await pendingConfirm.value.action();
+    } finally {
+        confirmBusy.value = false;
+        pendingConfirm.value = null;
+    }
+}
 
 const fetchGroup = async () => {
     try {
@@ -39,7 +62,30 @@ const inviteMember = async () => {
         newMemberMail.value = ""
     } catch(error) {
         console.error("Fehler beim Einladen:", error.response?.data || error.message);
-        alert(error.response?.data?.error || "Es gab ein Problem beim Hinzufügen.");
+        showToast(error.response?.data?.error || "Es gab ein Problem beim Hinzufügen.", 'error');
+    }
+}
+
+const displayMemberName = (member) => {
+    if (member.first_name || member.last_name) {
+        return `${member.first_name ?? ''} ${member.last_name ?? ''}`.trim();
+    }
+    return member.username;
+}
+
+// Übergibt die Adminrolle an ein anderes Mitglied. Der Server berechnet `is_admin`
+// bei jeder Anfrage neu aus `group.admin`, daher reicht das Neuladen der Gruppendaten
+// aus der Response, damit die Rechte hier sofort (bei mir deaktiviert, beim Ziel aktiviert) stimmen.
+const transferAdmin = async (member) => {
+    try {
+        const response = await api.post(`groups/${groupId.value}/transfer-admin/`, {
+            email: member.email
+        });
+        group.value = response.data;
+        showToast(`${displayMemberName(member)} ist jetzt Admin dieser Gruppe.`);
+    } catch (error) {
+        console.error("Fehler beim Übertragen der Adminrolle:", error);
+        showToast(error.response?.data?.error || "Es gab ein Problem beim Übertragen der Adminrolle.", 'error');
     }
 }
 
@@ -94,45 +140,83 @@ const handleConfirm = () => {
 
 
 const deleteMember = async () => {
+const confirmTransferAdmin = (member) => {
+    askConfirm({
+        title: 'Adminrolle übergeben?',
+        message: `Möchtest du die Adminrolle wirklich an ${displayMemberName(member)} übergeben?`,
+        confirmLabel: 'Übergeben',
+        action: () => transferAdmin(member),
+    });
+}
+
+const deleteMember = async (member) => {
     try{
         actionBusy.value = true;
         const response = await api.delete(`groups/${groupId.value}/kick`, {
-            data: { email: memberToDelete.value }
+            data: { email: member.email }
         });
-    
+
         group.value = response.data;
-        cancleConfirm();
+        showToast(`${displayMemberName(member)} wurde aus der Gruppe entfernt.`);
     } catch (error) {
         console.error("Fehler beim Löschen des Mitglieds:", error);
-        alert(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.");
-    } finally {
-        actionBusy.value = false;
+        showToast(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.", 'error');
     }
 };
+
+const confirmDeleteMember = (member) => {
+    askConfirm({
+        title: 'Mitglied entfernen?',
+        message: `Möchtest du das Mitglied (${member.email}) wirklich aus der Gruppe entfernen?`,
+        confirmLabel: 'Entfernen',
+        danger: true,
+        action: () => deleteMember(member),
+    });
+}
 
 const deleteGroup = async () =>{
     try{
         actionBusy.value = true;
         await api.delete(`groups/${groupId.value}/`);
+        showToast("Gruppe wurde erfolgreich gelöscht");
         router.push("/group");
     } catch (error) {
         console.error("Fehler beim Löschen der Gruppe:", error);
-        alert(error.response?.data?.error || "Es gab ein Problem beim Löschen der Gruppe.");
-        actionBusy.value = false;
+        showToast(error.response?.data?.error || "Es gab ein Problem beim Löschen der Gruppe.", 'error');
     }
 };
+
+const confirmDeleteGroup = () => {
+    askConfirm({
+        title: 'Gruppe löschen?',
+        message: 'Möchtest du diese Gruppe wirklich dauerhaft löschen?',
+        confirmLabel: 'Löschen',
+        danger: true,
+        action: deleteGroup,
+    });
+}
 
 const leaveGroup = async () =>{
     try{
         actionBusy.value = true;
         await api.post(`groups/${groupId.value}/leave`);
+        showToast("Gruppe wurde erfolgreich verlassen");
         router.push("/group");
     } catch (error) {
         console.error("Fehler beim Verlassen der Gruppe:", error);
-        alert(error.response?.data?.error || "Es gab ein Problem beim Verlassen der Gruppe.");
-        actionBusy.value = false;
+        showToast(error.response?.data?.error || "Es gab ein Problem beim Verlassen der Gruppe.", 'error');
     }
 };
+
+const confirmLeaveGroup = () => {
+    askConfirm({
+        title: 'Gruppe verlassen?',
+        message: 'Möchtest du diese Gruppe wirklich verlassen?',
+        confirmLabel: 'Verlassen',
+        danger: true,
+        action: leaveGroup,
+    });
+}
 
 watch(() => route.params.id, (newId) => {
     if (newId) fetchGroup();
@@ -151,14 +235,14 @@ onMounted(() => {
 
         <template v-else-if="group">
             <PageHeader>
-                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="askDeleteGroup">
+                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="confirmDeleteGroup">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
                     </svg>
                     <span>Gruppe Löschen</span>
                 </HeaderButton>
             </PageHeader>
-            
+
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                     <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
@@ -186,7 +270,7 @@ onMounted(() => {
                                 <span>Einladen</span>
                             </button>
 
-                            <button @click="askLeaveGroup" class="leave-btn">
+                            <button @click="confirmLeaveGroup" class="leave-btn">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
                                     <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z"/>
                                 </svg>
@@ -217,7 +301,14 @@ onMounted(() => {
                                     <span class="member-email">{{ member.email }}</span>
                                 </div>
 
-                                <div v-if="group.is_admin && member.email !== group.admin_email" class="delete-member" @click="askDeleteMember(member.email)">
+                                <!-- Adminrolle übergeben: nur für den aktuellen Admin sichtbar, nicht bei sich selbst -->
+                                <div v-if="group.is_admin && member.email !== group.admin_email" class="make-admin" @click="confirmTransferAdmin(member)" title="Adminrolle übergeben">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px">
+                                        <path d="M240-200 40-400l200-200 56 56-104 104h480v80H192l104 104-56 56Zm480-360-56-56 104-104H288v-80h480L664-704l56-56 200 200-200 200Z"/>
+                                    </svg>
+                                </div>
+
+                                <div v-if="group.is_admin && member.email !== group.admin_email" class="delete-member" @click="confirmDeleteMember(member)">
                                     <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px">
                                         <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
                                     </svg>
@@ -238,15 +329,16 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
+
             <ConfirmDialog
-                v-if="confirmAction"
-                :title="confirmConfig.title"
-                :message="confirmConfig.message"
-                :confirm-label="confirmConfig.confirmLabel"
-                danger
-                :busy="actionBusy"
+                v-if="pendingConfirm"
+                :title="pendingConfirm.title"
+                :message="pendingConfirm.message"
+                :confirm-label="pendingConfirm.confirmLabel"
+                :danger="pendingConfirm.danger"
+                :busy="confirmBusy"
                 @confirm="handleConfirm"
-                @cancel="cancleConfirm"
+                @cancel="pendingConfirm = null"
             />
         </template>
     </div>
@@ -469,7 +561,8 @@ onMounted(() => {
         display: flex;
         flex-direction: column;
         gap: 0.1rem;
-        min-width: 0; 
+        flex-grow: 1;
+        min-width: 0;
     }
 
     .member-name {
@@ -498,8 +591,8 @@ onMounted(() => {
         font-weight: 500;
     }
 
+    .make-admin,
     .delete-member {
-        margin-left: auto;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -510,14 +603,25 @@ onMounted(() => {
         transition: background-color 0.2s ease, transform 0.1s ease;
         flex-shrink: 0;
     }
+
+    .make-admin svg {
+        fill: #94a3b8;
+    }
+    .make-admin:hover {
+        background-color: #e8f7f3;
+    }
+    .make-admin:hover svg {
+        fill: var(--color-primary);
+    }
+
     .delete-member svg {
-        fill: var(--color-text-muted);
+        fill: #94a3b8;
     }
     .delete-member:hover {
-        background-color: var(--color-danger-bg);
+        background-color: #fee2e2;
     }
     .delete-member:hover svg {
-        fill: var(--color-danger);
+        fill: #ef4444;
     }
 
     #popup-overlay {

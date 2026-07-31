@@ -9,10 +9,6 @@ import BaseModal from '@/components/BaseModal.vue'
 
 defineEmits(['close'])
 
-const props = defineProps({
-  isGroupView: { type: Boolean, default: false }
-})
-
 const { availableLayers, activeLayerId, setLayer } = useMap()
 const { performanceMetric, performanceRange } = usePerformanceView()
 const { heatmapColor, heatmapGlowEnabled } = storeToRefs(useHeatmapStyleStore())
@@ -28,21 +24,6 @@ const onHeatmapColorInput = (event) => {
 
 const selectLayer = (layerId) => {
   setLayer(layerId)
-}
-
-const performanceOptions = [
-  { id: null, name: 'Standard' },
-  { id: 'puls', name: 'Puls' },
-  { id: 'tempo', name: 'Tempo' },
-  { id: 'watt', name: 'Watt' },
-]
-
-// Leistungsdaten sind personenbezogen und ergeben in der Gruppen-Schnittmengen-Ansicht keinen Sinn
-const isPerformanceOptionDisabled = (option) => props.isGroupView && option.id !== null
-
-const selectPerformanceMode = (metric) => {
-  if (props.isGroupView && metric !== null) return
-  performanceMetric.value = metric
 }
 </script>
 

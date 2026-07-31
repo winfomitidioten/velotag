@@ -7,14 +7,14 @@ from .serializers import RouteListSerializer
 from .models import Route
 
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes 
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.gis.geos import LineString
 
 from django.http import HttpResponse
 from django.core.serializers import serialize
-from .models import Route, GroupRideIntersection, UserPerformanceBucket
+from .models import Route, GroupRideIntersection 
 from groups.models import Group, Membership
 
 
@@ -112,50 +112,6 @@ class RouteMapView(APIView):
         serializer = RouteSerializer(routes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-class RoutePerformanceView(APIView):
-    """Liefert die Puls-/Tempo-/Watt-Rasterzellen (siehe routes/performance.py) für die
-    Leistungs-Ansicht auf der Karte. Die eigentliche Berechnung passiert bereits beim Hochladen
-    jeder Route (routes/signals.py) und wird inkrementell in UserPerformanceBucket gespeichert -
-    hier wird nur noch gelesen, unabhängig von der Anzahl der Routen des Users."""
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        buckets = UserPerformanceBucket.objects.filter(user=request.user)
-
-        segments = []
-        metric_values = {'puls': [], 'tempo': [], 'watt': []}
-
-        for bucket in buckets:
-            coords = list(bucket.geom.coords)  # [(lng, lat), (lng, lat)]
-            entry = {'coordinates': [[c[1], c[0]] for c in coords]}
-            has_any = False
-            for m in ('puls', 'tempo', 'watt'):
-                count = getattr(bucket, f'{m}_count')
-                if count > 0:
-                    avg_value = getattr(bucket, f'{m}_sum') / count
-                    entry[m] = {'value': round(avg_value, 1), 'count': count}
-                    metric_values[m].append(avg_value)
-                    has_any = True
-                else:
-                    entry[m] = None
-            if has_any:
-                segments.append(entry)
-
-        metrics_meta = {
-            m: {
-                'min_value': round(min(vals), 1) if vals else None,
-                'max_value': round(max(vals), 1) if vals else None,
-            }
-            for m, vals in metric_values.items()
-        }
-
-        return Response({
-            'metrics': metrics_meta,
-            'segments': segments,
-        }, status=status.HTTP_200_OK)
-
-
 #Für die Fahrten Anzeige
 class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom Frontend,
     #holt alle Strecken des eingeloggten Users aus der DB, serialisiert sie und schickt sie zurück
