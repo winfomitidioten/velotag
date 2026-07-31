@@ -2,21 +2,35 @@
 import { ref } from 'vue';
 import api from '@/api/api';
 import BaseModal from '@/components/BaseModal.vue';
+import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 
 const emit = defineEmits(['close', 'created']);
 
 const newGroupName = ref('');
+const newGroupDescription = ref('');
+const selectedFile = ref(null);
+const previewImage = ref(null);
 const saving = ref(false);
 const errors = ref('');
+
+const onGroupPhotoAdded = (photos) => {
+    const photo = photos[0];
+    if (!photo) return;
+    selectedFile.value = photo.file;
+    previewImage.value = photo.previewUrl;
+}
 
 const createNewGroup = async () => {
     if (!newGroupName.value.trim()) return;
     try {
         saving.value = true;
         errors.value = '';
-        const response = await api.post('groups/', {
-            name: newGroupName.value
-        });
+        const formData = new FormData();
+        formData.append('name', newGroupName.value);
+        if (newGroupDescription.value) formData.append('description', newGroupDescription.value);
+        if (selectedFile.value) formData.append('profilbild', selectedFile.value);
+
+        const response = await api.post('groups/', formData);
         emit('created', response.data);
     } catch (error) {
         console.error('Fehler beim Erstellen der Gruppe:', error.response?.data || error.message);
@@ -39,6 +53,17 @@ const createNewGroup = async () => {
             :disabled="saving"
             @keyup.enter="createNewGroup"
         />
+
+        <textarea
+            v-model="newGroupDescription"
+            class="group-description-input"
+            placeholder="Beschreibung (optional)"
+            rows="3"
+            :disabled="saving"
+        ></textarea>
+
+        <img v-if="previewImage" :src="previewImage" alt="Gruppenbild" class="group-photo-preview">
+        <CameraGalleryPicker :multiple="false" :has-photos="!!previewImage" @photos-added="onGroupPhotoAdded" />
 
         <p v-if="errors" class="group-error">{{ errors }}</p>
 
@@ -71,6 +96,36 @@ const createNewGroup = async () => {
 .group-name-input:focus {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.15);
+}
+
+.group-description-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 0.85rem;
+    padding: 0.85rem 1rem;
+    font-size: 1rem;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    outline: none;
+    color: var(--color-text);
+    background-color: var(--color-bg-page);
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.group-description-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.15);
+}
+
+.group-photo-preview {
+    width: 5rem;
+    height: 5rem;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    margin-top: 0.85rem;
+    align-self: center;
 }
 
 .group-error {
