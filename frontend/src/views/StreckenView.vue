@@ -74,6 +74,7 @@
           <span>Dauer</span>
           <span>Ø Herzfrequenz</span>
           <span>Ø Watt</span>
+          <span>Likes</span>
           <span></span>
         </div>
 
@@ -99,6 +100,7 @@
           <span>{{ formatDuration(strecke.duration_seconds) }}</span>
           <span>{{ strecke.avg_puls != null ? strecke.avg_puls + ' BPM' : '—' }}</span>
           <span>{{ strecke.avg_watt != null ? strecke.avg_watt + ' W' : '—' }}</span>
+          <span class="like-count">❤ {{ strecke.like_count }}</span>
           <button class="edit-btn" @click.stop="editingRoute = strecke" title="Bearbeiten">
             ✏️
           </button>
@@ -162,10 +164,14 @@
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 2.5rem;
+  grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 1fr 2.5rem;
   padding: 0.9rem 1.5rem;
   gap: 1rem;
   align-items: center;
+}
+
+.like-count {
+  color: var(--color-text-muted);
 }
 
 .table-header {

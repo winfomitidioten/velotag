@@ -4,7 +4,7 @@ from django.urls import path
 
 #from backend.users import views
 from . import views
-from .views import RouteCreateView, RouteListView, RouteMapView, RouteDetailView, RoutePerformanceView, RouteStatsView
+from .views import RouteCreateView, RouteListView, RouteMapView, RouteDetailView, RoutePerformanceView, RouteStatsView, RouteLikeView
 
 
 urlpatterns = [
@@ -16,6 +16,7 @@ urlpatterns = [
 
     path('performance/', RoutePerformanceView.as_view(), name='route-performance'),
     path('<int:strecken_id>/', RouteDetailView.as_view(), name='route-detail'),
+    path('<int:strecken_id>/like/', RouteLikeView.as_view(), name='route-like'),
     path('intersections/<int:group_id>/', views.group_intersections_geojson, name='group_intersections'),
 
 ]

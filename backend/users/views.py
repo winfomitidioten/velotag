@@ -155,5 +155,5 @@ class PublicUserProfileView(APIView):
         return Response({
             "profile": profile_data,
             "stats": Route.get_stats_for_user(target_user),
-            "recentRides": RouteListSerializer(last_three, many=True).data
+            "recentRides": RouteListSerializer(last_three, many=True, context={'request': request}).data
         }, status=status.HTTP_200_OK)
