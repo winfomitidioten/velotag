@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken
-from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView, SetGroupFavoriteView, RemoveFavoriteView, GetGroupFavoriteView, GroupTransferAdminView
+from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView, SetGroupFavoriteView, RemoveFavoriteView, GetGroupFavoriteView, GroupTransferAdminView, GroupInviteLinkView, GroupJoinByTokenView
 from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken
@@ -42,6 +42,8 @@ urlpatterns = [
     path('api/groups/<int:pk>/', GroupDetailView.as_view(), name='group-detail'),
     path('api/logout/', LogoutView.as_view()),
     path('api/groups/<int:pk>/invite/', GroupInviteAdmin.as_view(), name='group-invite-admin'),
+    path('api/groups/<int:pk>/invite-link/', GroupInviteLinkView.as_view(), name='group-invite-link'),
+    path('api/groups/join/', GroupJoinByTokenView.as_view(), name='group-join-by-token'),
     path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
     path('api/groups/<int:pk>/leave', GroupLeaveView.as_view(), name="group-leave"),
     path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick"),

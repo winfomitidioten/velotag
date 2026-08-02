@@ -6,6 +6,7 @@ import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../views/GroupView.vue'
 import GroupDetailView from '../views/GroupDetailView.vue'
 import GroupInviteView from '../views/GroupInviteView.vue'
+import JoinGroupView from '../views/JoinGroupView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
 import PublicUserProfile from '../components/PublicUserProfile.vue'
 
@@ -57,6 +58,13 @@ const routes = [
     path: '/group/invites',
     name: 'group-invites',
     component: GroupInviteView,
+    meta: { requiresAuth: true, showBack: true }
+  },
+  {
+    // Ziel des Einladungslinks/QR-Codes aus GroupDetailView.vue (VEL-74).
+    path: '/join/:token',
+    name: 'group-join',
+    component: JoinGroupView,
     meta: { requiresAuth: true, showBack: true }
   },
   {
