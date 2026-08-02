@@ -3,9 +3,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import HeaderButton from '@/components/HeaderButton.vue';
+import PageHeader from '@/components/PageHeader.vue';
 import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { usePageTitle } from '@/composables/usePageTitle';
+import { isMobile } from '@/composables/viewport';
 
 const route = useRoute()
 const router = useRouter()
@@ -209,7 +211,7 @@ onMounted(() => {
         </div>
 
         <template v-else-if="group">
-            <Teleport to="#app-header-actions">
+            <Teleport v-if="isMobile" to="#app-header-actions">
                 <HeaderButton v-if="group.is_admin" class="desktop-edit-btn" @click="openEditPopup">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
@@ -223,6 +225,20 @@ onMounted(() => {
                     <span>Gruppe Löschen</span>
                 </HeaderButton>
             </Teleport>
+            <PageHeader v-else>
+                <HeaderButton v-if="group.is_admin" class="desktop-edit-btn" @click="openEditPopup">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                        <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                    </svg>
+                    <span>Bearbeiten</span>
+                </HeaderButton>
+                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="askDeleteGroup">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                        <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
+                    </svg>
+                    <span>Gruppe Löschen</span>
+                </HeaderButton>
+            </PageHeader>
 
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
@@ -363,6 +379,14 @@ onMounted(() => {
         box-sizing: border-box;
     }
 
+    /* Ab Desktop-Breite übernimmt PageHeader (sticky, eigener margin-top) den
+       Versatz unter der DesktopNavBar - sonst würde der Abstand doppelt zählen. */
+    @media (min-width: 768px) {
+        .page-container {
+            padding-top: 0;
+        }
+    }
+
     header h3 {
         font-size: 1.2rem;
         font-weight: 600;
@@ -413,23 +437,25 @@ onMounted(() => {
         display: none;
     }
 
+    /* Gleicher Look wie die schwebenden Buttons auf der Karte (weißes
+       Quadrat mit abgerundeten Ecken, Icon in Primärfarbe, wie .btn_ebenen_preview) */
     .mobile-fab-btn {
         position: fixed;
-        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 1rem);
+        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 1.5rem);
         right: 1.5rem;
         z-index: 90;
-        background-color: var(--color-primary);
-        color: var(--color-on-primary);
+        background-color: var(--color-bg-card);
+        color: var(--color-primary);
         border: none;
         cursor: pointer;
-        width: 3.5rem;
-        height: 3.5rem;
-        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        border-radius: 20px;
         padding: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.4);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         transition: all 0.2s ease;
     }
     .mobile-fab-btn:active {
@@ -771,6 +797,8 @@ onMounted(() => {
         }
         .mobile-fab-btn {
             display: none;
+            bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px);
+            right: 10px;
         }
         .desktop-create-btn,
         .desktop-edit-btn {

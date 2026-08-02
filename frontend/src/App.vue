@@ -5,6 +5,7 @@ import apiClient from '@/api/client'
 
 import AppHeader from '@/components/AppHeader.vue'
 import AppTabBar from '@/components/AppTabBar.vue'
+import DesktopNavBar from '@/components/DesktopNavBar.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
 
 import { useUserStore } from '@/store/userStore'
@@ -12,6 +13,7 @@ import { useSettingsStore } from './store/settingsStore'
 
 import { useStravaImport } from '@/composables/useStravaImport'
 import { useSwipeBack } from '@/composables/useSwipeBack'
+import { isMobile, updateIsMobile } from '@/composables/viewport'
 
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
@@ -79,6 +81,7 @@ const swipeBack = useSwipeBack();
 
 const setAppHeight = () => {
   document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+  updateIsMobile();
 };
 
 // Bei theme='system' folgt die Statusleiste der OS-Einstellung, sonst der
@@ -139,13 +142,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <AppHeader v-if="!route.meta.hideMenu && !showStravaImport" />
+  <template v-if="!route.meta.hideMenu && !showStravaImport">
+    <AppHeader v-if="isMobile" />
+    <DesktopNavBar v-else />
+  </template>
+
   <RouterView v-slot="{ Component }">
     <keep-alive include="Karte">
       <component :is="Component" />
     </keep-alive>
   </RouterView>
-  <AppTabBar v-if="!route.meta.hideMenu && !showStravaImport" />
+
+  <AppTabBar v-if="isMobile && !route.meta.hideMenu && !showStravaImport" />
 
   <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
 </template>

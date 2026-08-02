@@ -318,7 +318,7 @@ watch(selectedGroupId, (newGroupId) => {
      zeigt nur noch den Text als abgerundete Pille statt sich als Lineal zu verbreitern.
      :deep(), da Leaflet dieses Element dynamisch selbst ins DOM einfügt */
   :deep(.map-scale-control) {
-    margin-bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 55px) !important;
+    margin-bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 68px) !important;
     margin-left: 10px;
     opacity: 0;
     pointer-events: none;
@@ -347,7 +347,7 @@ watch(selectedGroupId, (newGroupId) => {
   :deep(.map-attribution-control) {
     position: fixed !important;
     left: 10px !important; /* identisch mit .btn_map_info, damit die linke Kante zusammenfällt */
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 15px) !important; /* gleiche Zeile wie .btn_map_info */
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px) !important; /* gleiche Zeile wie .btn_map_info */
     margin: 0 !important;
     box-sizing: border-box;
     height: 34px; /* exakt so hoch wie .btn_map_info, statt größer/versetzt zu wirken */
@@ -503,7 +503,7 @@ watch(selectedGroupId, (newGroupId) => {
   .btn_ebenen_preview,
   .map_controls_pill {
     position: absolute;
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 15px);
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px);
     right: 10px;
     z-index: 500;
     display: flex;
@@ -536,7 +536,7 @@ watch(selectedGroupId, (newGroupId) => {
   }
 
   .btn_ebenen_preview {
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 125px);
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 138px);
     right: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
@@ -545,7 +545,7 @@ watch(selectedGroupId, (newGroupId) => {
      dezent (kleiner + blasser als die übrigen Karten-Buttons) */
   .btn_map_info {
     position: absolute;
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 15px);
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px);
     left: 10px;
     /* Muss über Leaflets eigenem Ecken-Container liegen: .leaflet-bottom.leaflet-left
        (in dem die Attribution-Leiste steckt) hat per Leaflet-Standard-CSS z-index:1000 -

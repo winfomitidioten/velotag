@@ -24,13 +24,13 @@ const handleBack = () => goBack(router, route);
           @click="handleBack"
           aria-label="Zurück zur vorherigen Seite"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
             <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/>
           </svg>
         </button>
       </div>
 
-      <!-- <span class="header-title">{{ title }}</span> -->
+      <span class="header-title">{{ title }}</span>
 
       <!-- Teleport-Ziel für seitenspezifische Aktions-Buttons (z.B. "Gruppe
            löschen", Einstellungen-Icon auf dem Profil) - existiert immer,
@@ -63,15 +63,15 @@ const handleBack = () => goBack(router, route);
 }
 
 .header-left {
-  width: 44px;
+  width: 48px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
 }
 
 .back-button {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: none;
   background: none;
@@ -100,7 +100,9 @@ const handleBack = () => goBack(router, route);
 
 .header-right {
   flex-shrink: 0;
-  min-width: 44px;
+  min-width: 48px;
+  /* Immer fest rechtsbündig, unabhängig davon ob .header-title Inhalt hat */
+  margin-left: auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;

@@ -19,7 +19,7 @@ const routes = [
       path: '/profile',
       name: 'profile',
       component: ProfileView,
-      meta: { requiresAuth: true, showBack: true, title: 'Profil' }
+      meta: { requiresAuth: true, title: 'Profil' }
   },
   {
     path: '/',

@@ -109,7 +109,7 @@
    Ändert sich die Header-Höhe, verschiebt sich das automatisch mit. */
 .strecken-meta-row {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   padding: 0.75rem 2rem 0;
 }
 
