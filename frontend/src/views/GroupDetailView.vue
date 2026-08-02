@@ -206,7 +206,7 @@ const handleConfirm = () => {
 const deleteMember = async () => {
     try{
         actionBusy.value = true;
-        const response = await api.delete(`groups/${groupId.value}/kick`, {
+        const response = await api.delete(`groups/${groupId.value}/kick/`, {
             data: { email: memberToDelete.value }
         });
 
