@@ -15,6 +15,7 @@ import { useStravaImport } from '@/composables/useStravaImport'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
+import { LocalNotifications } from '@capacitor/local-notifications'
 
 useSettingsStore(); // legt den Store an, der Konstruktor wendet gespeichertes Theme sofort an
 
@@ -22,6 +23,50 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const { showStravaImport } = useStravaImport();
+
+// Feste ID fuer die taegliche Erinnerung: schedule() mit derselben ID ersetzt
+// eine bereits geplante Benachrichtigung, statt Duplikate anzuhaeufen - daher
+// reicht ein einfacher Check ueber getPending(), ob sie schon existiert.
+const DAILY_REMINDER_ID = 1001;
+
+// Rein lokale, taegliche Erinnerung ans Radfahren (kein Backend/Server noetig,
+// laeuft komplett auf dem Geraet).
+const setupDailyReminder = async () => {
+  if (!Capacitor.isNativePlatform()) {
+    return;
+  }
+  try {
+    let permStatus = await LocalNotifications.checkPermissions();
+
+    if (permStatus.display === 'prompt') {
+      permStatus = await LocalNotifications.requestPermissions();
+    }
+
+    if (permStatus.display !== 'granted') {
+      console.log("Nutzer hat lokale Benachrichtigungen blockiert");
+      return;
+    }
+
+    const { notifications: pending } = await LocalNotifications.getPending();
+    if (pending.some((n) => n.id === DAILY_REMINDER_ID)) {
+      return; // schon geplant, z.B. von einem frueheren App-Start
+    }
+
+    await LocalNotifications.schedule({
+      notifications: [{
+        id: DAILY_REMINDER_ID,
+        title: 'Schon gefahren heute? 🚴',
+        body: 'Vergiss nicht, deine heutige Fahrt in velotag festzuhalten.',
+        schedule: {
+          on: { hour: 11, minute: 0 },
+          repeats: true,
+        },
+      }],
+    });
+  } catch (error) {
+    console.log("Fehler bei der taeglichen Erinnerung:", error)
+  }
+}
 
 const goBack = () => {
   router.push(route.meta.backTo ?? '/map');
@@ -32,6 +77,7 @@ const setAppHeight = () => {
 };
 
 onMounted(async () => {
+  await setupDailyReminder();
   if (Capacitor.isNativePlatform()) {
     apiClient.defaults.baseURL = 'http://167.233.33.166/api';
     await StatusBar.setOverlaysWebView({ overlay: true });
@@ -85,7 +131,7 @@ onMounted(async () => {
 </template>
 
 <style>
-/* html und body funktionieren in <style scoped> nicht! 
+/* html und body funktionieren in <style scoped> nicht!
    Daher bleibt das hier ohne 'scoped', damit der graue Hintergrund überall gilt. */
 html, body, #app {
   margin: 0;
