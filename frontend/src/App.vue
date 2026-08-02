@@ -11,6 +11,7 @@ import { useUserStore } from '@/store/userStore'
 import { useSettingsStore } from './store/settingsStore'
 
 import { useStravaImport } from '@/composables/useStravaImport'
+import { useToast } from '@/composables/useToast'
 
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
@@ -23,10 +24,9 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const { showStravaImport } = useStravaImport();
+const { showToast } = useToast();
 
 // Registriert das Geraet fuer Push-Benachrichtigungen bei Gruppeneinladungen (nur Android).
-// Der In-App-Hinweis bei geoeffneter App (pushNotificationReceived) folgt als
-// eigener Schritt, sobald diese Grundfunktion bestaetigt lauffaehig ist.
 const setupAndroidPush = async () => {
   if (Capacitor.getPlatform() !== 'android') {
     return;
@@ -80,6 +80,14 @@ const setupAndroidPush = async () => {
       }
     });
 
+    // Bei geöffneter App zeigt Android selbst kein System-Banner für die
+    // empfangene Nachricht (das Notification-Objekt wird nur an die App
+    // weitergereicht) - hier übernehmen wir das mit unserem eigenen Toast,
+    // statt dass die Benachrichtigung sonst unbemerkt bliebe.
+    await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      showToast(`${notification.title}: ${notification.body}`);
+    });
+
     await PushNotifications.register();
   } catch (error) {
     console.log("Fehler beim Push:", error)
@@ -97,7 +105,9 @@ const setAppHeight = () => {
 onMounted(async () => {
   await setupAndroidPush();
   if (Capacitor.isNativePlatform()) {
-    apiClient.defaults.baseURL = 'http://167.233.33.166/api';
+    // baseURL wird bereits in api/client.js korrekt gesetzt (VITE_API_BASE_URL ??
+    // Produktion) - eine feste Override hier wuerde das jedes Mal ueberschreiben,
+    // inklusive waehrend des asynchronen Push-Registrierungs-Events oben.
     await StatusBar.setOverlaysWebView({ overlay: true });
     // Style.Light => dunkle Uhr/Batterie-Icons, richtig für unseren hellen Hintergrund
     // (Style.Dark ist entgegen des Namens für dunkle Hintergründe mit hellen Icons gedacht)
