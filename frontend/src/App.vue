@@ -15,6 +15,7 @@ import { useStravaImport } from '@/composables/useStravaImport'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
+import { PushNotifications } from '@capacitor/push-notifications'
 
 useSettingsStore(); // legt den Store an, der Konstruktor wendet gespeichertes Theme sofort an
 
@@ -22,6 +23,68 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const { showStravaImport } = useStravaImport();
+
+// Registriert das Geraet fuer Push-Benachrichtigungen bei Gruppeneinladungen (nur Android).
+// Der In-App-Hinweis bei geoeffneter App (pushNotificationReceived) folgt als
+// eigener Schritt, sobald diese Grundfunktion bestaetigt lauffaehig ist.
+const setupAndroidPush = async () => {
+  if (Capacitor.getPlatform() !== 'android') {
+    return;
+  }
+  try {
+    let permStatus = await PushNotifications.checkPermissions();
+
+    if (permStatus.receive === 'prompt') {
+      permStatus = await PushNotifications.requestPermissions();
+    }
+
+    if (permStatus.receive !== 'granted') {
+      console.log("Nutzer hat Benachrichtigungen blockiert");
+      return;
+    }
+
+    // Ohne eigenen Channel landet die Benachrichtigung nur im Verlauf (Shade),
+    // zeigt aber kein Heads-up-Banner auf dem Sperr-/Homebildschirm. importance: 5
+    // (IMPORTANCE_HIGH) ist dafür nötig. Die channel_id muss im Backend beim
+    // Versand exakt so referenziert werden (siehe notifications.py).
+    await PushNotifications.createChannel({
+      id: 'group_invitations',
+      name: 'Gruppeneinladungen',
+      description: 'Benachrichtigungen über neue Gruppeneinladungen',
+      importance: 5,
+    });
+
+    // Listener MÜSSEN vor register() angehängt werden: Capacitor kann das
+    // 'registration'-Event nativ nahezu sofort feuern, sobald register() aufgerufen
+    // wird - wenn der Listener erst danach registriert wird, geht der Token verloren
+    // ("No listeners found for event registration" im Logcat).
+    // Wichtig: der Event-Name ist 'registration', NICHT 'register' (das ist nur der
+    // Methodenname von PushNotifications.register() weiter unten).
+    await PushNotifications.addListener('registration', async (token) => {
+      try {
+        await apiClient.post('/user/save-push-token/', {
+          token: token.value,
+          platform: 'android'
+        });
+      } catch (err) {
+        console.error("Fehler beim Senden des Tokens an Backend: ", err);
+      }
+    });
+
+    await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      console.log("Nutzer hat Benachrichtigung geklickt", action.notification);
+      const data = action.notification.data;
+
+      if (data && data.type == 'group_invitation') {
+        router.push('group/invitations');
+      }
+    });
+
+    await PushNotifications.register();
+  } catch (error) {
+    console.log("Fehler beim Push:", error)
+  }
+}
 
 const goBack = () => {
   router.push(route.meta.backTo ?? '/map');
@@ -32,6 +95,7 @@ const setAppHeight = () => {
 };
 
 onMounted(async () => {
+  await setupAndroidPush();
   if (Capacitor.isNativePlatform()) {
     apiClient.defaults.baseURL = 'http://167.233.33.166/api';
     await StatusBar.setOverlaysWebView({ overlay: true });
