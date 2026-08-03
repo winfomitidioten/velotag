@@ -464,7 +464,10 @@ watch(selectedGroupId, (newGroupId) => {
 
   .pin-mode-banner {
   position: fixed;
-  top: calc(var(--safe-top) + var(--app-header-height) + 1.0 rem);
+  /* Muss unter dem Solo/Group-Toggle (top: app-header-height + 12px, height: 40px)
+     durchrutschen, sonst überlappen sich beide - gleicher Versatz wie beim
+     .group-dropdown, das direkt unter dem Toggle sitzt. */
+  top: calc(var(--safe-top) + var(--app-header-height) + 75px);
   left: 50%;
   transform: translateX(-50%);
   max-width: calc(100% - 140px);
@@ -478,6 +481,14 @@ watch(selectedGroupId, (newGroupId) => {
   border-radius: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   font-size: 13px;
+  }
+
+  /* Auf dem Handy darf der Banner näher an die Bildschirmränder gehen als auf
+     Desktop-Breite (dort bleibt der größere Rand von 140px erhalten) */
+  @media (max-width: 767px) {
+    .pin-mode-banner {
+      max-width: calc(100% - 32px);
+    }
   }
 
   .pin-mode-banner-close {
@@ -503,7 +514,7 @@ watch(selectedGroupId, (newGroupId) => {
   .btn_ebenen_preview,
   .map_controls_pill {
     position: absolute;
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px);
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 32px);
     right: 10px;
     z-index: 500;
     display: flex;
@@ -513,6 +524,7 @@ watch(selectedGroupId, (newGroupId) => {
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     background-color: var(--color-bg-card);
+    border: 1.5px solid var(--color-primary);
   }
 
   .btn_ebenen_preview,
@@ -539,6 +551,7 @@ watch(selectedGroupId, (newGroupId) => {
     bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 138px);
     right: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    border: 1.5px solid var(--color-primary);
   }
 
   /* Info-Button für den Kartennachweis: unten links, unterhalb der Maßstabsanzeige,
@@ -553,7 +566,7 @@ watch(selectedGroupId, (newGroupId) => {
     z-index: 1001;
     width: 34px;
     height: 34px;
-    border: none;
+    border: 1.5px solid var(--color-primary);
     outline: none;
     appearance: none;
     -webkit-appearance: none;
@@ -597,6 +610,7 @@ watch(selectedGroupId, (newGroupId) => {
     z-index: 9999;
     background-color: var(--color-bg-card);
     border-radius: 30px;
+    border: 1.5px solid var(--color-primary);
     display: flex;
     align-items: center;
     padding: 4px;

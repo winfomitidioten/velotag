@@ -30,7 +30,7 @@ const handleBack = () => goBack(router, route);
         </button>
       </div>
 
-      <span class="header-title">{{ title }}</span>
+      <span v-if="!route.meta.hideTitle" class="header-title">{{ title }}</span>
 
       <!-- Teleport-Ziel für seitenspezifische Aktions-Buttons (z.B. "Gruppe
            löschen", Einstellungen-Icon auf dem Profil) - existiert immer,

@@ -5,6 +5,7 @@ import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../views/GroupView.vue'
 import GroupDetailView from '../views/GroupDetailView.vue'
+import GroupEditView from '../views/GroupEditView.vue'
 import GroupInviteView from '../views/GroupInviteView.vue'
 import SettingsView from '@/views/SettingsView.vue';
 
@@ -13,7 +14,7 @@ const routes = [
     path: '/map',
     name: 'map',
     component: Karte,
-    meta: { requiresAuth: true, title: 'Karte' }
+    meta: { requiresAuth: true, title: 'Karte', hideTitle: true }
   },
   {
       path: '/profile',
@@ -49,6 +50,17 @@ const routes = [
     name: 'group-detail',
     component: GroupDetailView,
     meta: { requiresAuth: true, showBack: true, backTo: '/group', title: 'Gruppe' }
+  },
+  {
+    path: '/group/:id/edit',
+    name: 'group-edit',
+    component: GroupEditView,
+    meta: {
+      requiresAuth: true,
+      showBack: true,
+      backTo: (route) => `/group/${route.params.id}`,
+      title: 'Gruppe bearbeiten'
+    }
   },
   {
     path: '/group/invites',

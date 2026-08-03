@@ -2,5 +2,8 @@
 // und der Edge-Swipe-Geste (useSwipeBack.js) - beide sollen exakt gleich
 // navigieren.
 export function goBack(router, route) {
-  router.push(route.meta.backTo ?? '/map');
+  const backTo = route.meta.backTo;
+  // backTo kann auch eine Funktion sein, wenn das Ziel von Routen-Params abhängt
+  // (z.B. zurück zur Gruppe, aus der die Bearbeiten-Seite geöffnet wurde).
+  router.push((typeof backTo === 'function' ? backTo(route) : backTo) ?? '/map');
 }

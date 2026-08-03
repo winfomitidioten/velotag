@@ -1,12 +1,18 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
 import api from '@/api/api';
 import CreateGroupModal from '@/components/CreateGroupModal.vue';
 
 const userStore = useUserStore();
+const route = useRoute();
 const router = useRouter();
+
+// /group/:id ist eine eigene Top-Level-Route (kein Kind von /group), daher würde
+// vue-router den Gruppen-Tab sonst nicht als aktiv markieren, obwohl man sich
+// inhaltlich noch "in" den Gruppen befindet (gleiches Problem wie in AppTabBar.vue).
+const isGroupsActive = computed(() => ['group', 'group-detail'].includes(route.name));
 
 const showCreateGroup = ref(false);
 
@@ -78,15 +84,6 @@ const scheduleCloseGroupsMenu = () => {
   }, 200);
 };
 
-const toggleGroupsMenu = async () => {
-  if (showGroupsMenu.value) {
-    clearTimeout(groupsCloseTimer);
-    showGroupsMenu.value = false;
-    return;
-  }
-  await openGroupsMenu();
-};
-
 const toggleProfileMenu = () => {
   const next = !showProfileMenu.value;
   closeMenus();
@@ -138,6 +135,13 @@ onUnmounted(() => {
       </RouterLink>
 
       <nav class="app-nav">
+        <RouterLink to="/map" class="nav-link" @click="closeMenus">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+            <path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 294q122-112 181-203.5T720-552q0-109-69.5-178.5T480-800q-101 0-170.5 69.5T240-552q0 71 59 162.5T480-186Zm0 106Q319-217 239.5-334.5T160-552q0-150 96.5-249T480-880q127 0 223.5 99T800-552q0 100-79.5 217.5T480-80Zm0-480Z"/>
+          </svg>
+          <span>Karte</span>
+        </RouterLink>
+
         <RouterLink to="/rides" class="nav-link" @click="closeMenus">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
             <path d="M196-160q-82.33 0-139.17-57.17Q0-274.33 0-356.67 0-439 57.52-495.83q57.53-56.84 139.15-56.84 73 0 126.16 45.67Q376-461.33 388-392h42.67L352-613.33h-72V-680h192v66.67h-49.33l22 60.66h212L590-733.33H485.33V-800H586q24.67 0 42.5 12t26.17 34.67l73.33 200h36q81.34 0 138.67 56.99Q960-439.35 960-358.5q0 81.83-56.84 140.17Q846.32-160 764-160q-71.73 0-126.03-47t-67.3-118.33H388q-12 71-65.67 118.16Q268.67-160 196-160Zm0-66.67q45.67 0 79.17-28.16 33.5-28.17 45.5-70.5H204V-392h116.67q-12-42-45.84-68-33.83-26-78.16-26-54.34 0-92.17 37.5t-37.83 91.83q0 54.17 37.5 92.09 37.5 37.91 91.83 37.91ZM502-392h69.33q4.34-23 14.84-48.33 10.5-25.34 28.5-45.67H468l34 94Zm262 165.33q54.33 0 91.83-37.91 37.5-37.92 37.5-92.09 0-54.33-37.5-91.83T764-486h-12l39.33 110.67-62.66 22-41.34-110q-26 17-39.33 45.33-13.33 28.33-13.33 61.33 0 54.17 37.5 92.09 37.5 37.91 91.83 37.91Zm-570-130Zm570 0Z"/>
@@ -151,7 +155,7 @@ onUnmounted(() => {
           @mouseenter="openGroupsMenu"
           @mouseleave="scheduleCloseGroupsMenu"
         >
-          <button type="button" class="nav-link nav-link--button" :class="{ open: showGroupsMenu }" @click="toggleGroupsMenu">
+          <RouterLink to="/group" class="nav-link nav-link--button" :class="{ open: showGroupsMenu || isGroupsActive }" @click="closeMenus">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -162,7 +166,7 @@ onUnmounted(() => {
             <svg class="chevron" viewBox="0 -960 960 960" fill="currentColor" :class="{ rotated: showGroupsMenu }">
               <path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/>
             </svg>
-          </button>
+          </RouterLink>
         </div>
 
         <!-- Teleport: .app-nav scrollt horizontal (overflow-x: auto), was laut CSS-Spezifikation
@@ -194,9 +198,6 @@ onUnmounted(() => {
             </li>
             <li class="nav-dropdown-divider" role="separator"></li>
             <li>
-              <RouterLink to="/group" class="nav-dropdown-item" @click="closeMenus">Zu den Gruppen</RouterLink>
-            </li>
-            <li>
               <button type="button" class="nav-dropdown-item nav-dropdown-item--create" @click="openCreateGroup">
                 + Neue Gruppe erstellen
               </button>
@@ -212,13 +213,6 @@ onUnmounted(() => {
           <span>Einladungen</span>
         </RouterLink>
 
-        <RouterLink to="/settings" class="nav-link" @click="closeMenus">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-          <span>Einstellungen</span>
-        </RouterLink>
       </nav>
 
       <div class="profile-menu" ref="profileMenuRef">
@@ -232,6 +226,9 @@ onUnmounted(() => {
         <ul v-if="showProfileMenu" class="profile-dropdown-list">
           <li>
             <RouterLink to="/profile" class="profile-dropdown-item" @click="closeMenus">Zum Profil</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/settings" class="profile-dropdown-item" @click="closeMenus">Einstellungen</RouterLink>
           </li>
           <li class="profile-dropdown-divider" role="separator"></li>
           <li>

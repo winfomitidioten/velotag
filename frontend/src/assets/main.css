@@ -13,7 +13,7 @@
   --color-bg-card:      #ffffff;   /* Karten/Box Hintergrund */
   --color-bg-card-rgb:  255, 255, 255; /* Für halbtransparente Karten-Flächen (z.B. Pillen auf der Karte) */
   --color-bg-close-btn: #f1f5f9;   /* Hintergrund für den Schließ-Button */
-  --color-bg-hover:     #f1f5f9;   /* Hover-/Hintergrund für dezente Flächen (z.B. Listen-Items) */
+  --color-bg-hover:     #dde2e7e8;   /* Hover-/Hintergrund für dezente Flächen (z.B. Listen-Items) */
   --color-bg-input:     #f8fafc;   /* Hintergrund für Inputs/Dropzones */
   --color-text:         #1a1a1a;   /* Haupttext */
   --color-text-muted:   #888888;   /* grauer Text */

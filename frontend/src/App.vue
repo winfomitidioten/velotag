@@ -84,6 +84,17 @@ const setAppHeight = () => {
   updateIsMobile();
 };
 
+// Kompaktere Header-Höhe nur auf der Karte UND nur mobil - die Desktop-Navbar
+// nutzt dieselbe Variable (main.css, @media min-width:768px), daher hier ohne
+// Inline-Override die CSS-eigenen Werte (mobil 52px / desktop 56px) greifen lassen.
+watch([() => route.name, isMobile], ([name, mobile]) => {
+  if (mobile && name === 'map') {
+    document.documentElement.style.setProperty('--app-header-height', '28px');
+  } else {
+    document.documentElement.style.removeProperty('--app-header-height');
+  }
+}, { immediate: true });
+
 // Bei theme='system' folgt die Statusleiste der OS-Einstellung, sonst der
 // manuell gewählten
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');

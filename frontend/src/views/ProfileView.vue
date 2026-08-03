@@ -260,7 +260,7 @@
         flex-direction: column;
         gap: 1.5rem;
         margin: 0 auto;
-        padding-bottom: 4rem;
+        padding-bottom: 8rem;
     }
 
     img {

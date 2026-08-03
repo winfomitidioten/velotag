@@ -4,7 +4,6 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import HeaderButton from '@/components/HeaderButton.vue';
 import PageHeader from '@/components/PageHeader.vue';
-import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { usePageTitle } from '@/composables/usePageTitle';
 import { isMobile } from '@/composables/viewport';
@@ -19,15 +18,6 @@ const loading = ref(false)
 const showPopup = ref(false)
 const newMemberMail = ref("")
 
-// Bearbeiten der Gruppe (Name/Beschreibung/Bild) - eigener Popup-Zustand,
-// getrennt vom Einladen-Popup oben.
-const showEditPopup = ref(false)
-const editName = ref("")
-const editDescription = ref("")
-const editSelectedFile = ref(null)
-const editPreviewImage = ref(null)
-const editRemoveProfilbild = ref(false)
-
 const fetchGroup = async () => {
     try {
         loading.value = true;
@@ -38,53 +28,6 @@ const fetchGroup = async () => {
         console.error('Fehler beim Laden der Gruppe: ', err)
     } finally {
         loading.value = false;
-    }
-}
-
-// Öffnet den Bearbeiten-Popup und füllt ihn mit den aktuellen Gruppendaten vor.
-const openEditPopup = () => {
-    editName.value = group.value.name;
-    editDescription.value = group.value.description || "";
-    editSelectedFile.value = null;
-    editPreviewImage.value = null;
-    editRemoveProfilbild.value = false;
-    showEditPopup.value = true;
-}
-
-const onEditPhotoAdded = (photos) => {
-    const photo = photos[0];
-    if (!photo) return;
-    editSelectedFile.value = photo.file;
-    editPreviewImage.value = photo.previewUrl;
-    editRemoveProfilbild.value = false;
-}
-
-// Entfernt das Bild ohne ein neues auszuwählen (Akzeptanzkriterium: löschen ohne Ersatz).
-const removeEditPicture = () => {
-    editSelectedFile.value = null;
-    editPreviewImage.value = null;
-    editRemoveProfilbild.value = true;
-}
-
-const updateGroup = async () => {
-    if (!editName.value.trim()) return;
-    try {
-        const formData = new FormData();
-        formData.append('name', editName.value);
-        formData.append('description', editDescription.value); // leerer String entfernt die Beschreibung
-
-        if (editSelectedFile.value) {
-            formData.append('profilbild', editSelectedFile.value);
-        } else if (editRemoveProfilbild.value) {
-            formData.append('remove_profilbild', 'true');
-        }
-
-        const response = await api.patch(`groups/${groupId.value}/`, formData);
-        group.value = response.data;
-        showEditPopup.value = false;
-    } catch (error) {
-        console.error("Fehler beim Bearbeiten der Gruppe:", error);
-        alert(error.response?.data?.error || "Es gab ein Problem beim Speichern der Änderungen.");
     }
 }
 
@@ -114,7 +57,6 @@ const askDeleteMember = (email) => {
     confirmAction.value = 'deleteMember';
 };
 
-const askDeleteGroup = () => { confirmAction.value = 'deleteGroup' };
 const askLeaveGroup = () => { confirmAction.value = 'leaveGroup' };
 
 const cancleConfirm = () => {
@@ -130,12 +72,6 @@ const confirmConfig = computed(() => {
                 message: `Möchtest du ${memberToDelete.value} wirklich aus der Gruppe entfernen?`,
                 confirmLabel: 'Entfernen'
             };
-        case 'deleteGroup':
-            return {
-                title: 'Gruppe löschen?',
-                message: 'Die Gruppe wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
-                confirmLabel: 'Löschen'
-            };
         case 'leaveGroup':
             return {
                 title: 'Gruppe verlassen?',
@@ -149,7 +85,6 @@ const confirmConfig = computed(() => {
 
 const handleConfirm = () => {
     if (confirmAction.value === 'deleteMember') return deleteMember();
-    if (confirmAction.value === 'deleteGroup') return deleteGroup();
     if (confirmAction.value === 'leaveGroup') return leaveGroup();
 };
 
@@ -167,18 +102,6 @@ const deleteMember = async () => {
         console.error("Fehler beim Löschen des Mitglieds:", error);
         alert(error.response?.data?.error || "Es gab ein Problem beim Entfernen des Mitglieds.");
     } finally {
-        actionBusy.value = false;
-    }
-};
-
-const deleteGroup = async () =>{
-    try{
-        actionBusy.value = true;
-        await api.delete(`groups/${groupId.value}/`);
-        router.push("/group");
-    } catch (error) {
-        console.error("Fehler beim Löschen der Gruppe:", error);
-        alert(error.response?.data?.error || "Es gab ein Problem beim Löschen der Gruppe.");
         actionBusy.value = false;
     }
 };
@@ -212,31 +135,19 @@ onMounted(() => {
 
         <template v-else-if="group">
             <Teleport v-if="isMobile" to="#app-header-actions">
-                <HeaderButton v-if="group.is_admin" class="desktop-edit-btn" @click="openEditPopup">
+                <HeaderButton v-if="group.is_admin" class="desktop-edit-btn mobile-edit-btn" @click="router.push(`/group/${groupId}/edit`)">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
                     </svg>
                     <span>Bearbeiten</span>
-                </HeaderButton>
-                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="askDeleteGroup">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-                        <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
-                    </svg>
-                    <span>Gruppe Löschen</span>
                 </HeaderButton>
             </Teleport>
             <PageHeader v-else>
-                <HeaderButton v-if="group.is_admin" class="desktop-edit-btn" @click="openEditPopup">
+                <HeaderButton v-if="group.is_admin" class="desktop-edit-btn" @click="router.push(`/group/${groupId}/edit`)">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                         <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
                     </svg>
                     <span>Bearbeiten</span>
-                </HeaderButton>
-                <HeaderButton v-if="group.is_admin" class="desktop-create-btn" @click="askDeleteGroup">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-                        <path d="m376-300 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Zm-96 180q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520Zm-400 0v520-520Z"/>
-                    </svg>
-                    <span>Gruppe Löschen</span>
                 </HeaderButton>
             </PageHeader>
 
@@ -323,31 +234,6 @@ onMounted(() => {
                 </div>
             </div>
 
-            <div v-if="showEditPopup" @click.self="showEditPopup = false" id="popup-overlay">
-                <div id="popup-content">
-                    <h3>Gruppe bearbeiten</h3>
-                    <input v-model="editName" type="text" placeholder="Gruppenname">
-                    <textarea v-model="editDescription" placeholder="Beschreibung (optional)" rows="3"></textarea>
-
-                    <img v-if="editPreviewImage" :src="editPreviewImage" alt="Gruppenbild" class="group-photo-preview">
-                    <img v-else-if="group.profilbild && !editRemoveProfilbild" :src="group.profilbild" alt="Gruppenbild" class="group-photo-preview">
-
-                    <CameraGalleryPicker :multiple="false" :has-photos="!!editPreviewImage" @photos-added="onEditPhotoAdded" />
-                    <button
-                        v-if="(group.profilbild && !editRemoveProfilbild) || editPreviewImage"
-                        type="button"
-                        @click="removeEditPicture"
-                        id="remove-picture-btn"
-                    >
-                        Bild entfernen
-                    </button>
-
-                    <div id="popup-actions">
-                        <button @click="showEditPopup = false" id="cancel-btn">Abbrechen</button>
-                        <button @click="updateGroup" id="create-btn">Speichern</button>
-                    </div>
-                </div>
-            </div>
             <ConfirmDialog
                 v-if="confirmAction"
                 :title="confirmConfig.title"
@@ -398,27 +284,11 @@ onMounted(() => {
         text-overflow: ellipsis;
     }
 
-    .desktop-create-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        background-color: var(--color-danger);
-        color: var(--color-on-primary);
-        border: none;
-        /* Auf schmalen Handys nur das Icon zeigen (padding gleich für beide Achsen),
-           damit zwei Header-Buttons nebeneinander nicht überlaufen. Text kommt erst
-           ab 480px zurück, siehe Media Query weiter unten. */
-        padding: 0.5rem;
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        font-weight: 600;
-    }
-
     .desktop-edit-btn {
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        background-color: var(--color-bg-page);
+        background-color: var(--color-bg-card);
         color: var(--color-text);
         border: 1px solid var(--color-border);
         padding: 0.5rem;
@@ -431,18 +301,28 @@ onMounted(() => {
         color: var(--color-primary);
     }
 
-    /* Text-Label der beiden Header-Buttons erst ab Tablet-Breite zeigen (siehe oben) */
-    .desktop-create-btn span,
+    /* Text-Label des Header-Buttons erst ab Tablet-Breite zeigen (siehe oben) */
     .desktop-edit-btn span {
         display: none;
+    }
+
+    /* Mobiler Header-Button nur als reines Icon ohne Rahmen/Hintergrund -
+       gleiches Muster wie .settings-btn in ProfileView.vue */
+    .mobile-edit-btn {
+        background-color: transparent;
+        border: none;
+        padding: 0.4rem;
+    }
+    .mobile-edit-btn:hover {
+        background-color: var(--color-bg-page);
     }
 
     /* Gleicher Look wie die schwebenden Buttons auf der Karte (weißes
        Quadrat mit abgerundeten Ecken, Icon in Primärfarbe, wie .btn_ebenen_preview) */
     .mobile-fab-btn {
         position: fixed;
-        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 1.5rem);
-        right: 1.5rem;
+        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 42px);
+        right: 10px;
         z-index: 90;
         background-color: var(--color-bg-card);
         color: var(--color-primary);
@@ -451,6 +331,7 @@ onMounted(() => {
         width: 50px;
         height: 50px;
         border-radius: 20px;
+        border: 1.5px solid var(--color-primary);
         padding: 0;
         display: flex;
         align-items: center;
@@ -735,25 +616,6 @@ onMounted(() => {
     #popup-content textarea:focus {
         border-color: var(--color-primary);
     }
-    .group-photo-preview {
-        width: 5rem;
-        height: 5rem;
-        border-radius: var(--radius-md);
-        object-fit: cover;
-        align-self: center;
-    }
-    #remove-picture-btn {
-        background: none;
-        border: none;
-        color: var(--color-text-muted);
-        text-decoration: underline;
-        cursor: pointer;
-        font-size: 0.85rem;
-        align-self: center;
-    }
-    #remove-picture-btn:hover {
-        color: #ef4444;
-    }
     #popup-actions {
         display: flex;
         justify-content: flex-end;
@@ -800,11 +662,9 @@ onMounted(() => {
             bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px);
             right: 10px;
         }
-        .desktop-create-btn,
         .desktop-edit-btn {
             padding: 0.5rem 1rem;
         }
-        .desktop-create-btn span,
         .desktop-edit-btn span {
             display: inline;
         }

@@ -8,15 +8,9 @@
     import CreateGroupModal from '@/components/CreateGroupModal.vue';
     import { isMobile } from '@/composables/viewport';
 
-    import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
-
-
     const groups = ref([])
     const loading = ref(false)
     const showPopup = ref(false)
-    const newGroupDescription = ref("")
-    const selectedFile = ref(null)
-    const previewImage = ref(null)
     const router = useRouter()
     const { favoriteGroupId } = useFavorite()
     const toggleFavorite = (id) => {
@@ -61,34 +55,6 @@
         }
     }
 
-    const onGroupPhotoAdded = (photos) => {
-        const photo = photos[0];
-        if (!photo) return;
-        selectedFile.value = photo.file;
-        previewImage.value = photo.previewUrl;
-    }
-
-    const createNewGroup = async () => {
-        if (!newGroupName.value.trim()) return;
-        try {
-            const formData = new FormData();
-            formData.append('name', newGroupName.value);
-            if (newGroupDescription.value) formData.append('description', newGroupDescription.value);
-            if (selectedFile.value) formData.append('profilbild', selectedFile.value);
-
-            const response = await api.post('groups/', formData);
-
-            const newGroup = response.data;
-            groups.value.push(newGroup);
-            showPopup.value = false;
-            newGroupName.value = ""
-            newGroupDescription.value = ""
-            selectedFile.value = null
-            previewImage.value = null
-        } catch(error) {
-            console.error("Fehler beim Erstellen der Gruppe:", error.response?.data || error.message);
-        }
-    }
     const handleGroupCreated = (newGroup) => {
         groups.value.push(newGroup);
         showPopup.value = false;
@@ -173,21 +139,6 @@
             </div>
         </main>
 
-        <div v-if="showPopup" @click.self="showPopup = false" id="popup-overlay">
-            <div id="popup-content">
-                <h3>Neue Gruppe erstellen</h3>
-                <input v-model="newGroupName" type="text" placeholder="Name deiner Gruppe..." @keyup.enter="createNewGroup">
-                <textarea v-model="newGroupDescription" placeholder="Beschreibung (optional)" rows="3"></textarea>
-
-                <img v-if="previewImage" :src="previewImage" alt="Gruppenbild" class="group-photo-preview">
-                <CameraGalleryPicker :multiple="false" :has-photos="!!previewImage" @photos-added="onGroupPhotoAdded" />
-
-                <div id="popup-actions">
-                    <button @click="showPopup = false" id="cancle-btn">Abbrechen</button>
-                    <button @click="createNewGroup" id="create-btn">Erstellen</button>
-                </div>
-            </div>
-        </div>
         <CreateGroupModal
             v-if="showPopup"
             @close="showPopup = false"
@@ -220,19 +171,17 @@
        mit abgerundeten Ecken, Icon in Primärfarbe, wie .btn_ebenen_preview) */
     .mobile-fab-btn {
         position: fixed;
-        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 1.5rem);
-        right: 1.5rem;
+        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 42px);
+        right: 10px;
         z-index: 90;
         background-color: var(--color-bg-card);
         color: var(--color-primary);
-        border: none;
+        border-radius: 20px;
+        border: 1.5px solid var(--color-primary);
         cursor: pointer;
-
         width: 50px;
         height: 50px;
-        border-radius: 20px;
         padding: 0;
-
         display: flex;
         align-items: center;
         justify-content: center;
@@ -351,97 +300,6 @@
     .forward-icon svg {
         fill: var(--color-text-muted);
         transition: fill 0.2s ease;
-    }
-
-    #popup-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(44, 62, 80, 0.4); 
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 999;
-        backdrop-filter: blur(4px); 
-        padding: 1rem;
-        box-sizing: border-box;
-    }
-
-    #popup-content {
-        background: var(--color-bg-card);
-        padding: 1.5rem;
-        border-radius: var(--radius-lg);
-        width: 100%;
-        max-width: 28rem;
-        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1);
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-        box-sizing: border-box;
-    }
-    #popup-content h3 {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--color-text);
-    }
-    #popup-content input[type="text"],
-    #popup-content textarea {
-        width: 100%;
-        padding: 0.85rem 1rem;
-        font-size: 1rem;
-        font-family: inherit;
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-md);
-        outline: none;
-        color: var(--color-text);
-        transition: all 0.2s ease;
-        box-sizing: border-box;
-        background-color: var(--color-bg-page);
-        resize: vertical;
-    }
-    .group-photo-preview {
-        width: 5rem;
-        height: 5rem;
-        border-radius: var(--radius-md);
-        object-fit: cover;
-        align-self: center;
-    }
-    #popup-content input[type="text"]:focus,
-    #popup-content textarea:focus {
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px rgba(61, 184, 151, 0.15);
-    }
-    #popup-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-    }
-    #popup-actions button {
-        border: none;
-        cursor: pointer;
-        border-radius: var(--radius-md);
-        padding: 0.85rem 1.5rem;
-        font-size: 0.95rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        flex: 1;
-    }
-    #cancle-btn {
-        background-color: #f1f5f9;
-        color: #64748b;
-    }
-    #cancle-btn:hover {
-        background-color: #e2e8f0;
-    }
-    #create-btn {
-        background-color: var(--color-primary);
-        color: white;
-    }
-    #create-btn:hover {
-        background-color: var(--color-primary-dark);
     }
 
     /* --- TABLET / DESKTOP OPTIMIERUNGEN --- */
