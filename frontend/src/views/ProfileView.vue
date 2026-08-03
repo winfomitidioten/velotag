@@ -5,6 +5,7 @@
     import api from '@/api/api';
     import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
     import PageHeader from '@/components/PageHeader.vue';
+    import BaseModal from '@/components/BaseModal.vue';
     import { isMobile } from '@/composables/viewport';
 
     const userStore = useUserStore();
@@ -12,6 +13,8 @@
 
     const saving = ref(false);
     const saved = ref(false);
+
+    const showPhotoMenu = ref(false);
 
     const profile = ref({
         firstname: '',
@@ -122,20 +125,57 @@
         <form id="formular" @submit.prevent="updateProfile">
             <div id="profile-selector" class="input-group">
                 <div class="profile-row">
-                    <div id="profile-picture">
-                        <img :src="previewImage || profile.profilbild || '/profile_pic.jpg'" id="picture" alt="Profilbild">
-                    </div>
+                    <CameraGalleryPicker
+                        :multiple="false"
+                        :has-photos="!!previewImage"
+                        :disabled="saving"
+                        @photos-added="onProfilePhotoAdded"
+                        v-slot="{ isNative, takePhoto, pickFromGallery, onFilesSelected }"
+                    >
+                        <div id="profile-picture">
+                            <img :src="previewImage || profile.profilbild || '/profile_pic.jpg'" id="picture" alt="Profilbild">
+
+                            <!-- Web: Klick öffnet den Datei-Dialog des Browsers direkt (mobile Browser
+                                 bieten dort selbst schon Kamera + Galerie als Auswahl an). -->
+                            <label v-if="!isNative" for="profile-photo-upload" class="photo-edit-overlay" aria-label="Profilbild ändern">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                                    <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                                </svg>
+                            </label>
+                            <!-- Native App: Kamera und Galerie sind getrennte Plugin-Aufrufe, daher
+                                 hier explizit zur Auswahl stellen statt direkt eine Aktion auszuführen. -->
+                            <button v-else type="button" class="photo-edit-overlay" @click="showPhotoMenu = true" aria-haspopup="true" :aria-expanded="showPhotoMenu" aria-label="Profilbild ändern">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                                    <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                                </svg>
+                            </button>
+
+                            <BaseModal v-if="isNative && showPhotoMenu" variant="sheet" width="24rem" @close="showPhotoMenu = false">
+                                <h2>Profilbild ändern</h2>
+                                <div class="photo-menu">
+                                    <button type="button" class="photo-menu-item" @click="takePhoto(); showPhotoMenu = false">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                                            <path d="M480-260q75 0 127.5-52.5T660-440q0-75-52.5-127.5T480-620q-75 0-127.5 52.5T300-440q0 75 52.5 127.5T480-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29ZM160-120q-33 0-56.5-23.5T80-200v-480q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5 23.5T880-680v480q0 33-23.5 56.5T800-120H160Z"/>
+                                        </svg>
+                                        Foto aufnehmen
+                                    </button>
+                                    <button type="button" class="photo-menu-item" @click="pickFromGallery(); showPhotoMenu = false">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                                            <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm40-80h480L570-480 450-320l-90-120-120 160Z"/>
+                                        </svg>
+                                        Aus Galerie wählen
+                                    </button>
+                                </div>
+                            </BaseModal>
+                        </div>
+                        <input v-if="!isNative" type="file" accept="image/*" id="profile-photo-upload" class="visually-hidden-input" :disabled="saving" @change="onFilesSelected">
+                    </CameraGalleryPicker>
+
                     <div id="profile-text">
                         <h3>Profilbild</h3>
                         <p>Wähle ein neues Profilbild aus</p>
                     </div>
                 </div>
-
-                <CameraGalleryPicker
-                    :multiple="false"
-                    :has-photos="!!previewImage"
-                    @photos-added="onProfilePhotoAdded"
-                />
             </div>
             
             <div id="personal-info" class="input-group">
@@ -264,11 +304,12 @@
     }
 
     img {
-        border-radius: 50%;
-        border: 0.25rem solid var(--color-primary);
-        /* Etwas kompakter auf dem Handy, damit es neben dem Text gut Platz hat */
-        width: 5.5rem;
-        height: 5.5rem;
+        /* Füllt #profile-picture exakt aus - Rand und Kreiszuschnitt sitzen
+           beide auf dem Wrapper, damit sich beide Kreise nicht minimal
+           unterscheiden können (führte vorher zu einem ungleichmäßigen Rand). */
+        display: block;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
     }
 
@@ -314,6 +355,77 @@
     #profile-picture {
         position: relative;
         flex-shrink: 0; /* Verhindert, dass das Bild auf kleinen Bildschirmen gestaucht wird */
+        width: 5.5rem;
+        height: 5.5rem;
+        border-radius: 50%;
+        border: 0.25rem solid var(--color-primary);
+        box-sizing: border-box;
+        overflow: hidden; /* schneidet Bild + Overlay hart auf die Kreisform zu */
+    }
+
+    /* Bearbeiten-Stift über dem Profilbild - erscheint erst bei Hover/Tap,
+       rund statt eckig, damit er zur kreisrunden Bildform passt. */
+    .photo-edit-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0.45);
+        border-radius: 50%;
+        border: none;
+        padding: 0;
+        color: #fff;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+    #profile-picture:hover .photo-edit-overlay,
+    #profile-picture:focus-within .photo-edit-overlay {
+        opacity: 1;
+    }
+
+    .visually-hidden-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+    }
+
+    /* Auswahlmenü für die native App (Kamera vs. Galerie) - Overlay, Rahmen
+       und Schließen-Verhalten kommen aus BaseModal, hier nur die Buttons. */
+    .photo-menu {
+        margin-top: 1.5rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .photo-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: none;
+        border: none;
+        border-bottom: 1px solid var(--color-border);
+        color: var(--color-text);
+        padding: 1rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+    }
+    .photo-menu-item:last-child {
+        border-bottom: none;
+    }
+    .photo-menu-item:hover {
+        background-color: var(--color-bg-hover);
+    }
+    .photo-menu-item svg {
+        fill: var(--color-primary);
+        flex-shrink: 0;
     }
 
     #personal-info {
@@ -418,7 +530,7 @@
             padding: 2rem;
         }
 
-        img {
+        #profile-picture {
             /* Auf dem Desktop darf das Bild wieder etwas größer sein */
             width: 7rem;
             height: 7rem;
