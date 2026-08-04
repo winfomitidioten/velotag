@@ -5,6 +5,8 @@ from django.db.models import UniqueConstraint, Q
 # Create your models here.
 class Group(models.Model):
     name = models.CharField(max_length=150, blank=False)
+    description = models.TextField(blank=True, default='')
+    profilbild = models.ImageField(upload_to='group_pics/', null=True, blank=True)
     admin = models.ForeignKey(User, on_delete=models.CASCADE, related_name='administered_groups')
     members = models.ManyToManyField(User, related_name='group_memberships', through='Membership')
 

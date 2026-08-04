@@ -204,7 +204,7 @@ if platform.system() == "Windows":
                 gdal_files = [f for f in os.listdir(path) if 'gdal' in f.lower() and f.endswith('.dll')]
                 if gdal_files:
                     GDAL_LIBRARY_PATH = os.path.join(path, gdal_files[0])
-                
+
                 # 2. GEOS-Pfad setzen (sucht nach geos_c.dll oder libgeos_c.dll)
                 geos_files = [f for f in os.listdir(path) if 'geos_c' in f.lower() and f.endswith('.dll')]
                 if geos_files:

@@ -14,14 +14,16 @@ class RouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ['strecken_name', 
-                  'group_id', 
-                  'polyline_map', 
-                  'puls_stream', 
-                  'zeit_stream', 
-                  'watt_stream', 
+        
+        fields = ['strecken_name',
+                  'group_id',
+                  'polyline_map',
+                  'puls_stream',
+                  'zeit_stream',
+                  'watt_stream',
+                  'distance_meters',
                   'start_time',
-                  'end_time', 
+                  'end_time',
                   'coordinates',
                   'geom']
         
@@ -51,7 +53,9 @@ class RouteListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ['strecken_id', 'strecken_name', 'created_at', 'duration_seconds', 'avg_puls', 'avg_watt', 'group_id', 'groups']
+
+        fields = ['strecken_id', 'strecken_name', 'created_at', 'duration_seconds', 'avg_puls', 'avg_watt', 'group_id', 'groups', 'polyline_map']
+
 
     
     def get_duration_seconds(self, obj):

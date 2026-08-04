@@ -1,6 +1,9 @@
 <script setup>
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useMap } from '@/composables/useMap'
 import { usePerformanceView } from '@/composables/usePerformanceView'
+import { useHeatmapStyleStore } from '@/store/heatmapStyleStore'
 import { intensityGradientCss, METRIC_UNITS } from '@/utils/intensityColor'
 import BaseModal from '@/components/BaseModal.vue'
 
@@ -12,6 +15,16 @@ const props = defineProps({
 
 const { availableLayers, activeLayerId, setLayer } = useMap()
 const { performanceMetric, performanceRange } = usePerformanceView()
+const { heatmapColor, heatmapGlowEnabled } = storeToRefs(useHeatmapStyleStore())
+
+// Gleiche Auto-Logik wie in drawUserMap.js: Blau auf Hybrid ist am besten sichtbar, sonst Rot -
+// wird als Vorschau angezeigt, solange der Nutzer noch keine eigene Farbe gewählt hat (null)
+const autoHeatmapColor = computed(() => activeLayerId.value === 'hybrid' ? '#0000ff' : '#ff0000')
+const displayedHeatmapColor = computed(() => heatmapColor.value ?? autoHeatmapColor.value)
+
+const onHeatmapColorInput = (event) => {
+  heatmapColor.value = event.target.value
+}
 
 const selectLayer = (layerId) => {
   setLayer(layerId)
@@ -34,28 +47,19 @@ const selectPerformanceMode = (metric) => {
 </script>
 
 <template>
-  <div class="popup">
-    <div class="popup-content">
-      <div class="header">
-        <h2>Ebenen auswählen</h2>
-        <button @click="$emit('close')" class="popup-close-button" aria-label="Schließen">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
-            <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
-          </svg>
-        </button>
-      </div>
-      
-      <div class="layers-container">
-        <div
-          v-for="layer in availableLayers"
-          :key="layer.id"
-          class="layer-option"
-          :class="{ 'active': layer.id === activeLayerId }"
-          @click="selectLayer(layer.id)"
-        >
-          <img :src="layer.preview" :alt="layer.name" class="layer-preview" />
-          <span class="layer-name">{{ layer.name }}</span>
-        </div>
+  <BaseModal variant="sheet" width="min(560px, 90vw)" @close="$emit('close')">
+    <h2>Ebenen auswählen</h2>
+
+    <div class="layers-container">
+      <div
+        v-for="layer in availableLayers"
+        :key="layer.id"
+        class="layer-option"
+        :class="{ 'active': layer.id === activeLayerId }"
+        @click="selectLayer(layer.id)"
+      >
+        <img :src="layer.preview" :alt="layer.name" class="layer-preview" />
+        <span class="layer-name">{{ layer.name }}</span>
       </div>
 
       <h2 class="section-heading">Routendarstellung</h2>
@@ -77,6 +81,21 @@ const selectPerformanceMode = (metric) => {
         Leistungsdaten sind an dein Profil gebunden und in der Gruppenansicht nicht verfügbar.
       </p>
 
+      <h2 class="section-heading">Heatmap-Personalisierung</h2>
+      <div class="heatmap-style-options" :class="{ disabled: performanceMetric !== null }">
+        <label class="heatmap-color-picker">
+          <span>Linienfarbe</span>
+          <input type="color" :value="displayedHeatmapColor" :disabled="performanceMetric !== null" @input="onHeatmapColorInput" />
+        </label>
+        <label class="heatmap-glow-toggle">
+          <span>Glow-Effekt</span>
+          <input type="checkbox" v-model="heatmapGlowEnabled" :disabled="performanceMetric !== null" />
+        </label>
+      </div>
+      <p v-if="performanceMetric" class="performance-hint">
+        Gilt nur für die Standardansicht (Puls/Tempo/Watt nutzen einen festen Farbverlauf).
+      </p>
+
       <div v-if="performanceMetric" class="performance-legend">
         <template v-if="performanceRange.hasData">
           <span class="performance-legend-label">{{ performanceRange.minValue }}</span>
@@ -86,19 +105,16 @@ const selectPerformanceMode = (metric) => {
         <span v-else class="performance-legend-empty">Keine Daten für diese Ansicht (nur GPX-Uploads werden unterstützt).</span>
       </div>
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <style scoped>
 /* Overlay, Box, Radius/Schatten und Schließen-Button kommen aus BaseModal */
-.layers-modal-title {
-  margin-bottom: 20px;
-}
-
 .layers-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 15px;
+  margin-top: 20px;
 }
 
 .layer-option {
@@ -119,7 +135,7 @@ const selectPerformanceMode = (metric) => {
 
 .layer-option.active {
   border-color: var(--color-primary);
-  box-shadow: 0 0 10px rgba(61, 184, 151, 0.5);
+  box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.5);
 }
 
 .layer-preview {
@@ -135,6 +151,17 @@ const selectPerformanceMode = (metric) => {
 .layer-name {
   font-weight: 500;
   font-size: 14px;
+}
+
+/* .layers-container ist ein Grid für die Ebenen-Vorschaukarten - alles ab hier sind eigene
+   Abschnitte (Überschrift + Inhalt), die jeweils die volle Breite einnehmen und sich
+   untereinander stapeln sollen, statt vom Grid-Auto-Placement in Kartenspalten gequetscht zu werden */
+.section-heading,
+.performance-options,
+.performance-hint,
+.heatmap-style-options,
+.performance-legend {
+  grid-column: 1 / -1;
 }
 
 .section-heading {
@@ -188,6 +215,51 @@ const selectPerformanceMode = (metric) => {
   text-align: left;
   font-size: 12px;
   color: var(--color-text-muted, #64748b);
+}
+
+.heatmap-style-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.heatmap-style-options.disabled {
+  opacity: 0.45;
+}
+
+.heatmap-style-options.disabled .heatmap-color-picker,
+.heatmap-style-options.disabled .heatmap-glow-toggle,
+.heatmap-style-options.disabled input {
+  cursor: not-allowed;
+}
+
+.heatmap-color-picker,
+.heatmap-glow-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text, #2c3e50);
+  cursor: pointer;
+}
+
+.heatmap-color-picker input[type="color"] {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid var(--color-border, #ccc);
+  border-radius: 8px;
+  cursor: pointer;
+  background: none;
+}
+
+.heatmap-glow-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
 }
 
 .performance-legend {

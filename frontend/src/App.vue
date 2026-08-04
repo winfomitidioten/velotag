@@ -1,15 +1,22 @@
 <script setup>
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { onMounted } from 'vue'
+import apiClient from '@/api/client'
+
 import AppHeader from '@/components/AppHeader.vue'
+import AppToast from '@/components/AppToast.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
+
 import { useUserStore } from '@/store/userStore'
+import { useSettingsStore } from './store/settingsStore'
+
 import { useStravaImport } from '@/composables/useStravaImport'
+
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
-import apiClient from '@/api/client'
 
+useSettingsStore(); // legt den Store an, der Konstruktor wendet gespeichertes Theme sofort an
 
 const route = useRoute();
 const router = useRouter();
@@ -74,6 +81,7 @@ onMounted(async () => {
   </button>
 
   <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
+  <AppToast />
 </template>
 
 <style>
@@ -84,7 +92,11 @@ html, body, #app {
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: #f5f7f8;
+  background-color: var(--color-bg-page);
+  /* Basis-Textfarbe: greift für alle Texte ohne eigene color-Regel (sonst
+     bleiben sie beim UA-Standard schwarz und sind im Dunkel-Modus unlesbar) */
+  color: var(--color-text);
+  transition: var(--theme-transition);
   font-family: sans-serif;
   box-sizing: border-box;
 }
