@@ -34,7 +34,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', default=False)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost'] if DEBUG else ['167.233.33.166']
+ALLOWED_HOSTS = ['167.233.33.166', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -99,36 +99,24 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny'
     ],
 }
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'NAME': env('DB_NAME'),
-            'USER': env('DB_USER'),
-            'PASSWORD': env('DB_PASSW'),
-            'HOST': env('DB_HOST'),
-            'PORT': env('DB_PORT'),
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSW'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'NAME': env('DEV_DB_NAME'),
-            'USER': env('DEV_DB_USER'),
-            'PASSWORD': env('DEV_DB_PASSW'),
-            'HOST': env('DEV_DB_HOST'),
-            'PORT': env('DEV_DB_PORT'),
-        }
-    }
-
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -189,14 +177,6 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-}
 
 
 
