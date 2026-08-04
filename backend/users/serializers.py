@@ -6,17 +6,29 @@ from rest_framework import serializers
 from .models import UserProfile
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    firstname = serializers.CharField(source='user.first_name', required=False, allow_blank=True)
-    lastname = serializers.CharField(source='user.last_name', required=False, allow_blank=True)
-    mail = serializers.EmailField(source='user.email', required=False)
-
-    profilbild = serializers.ImageField(required=False, allow_null=True)
+    id = serializers.SerializerMethodField() #Damit das Frontend auf die eigene Profilseite verlinken kann (/user/:id)
+    firstname = serializers.SerializerMethodField()
+    lastname = serializers.SerializerMethodField()
+    mail = serializers.SerializerMethodField()
+    profilbild = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ['firstname', 'lastname', 'mail', 'profilbild']
+        fields = ['id', 'firstname', 'lastname', 'mail', 'profilbild']
+
+    def get_id(self, obj):
+        return obj.user.id
 
 
+    def get_firstname(self, obj):
+        return obj.user.first_name or obj.firstname
+
+    def get_lastname(self, obj):
+        return obj.user.last_name or obj.lastname
+
+    def get_mail(self, obj):
+        return obj.user.email or obj.mail
+    
     def get_profilbild(self, obj):
         if obj.profilbild:
             request = self.context.get('request')

@@ -4,6 +4,7 @@ import { onMounted, onUnmounted, watch } from 'vue'
 import apiClient from '@/api/client'
 
 import AppHeader from '@/components/AppHeader.vue'
+import AppToast from '@/components/AppToast.vue'
 import AppTabBar from '@/components/AppTabBar.vue'
 import DesktopNavBar from '@/components/DesktopNavBar.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
@@ -167,6 +168,7 @@ onUnmounted(() => {
   <AppTabBar v-if="isMobile && !route.meta.hideMenu && !showStravaImport" />
 
   <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
+  <AppToast />
 </template>
 
 <style>

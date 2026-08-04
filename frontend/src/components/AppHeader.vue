@@ -28,6 +28,16 @@ const handleBack = () => goBack(router, route);
             <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/>
           </svg>
         </button>
+
+        <ul v-if="showProfileMenu" class="profile-dropdown-list">
+          <li>
+            <RouterLink :to="{ name: 'user-profile', params: { id: userStore.id } }" class="profile-dropdown-item" @click="closeMenus">Zum Profil</RouterLink>
+          </li>
+          <li class="profile-dropdown-divider" role="separator"></li>
+          <li>
+            <button type="button" class="profile-dropdown-item profile-dropdown-item--danger" @click="handleLogout">Abmelden</button>
+          </li>
+        </ul>
       </div>
 
       <span v-if="!route.meta.hideTitle" class="header-title">{{ title }}</span>

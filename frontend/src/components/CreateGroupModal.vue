@@ -33,6 +33,12 @@ const createNewGroup = async () => {
         if (selectedFile.value) formData.append('profilbild', selectedFile.value);
 
         const response = await api.post('groups/', formData);
+        const formData = new FormData();
+        formData.append('name', newGroupName.value);
+        if (newGroupDescription.value) formData.append('description', newGroupDescription.value);
+        if (selectedFile.value) formData.append('profilbild', selectedFile.value);
+
+        const response = await api.post('groups/', formData);
         emit('created', response.data);
     } catch (error) {
         console.error('Fehler beim Erstellen der Gruppe:', error.response?.data || error.message);
