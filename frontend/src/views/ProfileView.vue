@@ -1,6 +1,7 @@
 <script setup>
-    import { ref, onMounted } from 'vue';
+    import { ref, computed, onMounted } from 'vue';
     import { useUserStore } from '@/store/userStore';
+    import { Geolocation } from '@capacitor/geolocation';
     import api from '@/api/api';
     import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 
@@ -28,11 +29,65 @@
         previewImage.value = photo.previewUrl;
     }
 
+    // --- Standort ---
+    const latitude = ref(null);
+    const longitude = ref(null);
+    const locationName = ref('');
+    const manualQuery = ref('');
+    const locationLoading = ref(false);
+    const locationError = ref('');
+    const sensorHint = ref('');
+
+    const detectLocation = async () => {
+        locationError.value = '';
+        sensorHint.value = '';
+        locationLoading.value = true;
+        try {
+            const position = await Geolocation.getCurrentPosition();
+            latitude.value = position.coords.latitude;
+            longitude.value = position.coords.longitude;
+            try {
+                const response = await api.get('geocode/reverse/', {
+                    params: { lat: latitude.value, lon: longitude.value }
+                });
+                locationName.value = response.data.display_name || '';
+                // Freitextfeld mitbefüllen, damit der User nicht denkt, er müsse
+                // den Ort zusätzlich manuell eingeben
+                manualQuery.value = locationName.value;
+            } catch {
+                // Reverse-Geocoding ist rein kosmetisch, Fehler hier blockieren nicht
+            }
+        } catch {
+            sensorHint.value = 'Standort konnte nicht ermittelt werden. Bitte gib deinen Ort manuell ein.';
+        } finally {
+            locationLoading.value = false;
+        }
+    };
+
+    const searchLocation = async () => {
+        if (!manualQuery.value.trim()) return;
+        locationError.value = '';
+        locationLoading.value = true;
+        try {
+            const response = await api.get('geocode/', { params: { query: manualQuery.value } });
+            latitude.value = response.data.latitude;
+            longitude.value = response.data.longitude;
+            locationName.value = response.data.display_name;
+        } catch {
+            locationError.value = 'Ort nicht gefunden, bitte anders formulieren.';
+        } finally {
+            locationLoading.value = false;
+        }
+    };
+
     const fetchProfile = async () => {
         try {
             loading.value = true
             const response = await api.get('profil/')
             profile.value = response.data
+            latitude.value = response.data.latitude ?? null;
+            longitude.value = response.data.longitude ?? null;
+            locationName.value = response.data.location_name ?? '';
         } catch(err) {
             console.error('Fehler: ', err)
         } finally {
@@ -72,10 +127,18 @@
             if(selectedFile.value){
                 formData.append('profilbild', selectedFile.value)
             }
-            
+            if (latitude.value !== null && longitude.value !== null) {
+                formData.append('latitude', latitude.value);
+                formData.append('longitude', longitude.value);
+            }
+            if (locationName.value) formData.append('location_name', locationName.value);
+
             const response = await api.patch('profil/', formData)
 
             profile.value = response.data
+            latitude.value = response.data.latitude ?? null;
+            longitude.value = response.data.longitude ?? null;
+            locationName.value = response.data.location_name ?? '';
             await userStore.fetchProfile();
 
             newPassword.value = ""
@@ -152,7 +215,44 @@
                     <input type="email" placeholder="julius@mail.de" id="mail" v-model="profile.mail">
                 </div>
             </div>
-            
+
+            <div id="location" class="input-group">
+                <h3 class="icon-heading">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        height="24px"
+                        viewBox="0 -960 960 960"
+                        width="24px"
+                        fill="currentColor">
+                        <path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"/>
+                    </svg>
+                    Standort
+                </h3>
+
+                <button type="button" class="btn-location" :disabled="locationLoading" @click="detectLocation">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor">
+                        <path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"/>
+                    </svg>
+                    <span>{{ locationLoading ? 'Ermittle Standort...' : 'Standort automatisch ermitteln' }}</span>
+                </button>
+                <p v-if="sensorHint" class="location-hint">{{ sensorHint }}</p>
+
+                <div class="name-field location-search">
+                    <label>Ort manuell eingeben</label>
+                    <div class="location-search-row">
+                        <input
+                            type="text"
+                            v-model="manualQuery"
+                            placeholder="z.B. Wiesbaden"
+                            @keyup.enter="searchLocation"
+                        >
+                        <button type="button" class="btn-location-search" :disabled="locationLoading" @click="searchLocation">Suchen</button>
+                    </div>
+                    <p v-if="locationError" class="location-error">{{ locationError }}</p>
+                </div>
+
+                <p v-if="locationName" class="location-confirmed">Aktueller Standort: {{ locationName }}</p>
+            </div>
+
             <div id="password" class="input-group">
                 <h3 class="icon-heading">
                     <svg xmlns="http://www.w3.org/2000/svg" 
@@ -241,6 +341,75 @@
         display: flex;
         flex-direction: column;
         gap: 1rem;
+    }
+
+    #location {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .btn-location {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 0.85rem;
+        background: var(--color-bg-page);
+        color: var(--color-primary);
+        border: 1.5px solid var(--color-primary);
+        border-radius: var(--radius-md);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-location:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .location-search-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .location-search-row input {
+        flex: 1;
+    }
+
+    .btn-location-search {
+        flex-shrink: 0;
+        padding: 0.85rem 1rem;
+        background: none;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        color: var(--color-primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+    .btn-location-search:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .location-hint {
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        text-align: center;
+        margin: 0;
+    }
+    .location-error {
+        font-size: 0.85rem;
+        color: var(--color-danger);
+        margin: 0.4rem 0 0;
+    }
+    .location-confirmed {
+        font-size: 0.9rem;
+        color: var(--color-primary);
+        margin: 0;
     }
 
     /* JETZT NEBENEEINANDER AUF DEM HANDY */
