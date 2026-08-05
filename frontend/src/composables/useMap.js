@@ -35,6 +35,10 @@ const mapInstance = shallowRef(null);
 const currentTileLayer = shallowRef(null);
 export const activeLayerId = ref(availableLayers[0].id); // Standardmäßig der erste Layer
 
+// Fallback, falls dem User (noch) kein Standort hinterlegt ist - identisch zum
+// Fallback in initializeMap, damit "Heimatposition" überall dasselbe meint
+export const DEFAULT_CENTER = [50.0963, 8.2195];
+
 // Kartennachweis: standardmäßig ausgeblendet, wird erst über den Info-Button in Karte.vue eingeblendet
 const isAttributionVisible = ref(false);
 let attributionContainer = null; // rohes Leaflet-DOM-Element, kein Vue-Ref nötig
@@ -42,15 +46,19 @@ let attributionContainer = null; // rohes Leaflet-DOM-Element, kein Vue-Ref nöt
 // Diese Funktion stellt sicher, dass der Zustand über die ganze App hinweg geteilt wird.
 export function useMap() {
 
-    const initializeMap = (elementId) => {
+    const initializeMap = (elementId, center) => {
         if (mapInstance.value) {
             return mapInstance.value;
         }
 
+        // Standardmäßig Wiesbaden - Fallback für den Fall, dass dem User (noch) kein
+        // Standort hinterlegt ist (z.B. Datenmigrationslücken)
+        const startCenter = center ?? DEFAULT_CENTER;
+
         const map = L.map(elementId, {
             zoomControl: false, // <--- Hier schalten wir die Buttons aus
             attributionControl: false // eigene Attribution unten links statt Leaflets Standard-Ecke unten rechts (kollidiert sonst mit den Karten-Buttons)
-            }).setView([50.0963, 8.2195], 11);
+            }).setView(startCenter, 11);
         mapInstance.value = map;
 
         // Setze den initialen Layer
@@ -108,6 +116,13 @@ export function useMap() {
         activeLayerId.value = layerId;
     };
 
+    // Fliegt sanft zur Heimatposition zurück (z.B. per Logo-Klick in AppHeader.vue).
+    // No-op, solange die Karte noch nie initialisiert wurde.
+    const resetToHome = (center) => {
+        if (!mapInstance.value) return;
+        mapInstance.value.flyTo(center ?? DEFAULT_CENTER, 11, { duration: 1 });
+    };
+
     const toggleAttribution = () => {
         isAttributionVisible.value = !isAttributionVisible.value;
         if (attributionContainer) {
@@ -135,6 +150,7 @@ export function useMap() {
     return {
         initializeMap,
         setLayer,
+        resetToHome,
         availableLayers,
         activeLayerId,
         isAttributionVisible,

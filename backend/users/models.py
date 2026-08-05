@@ -11,6 +11,11 @@ class UserProfile(models.Model):
 
     profilbild = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
 
+    onboarding_completed = models.BooleanField(default=False)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    location_name = models.CharField(max_length=255, blank=True)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

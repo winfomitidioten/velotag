@@ -65,5 +65,7 @@
 	<string>velotag benötigt Zugriff auf Ihre Kamera, um ein Profilbild aufzunehmen.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>velotag benötigt Zugriff auf Ihre Mediathek, um ein Profilbild auszuwählen.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>velotag benötigt Zugriff auf Ihren Standort, um die Karte beim Start an deiner Position zu zentrieren.</string>
 </dict>
 </plist>
