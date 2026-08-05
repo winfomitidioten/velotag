@@ -8,6 +8,7 @@ import GroupDetailView from '../views/GroupDetailView.vue'
 import GroupInviteView from '../views/GroupInviteView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
 import PublicUserProfile from '../components/PublicUserProfile.vue'
+import { useUserStore } from '@/store/userStore';
 
 import SettingsView from '@/views/SettingsView.vue';
 
@@ -77,6 +78,12 @@ const routes = [
   component: PublicUserProfile,
   meta: { requiresAuth: true, showBack: true }
 },
+  {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: () => import('../views/OnboardingView.vue'),
+    meta: { requiresAuth: true, hideMenu: true }
+  },
 
 ];
 
@@ -91,6 +98,14 @@ router.beforeEach((to) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!token) {
       return { name: 'login' };
+    }
+
+    const userStore = useUserStore();
+    if (userStore.onboardingCompleted === false && to.name !== 'onboarding') {
+      return { name: 'onboarding' };
+    }
+    if (userStore.onboardingCompleted === true && to.name === 'onboarding') {
+      return { name: 'map' };
     }
   }
 });
