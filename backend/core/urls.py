@@ -10,7 +10,7 @@ from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken
 
-from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken, PublicUserProfileView
+from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken, PublicUserProfileView, OnboardingView, GeocodeView, GeocodeReverseView
 
 from .views.strava import strava_status, strava_connect, strava_callback, get_activities, import_activity
 
@@ -27,6 +27,9 @@ urlpatterns = [
     path('api/login/', CustomObtainAuthToken.as_view(), name='api_token_auth'),
     path('api/logout/', LogoutView.as_view()),
     path('api/profil/', ProfileView.as_view(), name='user-profile'),
+    path('api/onboarding/', OnboardingView.as_view(), name='onboarding'),
+    path('api/geocode/', GeocodeView.as_view(), name='geocode'),
+    path('api/geocode/reverse/', GeocodeReverseView.as_view(), name='geocode-reverse'),
     path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
 
     # Strava

@@ -40,6 +40,17 @@ const fetchProfile = async () => {
     }
 }
 
+const toggleLike = async (ride) => {
+    try {
+        const method = ride.liked_by_me ? 'delete' : 'post'
+        const { data } = await api[method](`routes/${ride.strecken_id}/like/`)
+        ride.liked_by_me = data.liked_by_me
+        ride.like_count = data.like_count
+    } catch (err) {
+        console.error('Fehler beim Liken:', err)
+    }
+}
+
 onMounted(fetchProfile)
 </script>
 
@@ -75,6 +86,18 @@ onMounted(fetchProfile)
             <span>{{ formatDate(ride.created_at) }}</span>
             <span>{{ formatDuration(ride.duration_seconds) }}</span>
           </div>
+          <button
+            type="button"
+            class="like-btn"
+            :class="{ liked: ride.liked_by_me }"
+            @click="toggleLike(ride)"
+            :title="ride.liked_by_me ? 'Gefällt mir entfernen' : 'Gefällt mir'"
+          >
+            <svg viewBox="0 -960 960 960" class="heart-icon">
+              <path d="M480-120 435-165Q276-311 172-427.5T68-643Q68-729 125-786t141-57Q312-843 355-802t125 118Q521-763 564-802t143-41Q783-843 840-786t57 143Q897-524 793-427.5T525-165l-45 45Z"/>
+            </svg>
+            <span class="like-count">{{ ride.like_count }}</span>
+          </button>
         </div>
       </div>
     </template>
@@ -184,5 +207,39 @@ h3 {
   color: var(--color-text-muted);
   font-size: 0.75rem;
   margin-top: 4px;
+}
+
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 10px;
+  margin-top: 8px;
+  border-radius: 12px;
+  color: var(--color-text-muted);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.like-btn:hover {
+  background-color: color-mix(in srgb, #e53e3e 12%, white);
+  color: #e53e3e;
+}
+
+.like-btn.liked {
+  color: #e53e3e;
+}
+
+.heart-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.like-count {
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 </style>
