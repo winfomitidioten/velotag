@@ -10,6 +10,7 @@ import { useUserStore } from '@/store/userStore'
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useToast } from '@/composables/useToast';
 import QRCode from 'qrcode';
+import { Capacitor } from '@capacitor/core';
 
 const route = useRoute()
 const router = useRouter()
@@ -121,7 +122,11 @@ const generateInviteLink = async () => {
     try {
         inviteLinkLoading.value = true;
         const response = await api.get(`groups/${groupId.value}/invite-link/`);
-        inviteLink.value = `${window.location.origin}/join/${response.data.token}`;
+        // window.location.origin zeigt in der nativen App auf http://localhost (WebView-intern,
+        // von außen nicht erreichbar) - dort brauchen wir die echte Produktions-Adresse, damit der
+        // Link/QR-Code auf einem anderen Gerät funktioniert.
+        const baseUrl = Capacitor.isNativePlatform() ? 'http://167.233.33.166' : window.location.origin;
+        inviteLink.value = `${baseUrl}/join/${response.data.token}`;
         inviteQrDataUrl.value = await QRCode.toDataURL(inviteLink.value);
     } catch (error) {
         console.error("Fehler beim Erzeugen des Einladungslinks:", error);

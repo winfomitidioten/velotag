@@ -23,6 +23,24 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- velotag://... Deep Links (Strava-Callback, Gruppeneinladungslink) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="velotag" />
+            </intent-filter>
+
+            <!-- Gruppeneinladungslink auch als normaler http-Link oeffenbar (z.B. aus WhatsApp/SMS),
+                 falls die App installiert ist - ohne Domain/HTTPS keine automatische Verifizierung,
+                 Android zeigt daher eine Auswahl zwischen App und Browser. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" android:host="167.233.33.166" android:pathPrefix="/join" />
+            </intent-filter>
+
         </activity>
 
         <provider

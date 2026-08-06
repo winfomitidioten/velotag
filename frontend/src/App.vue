@@ -159,12 +159,22 @@ onMounted(async () => {
     // (Style.Dark ist entgegen des Namens für dunkle Hintergründe mit hellen Icons gedacht)
     await StatusBar.setStyle({ style: Style.Light });
 
-    // Fängt den velotag://strava-callback Deep Link ab, mit dem das Backend
-    // nach dem Strava-Login zurück in die App springt
+    // Fängt Deep Links ab: velotag://strava-callback (Backend springt nach dem
+    // Strava-Login zurück in die App) sowie Gruppeneinladungslinks, egal ob als
+    // velotag://join?token=... oder als normaler http-Link geöffnet (siehe
+    // AndroidManifest.xml für die zugehörigen Intent-Filter).
     CapacitorApp.addListener('appUrlOpen', ({ url }) => {
       if (url.startsWith('velotag://strava-callback')) {
         router.push('/map');
         showStravaImport.value = true;
+        return;
+      }
+
+      const joinToken = url.includes('/join/')
+        ? url.split('/join/')[1]
+        : new URL(url).searchParams.get('token');
+      if (joinToken) {
+        router.push(`/join/${joinToken}`);
       }
     });
   }
@@ -176,6 +186,12 @@ onMounted(async () => {
   if (token && token !== 'undefined') {
     try {
       await userStore.fetchProfile();
+      // Die Root-Route leitet beim (Kalt-)Start immer erst auf /login um (siehe
+      // router/index.js) - mit gültigem Token wollen wir stattdessen direkt zur Karte,
+      // statt den Nutzer bei jedem App-Neustart erneut das Login-Formular sehen zu lassen.
+      if (route.path === '/login' || route.path === '/') {
+        router.push('/map');
+      }
     } catch {
       localStorage.removeItem('auth_token');
       router.push('/login');
