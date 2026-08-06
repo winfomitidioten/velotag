@@ -1,7 +1,12 @@
 from firebase_admin import messaging
-from users.models import UserDevice
+from users.models import UserDevice, UserProfile
 
 def send_push_notifications(user, title, body, data_payload=None):
+    profile = UserProfile.objects.filter(user=user).first()
+    if profile and not profile.notifications_enabled:
+        print(f"Push-Benachrichtigungen für {user.username} deaktiviert")
+        return
+
     devices = UserDevice.objects.filter(user=user)
 
     if not devices.exists():

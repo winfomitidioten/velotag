@@ -40,6 +40,7 @@ class ProfileView(APIView):
         password = request.data.get('password')
         profilbild = request.data.get('profilbild')
         group_invites_enabled = request.data.get('group_invites_enabled')
+        notifications_enabled = request.data.get('notifications_enabled')
 
         if firstname is not None:
             user.first_name = firstname
@@ -66,6 +67,12 @@ class ProfileView(APIView):
                 profile.group_invites_enabled = group_invites_enabled.lower() == 'true'
             else:
                 profile.group_invites_enabled = bool(group_invites_enabled)
+
+        if notifications_enabled is not None:
+            if isinstance(notifications_enabled, str):
+                profile.notifications_enabled = notifications_enabled.lower() == 'true'
+            else:
+                profile.notifications_enabled = bool(notifications_enabled)
 
         profile.save()
 

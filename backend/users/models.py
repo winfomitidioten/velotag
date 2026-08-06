@@ -15,6 +15,10 @@ class UserProfile(models.Model):
     # (durchgesetzt serverseitig in GroupInviteAdmin, nicht nur clientseitig).
     group_invites_enabled = models.BooleanField(default=True)
 
+    # Wenn deaktiviert, werden keine Push-Benachrichtigungen mehr verschickt
+    # (durchgesetzt serverseitig in send_push_notifications, nicht nur clientseitig).
+    notifications_enabled = models.BooleanField(default=True)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
