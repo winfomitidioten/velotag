@@ -1,7 +1,8 @@
+
+from users.models import UserDevice, UserProfile
 import firebase_admin
 from firebase_admin import credentials, messaging
 from django.conf import settings
-from users.models import UserDevice
 
 # Einmalige Initialisierung der Firebase Admin SDK beim ersten Import dieses Moduls.
 # get_app() wirft ValueError, wenn noch keine Default-App existiert - das ist der
@@ -18,6 +19,11 @@ except ValueError:
         print("firebase_credentials.json nicht gefunden - Push-Benachrichtigungen sind deaktiviert.")
 
 def send_push_notifications(user, title, body, data_payload=None):
+    profile = UserProfile.objects.filter(user=user).first()
+    if profile and not profile.notifications_enabled:
+        print(f"Push-Benachrichtigungen für {user.username} deaktiviert")
+        return
+
     devices = UserDevice.objects.filter(user=user)
 
     if not devices.exists():

@@ -11,6 +11,13 @@ class UserProfile(models.Model):
 
     profilbild = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
 
+    # Solo-Profil: wenn deaktiviert, darf niemand mehr diesen Nutzer in eine Gruppe einladen
+    # (durchgesetzt serverseitig in GroupInviteAdmin, nicht nur clientseitig).
+    group_invites_enabled = models.BooleanField(default=True)
+
+    # Wenn deaktiviert, werden keine Push-Benachrichtigungen mehr verschickt
+    # (durchgesetzt serverseitig in send_push_notifications, nicht nur clientseitig).
+    notifications_enabled = models.BooleanField(default=True)
     onboarding_completed = models.BooleanField(default=False)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)

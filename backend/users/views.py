@@ -43,6 +43,8 @@ class ProfileView(APIView):
         mail = request.data.get('user.email')
         password = request.data.get('password')
         profilbild = request.data.get('profilbild')
+        group_invites_enabled = request.data.get('group_invites_enabled')
+        notifications_enabled = request.data.get('notifications_enabled')
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
         location_name = request.data.get('location_name')
@@ -67,6 +69,17 @@ class ProfileView(APIView):
         if profilbild and not isinstance(profilbild, str):
             profile.profilbild = profilbild
 
+        if group_invites_enabled is not None:
+            if isinstance(group_invites_enabled, str):
+                profile.group_invites_enabled = group_invites_enabled.lower() == 'true'
+            else:
+                profile.group_invites_enabled = bool(group_invites_enabled)
+
+        if notifications_enabled is not None:
+            if isinstance(notifications_enabled, str):
+                profile.notifications_enabled = notifications_enabled.lower() == 'true'
+            else:
+                profile.notifications_enabled = bool(notifications_enabled)
         has_coords = latitude not in (None, '') and longitude not in (None, '')
         if has_coords:
             try:
