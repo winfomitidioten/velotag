@@ -11,11 +11,13 @@ import { useUserStore } from '@/store/userStore'
 import { useSettingsStore } from './store/settingsStore'
 
 import { useStravaImport } from '@/composables/useStravaImport'
+import { useToast } from '@/composables/useToast'
 
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { LocalNotifications } from '@capacitor/local-notifications'
+import { PushNotifications } from '@capacitor/push-notifications'
 
 useSettingsStore(); // legt den Store an, der Konstruktor wendet gespeichertes Theme sofort an
 
@@ -23,6 +25,75 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const { showStravaImport } = useStravaImport();
+const { showToast } = useToast();
+
+// Registriert das Geraet fuer Push-Benachrichtigungen bei Gruppeneinladungen (nur Android).
+const setupAndroidPush = async () => {
+  if (Capacitor.getPlatform() !== 'android') {
+    return;
+  }
+  try {
+    let permStatus = await PushNotifications.checkPermissions();
+
+    if (permStatus.receive === 'prompt') {
+      permStatus = await PushNotifications.requestPermissions();
+    }
+
+    if (permStatus.receive !== 'granted') {
+      console.log("Nutzer hat Benachrichtigungen blockiert");
+      return;
+    }
+
+    // Ohne eigenen Channel landet die Benachrichtigung nur im Verlauf (Shade),
+    // zeigt aber kein Heads-up-Banner auf dem Sperr-/Homebildschirm. importance: 5
+    // (IMPORTANCE_HIGH) ist dafür nötig. Die channel_id muss im Backend beim
+    // Versand exakt so referenziert werden (siehe notifications.py).
+    await PushNotifications.createChannel({
+      id: 'group_invitations',
+      name: 'Gruppeneinladungen',
+      description: 'Benachrichtigungen über neue Gruppeneinladungen',
+      importance: 5,
+    });
+
+    // Listener MÜSSEN vor register() angehängt werden: Capacitor kann das
+    // 'registration'-Event nativ nahezu sofort feuern, sobald register() aufgerufen
+    // wird - wenn der Listener erst danach registriert wird, geht der Token verloren
+    // ("No listeners found for event registration" im Logcat).
+    // Wichtig: der Event-Name ist 'registration', NICHT 'register' (das ist nur der
+    // Methodenname von PushNotifications.register() weiter unten).
+    await PushNotifications.addListener('registration', async (token) => {
+      try {
+        await apiClient.post('/user/save-push-token/', {
+          token: token.value,
+          platform: 'android'
+        });
+      } catch (err) {
+        console.error("Fehler beim Senden des Tokens an Backend: ", err);
+      }
+    });
+
+    await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      console.log("Nutzer hat Benachrichtigung geklickt", action.notification);
+      const data = action.notification.data;
+
+      if (data && data.type == 'group_invitation') {
+        router.push('group/invitations');
+      }
+    });
+
+    // Bei geöffneter App zeigt Android selbst kein System-Banner für die
+    // empfangene Nachricht (das Notification-Objekt wird nur an die App
+    // weitergereicht) - hier übernehmen wir das mit unserem eigenen Toast,
+    // statt dass die Benachrichtigung sonst unbemerkt bliebe.
+    await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      showToast(`${notification.title}: ${notification.body}`);
+    });
+
+    await PushNotifications.register();
+  } catch (error) {
+    console.log("Fehler beim Push:", error)
+  }
+}
 
 // Feste ID fuer die taegliche Erinnerung: schedule() mit derselben ID ersetzt
 // eine bereits geplante Benachrichtigung, statt Duplikate anzuhaeufen - daher
@@ -78,8 +149,11 @@ const setAppHeight = () => {
 
 onMounted(async () => {
   await setupDailyReminder();
+  await setupAndroidPush();
   if (Capacitor.isNativePlatform()) {
-    apiClient.defaults.baseURL = 'http://167.233.33.166/api';
+    // baseURL wird bereits in api/client.js korrekt gesetzt (VITE_API_BASE_URL ??
+    // Produktion) - eine feste Override hier wuerde das jedes Mal ueberschreiben,
+    // inklusive waehrend des asynchronen Push-Registrierungs-Events oben.
     await StatusBar.setOverlaysWebView({ overlay: true });
     // Style.Light => dunkle Uhr/Batterie-Icons, richtig für unseren hellen Hintergrund
     // (Style.Dark ist entgegen des Namens für dunkle Hintergründe mit hellen Icons gedacht)

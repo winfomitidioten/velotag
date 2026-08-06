@@ -1,6 +1,7 @@
 # --- Backend (Django) ---
 backend/venv-windows/
 backend/.env
+backend/firebase_credentials.json
 backend/__pycache__/
 backend/*/__pycache__/
 backend/*/*/__pycache__/
