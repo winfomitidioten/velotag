@@ -1,29 +1,5 @@
 <template>
     <form @submit.prevent="handleRegister">
-        <div class="field-row">
-            <div class="field">
-                <label>Vorname</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-                            <path d="M367-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q560-607 560-640t-23.5-56.5Q513-720 480-720t-56.5 23.5Q400-673 400-640t23.5 56.5Q447-560 480-560t56.5-23.5ZM480-640Zm0 400Z"/>
-                        </svg>
-                    </span>
-                    <input type="text" v-model="firstName" required placeholder="Max" />
-                </div>
-            </div>
-            <div class="field">
-                <label>Nachname</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-                            <path d="M367-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q560-607 560-640t-23.5-56.5Q513-720 480-720t-56.5 23.5Q400-673 400-640t23.5 56.5Q447-560 480-560t56.5-23.5ZM480-640Zm0 400Z"/>
-                        </svg>
-                    </span>
-                    <input type="text" v-model="lastName" required placeholder="Mustermann" />
-                </div>
-            </div>
-        </div>
         <div class="field">
             <label>E-Mail</label>
             <div class="input-wrapper">
@@ -70,8 +46,6 @@
 import { ref } from 'vue';
 import api from '../api/api';
 
-const firstName = ref('');
-const lastName = ref('');
 const email = ref('');
 const password = ref('');
 const passwordRepeat = ref('');
@@ -118,8 +92,6 @@ const handleRegister = async () => {
     loading.value = true;
     try {
         const response = await api.post('register/', {
-            first_name: firstName.value,
-            last_name: lastName.value,
             email: email.value,
             password: password.value,
         });
@@ -139,20 +111,6 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.field-row {
-    display: flex;
-    gap: 12px;
-}
-.field-row .field {
-    flex: 1;
-    min-width: 0;
-}
-@media (max-width: 520px) {
-    .field-row {
-        flex-direction: column;
-        gap: 0;
-    }
-}
 .field { margin-bottom: 1.1rem; }
 .field label { display: block; font-size: 13px; font-weight: 500; color: var(--color-text-muted); margin-bottom: 6px; }
 .input-wrapper { display: flex; align-items: center; border: 1.5px solid var(--color-border); border-radius: 10px; padding: 0 14px; background: var(--color-bg-card); transition: border-color 0.2s; }

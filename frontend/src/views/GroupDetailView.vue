@@ -4,6 +4,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from '@/components/HeaderButton.vue';
+import GroupTabsMenu from '@/components/GroupTabsMenu.vue';
 import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 import { useUserStore } from '@/store/userStore'
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -313,6 +314,8 @@ onMounted(() => {
                     <span>Gruppe Löschen</span>
                 </HeaderButton>
             </PageHeader>
+
+            <GroupTabsMenu :group-id="groupId" active="members" />
 
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">

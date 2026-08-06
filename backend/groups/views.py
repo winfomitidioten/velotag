@@ -2,14 +2,15 @@ from django.shortcuts import render
 from django.core import signing
 from rest_framework.views import APIView
 from rest_framework import status, permissions
-from django.db.models import Q
+from django.db.models import Q, Sum, Count
 from rest_framework.response import Response
-from .serializers import GroupSerializer
+from .serializers import GroupSerializer, GrouMemberSerializer
 from .models import Group, Membership
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from users.models import User
 from utils.notifications import send_push_notifications
+from routes.models import Route
 # Create your views here.
 
 class GroupView(APIView):
@@ -138,6 +139,57 @@ class GroupDetailView(APIView):
         group.save()
         serializer = GroupSerializer(group, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GroupLeaderboardView(APIView):
+    """
+    Bestenliste einer Gruppe nach gefahrenen Gesamt-km. Zaehlt bewusst ALLE
+    Fahrten eines Mitglieds (Solo + andere Gruppen), nicht nur die in dieser
+    Gruppe - das Ranking soll die Gesamtleistung der Person zeigen.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not Membership.objects.filter(user=request.user, group=group, status='Joined').exists():
+            return Response(
+                {"error": "Du hast keine Berechtigung, diese Gruppe anzuzeigen."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        members = User.objects.filter(membership__group=group, membership__status='Joined')
+
+        # Ein Query statt N+1: Gesamtdistanz + Fahrtenanzahl pro Nutzer aggregiert,
+        # ueber ALLE Routen der Mitglieder (kein Gruppenfilter auf Route).
+        stats_by_user = {
+            row['user']: row
+            for row in Route.objects.filter(user__in=members).values('user').annotate(
+                total_distance=Sum('distance_meters'),
+                ride_count=Count('strecken_id')
+            )
+        }
+
+        leaderboard = []
+        for member in members:
+            stats = stats_by_user.get(member.id)
+            member_data = GrouMemberSerializer(member, context={'request': request}).data
+            member_data['totalKm'] = round((stats['total_distance'] if stats else 0) / 1000)
+            member_data['rideCount'] = stats['ride_count'] if stats else 0
+            leaderboard.append(member_data)
+
+        leaderboard.sort(key=lambda entry: entry['totalKm'], reverse=True)
+        for index, entry in enumerate(leaderboard):
+            entry['rank'] = index + 1
+
+        return Response(leaderboard, status=status.HTTP_200_OK)
 
 
 class GroupInviteAdmin(APIView):
