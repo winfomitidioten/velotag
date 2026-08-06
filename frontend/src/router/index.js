@@ -1,10 +1,10 @@
-
 import { createRouter, createWebHistory } from 'vue-router';
 import ProfileView from '../views/ProfileView.vue'
 import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../views/GroupView.vue'
 import GroupDetailView from '../views/GroupDetailView.vue'
+import GroupLeaderboardView from '../components/GroupLeaderboardView.vue'
 import GroupInviteView from '../views/GroupInviteView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
 import PublicUserProfile from '../components/PublicUserProfile.vue'
@@ -52,6 +52,12 @@ const routes = [
     path: '/group/:id',
     name: 'group-detail',
     component: GroupDetailView,
+    meta: { requiresAuth: true, showBack: true, backTo: '/group' }
+  },
+  {
+    path: '/group/:id/leaderboard',
+    name: 'group-leaderboard',
+    component: GroupLeaderboardView,
     meta: { requiresAuth: true, showBack: true, backTo: '/group' }
   },
   {
