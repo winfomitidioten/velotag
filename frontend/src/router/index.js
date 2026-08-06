@@ -1,13 +1,15 @@
-
 import { createRouter, createWebHistory } from 'vue-router';
 import ProfileView from '../views/ProfileView.vue'
 import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../views/GroupView.vue'
 import GroupDetailView from '../views/GroupDetailView.vue'
+import GroupLeaderboardView from '../components/GroupLeaderboardView.vue'
 import GroupInviteView from '../views/GroupInviteView.vue'
+import JoinGroupView from '../views/JoinGroupView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
 import PublicUserProfile from '../components/PublicUserProfile.vue'
+import { useUserStore } from '@/store/userStore';
 
 import SettingsView from '@/views/SettingsView.vue';
 
@@ -54,9 +56,22 @@ const routes = [
     meta: { requiresAuth: true, showBack: true, backTo: '/group' }
   },
   {
+    path: '/group/:id/leaderboard',
+    name: 'group-leaderboard',
+    component: GroupLeaderboardView,
+    meta: { requiresAuth: true, showBack: true, backTo: '/group' }
+  },
+  {
     path: '/group/invites',
     name: 'group-invites',
     component: GroupInviteView,
+    meta: { requiresAuth: true, showBack: true }
+  },
+  {
+    // Ziel des Einladungslinks/QR-Codes aus GroupDetailView.vue (VEL-74).
+    path: '/join/:token',
+    name: 'group-join',
+    component: JoinGroupView,
     meta: { requiresAuth: true, showBack: true }
   },
   {
@@ -77,6 +92,12 @@ const routes = [
   component: PublicUserProfile,
   meta: { requiresAuth: true, showBack: true }
 },
+  {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: () => import('../views/OnboardingView.vue'),
+    meta: { requiresAuth: true, hideMenu: true }
+  },
 
 ];
 
@@ -91,6 +112,14 @@ router.beforeEach((to) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!token) {
       return { name: 'login' };
+    }
+
+    const userStore = useUserStore();
+    if (userStore.onboardingCompleted === false && to.name !== 'onboarding') {
+      return { name: 'onboarding' };
+    }
+    if (userStore.onboardingCompleted === true && to.name === 'onboarding') {
+      return { name: 'map' };
     }
   }
 });

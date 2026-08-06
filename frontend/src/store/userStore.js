@@ -8,6 +8,10 @@ export const useUserStore = defineStore('user', () => {
     const mail = ref('');
     const profileImage = ref('');
     const id = ref(null);
+    const latitude = ref(null);
+    const longitude = ref(null);
+    const locationName = ref('');
+    const onboardingCompleted = ref(null); // null = noch nicht geladen (siehe Router-Guard)
 
     const initials = computed(() => `${firstname.value[0] ?? ''}${lastname.value[0] ?? ''}`.toUpperCase());
 
@@ -19,6 +23,10 @@ export const useUserStore = defineStore('user', () => {
         mail.value = response.data.mail;
         const pic = response.data.profilbild;
         profileImage.value = pic ?? '';
+        latitude.value = response.data.latitude ?? null;
+        longitude.value = response.data.longitude ?? null;
+        locationName.value = response.data.location_name ?? '';
+        onboardingCompleted.value = response.data.onboarding_completed ?? false;
     };
 
     function clearUser() {
@@ -27,7 +35,15 @@ export const useUserStore = defineStore('user', () => {
         lastname.value = '';
         mail.value = '';
         profileImage.value = '';
+        latitude.value = null;
+        longitude.value = null;
+        locationName.value = '';
+        onboardingCompleted.value = null;
     }
 
-    return { id, firstname, lastname, mail, initials, profileImage, fetchProfile, clearUser };
+    return {
+        id, firstname, lastname, mail, initials, profileImage,
+        latitude, longitude, locationName, onboardingCompleted,
+        fetchProfile, clearUser
+    };
 });

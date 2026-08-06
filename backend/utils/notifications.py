@@ -1,5 +1,22 @@
-from firebase_admin import messaging
+
 from users.models import UserDevice, UserProfile
+import firebase_admin
+from firebase_admin import credentials, messaging
+from django.conf import settings
+
+# Einmalige Initialisierung der Firebase Admin SDK beim ersten Import dieses Moduls.
+# get_app() wirft ValueError, wenn noch keine Default-App existiert - das ist der
+# offizielle Weg, mehrfaches initialize_app() (z.B. durch Djangos Autoreloader) zu
+# vermeiden. Die Zugangsdaten liegen als lokale, nicht eingecheckte Datei pro
+# Entwickler vor (aus der Firebase-Konsole exportiert).
+try:
+    firebase_admin.get_app()
+except ValueError:
+    cred_path = settings.BASE_DIR / 'firebase_credentials.json'
+    if cred_path.exists():
+        firebase_admin.initialize_app(credentials.Certificate(str(cred_path)))
+    else:
+        print("firebase_credentials.json nicht gefunden - Push-Benachrichtigungen sind deaktiviert.")
 
 def send_push_notifications(user, title, body, data_payload=None):
     profile = UserProfile.objects.filter(user=user).first()
@@ -26,11 +43,22 @@ def send_push_notifications(user, title, body, data_payload=None):
                 title=title,
                 body=body
             ),
+            # priority='high' + channel_id sorgen dafür, dass Android die Nachricht
+            # als Heads-up-Banner zeigt statt sie nur still im Verlauf abzulegen.
+            # Die channel_id muss exakt zu dem Channel passen, den die App per
+            # PushNotifications.createChannel() anlegt (siehe App.vue).
+            android=messaging.AndroidConfig(
+                priority='high',
+                notification=messaging.AndroidNotification(channel_id='group_invitations'),
+            ),
             data=data_payload,
             tokens=tokens
         )
 
-        response = messaging.send_multicast(message)
+        # send_multicast() nutzt intern Googles /batch-Endpoint, den Google 2024
+        # abgeschaltet hat (führt zu HTTP 404). send_each_for_multicast() ist der
+        # offizielle Ersatz mit identischer Schnittstelle, ohne den Batch-Endpoint.
+        response = messaging.send_each_for_multicast(message)
         print(f"{response.success_count} Nachricht erfolgreich an {user.username} gesendet")
     except Exception as err:
         print(f"Push-Benachrichtigung an {user.username} fehlgeschlagen: {err}")

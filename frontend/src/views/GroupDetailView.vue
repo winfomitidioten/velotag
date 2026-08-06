@@ -4,10 +4,12 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
 import HeaderButton from '@/components/HeaderButton.vue';
+import GroupTabsMenu from '@/components/GroupTabsMenu.vue';
 import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 import { useUserStore } from '@/store/userStore'
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useToast } from '@/composables/useToast';
+import QRCode from 'qrcode';
 
 const route = useRoute()
 const router = useRouter()
@@ -99,13 +101,43 @@ const inviteMember = async () => {
         const response = await api.post(`groups/${groupId.value}/invite/`, {
             email: newMemberMail.value
         });
-    
+
         group.value = response.data;
         showPopup.value = false;
         newMemberMail.value = ""
     } catch(error) {
         console.error("Fehler beim Einladen:", error.response?.data || error.message);
         showToast(error.response?.data?.error || "Es gab ein Problem beim Hinzufügen.", 'error');
+    }
+}
+
+// Alternative zur direkten E-Mail-Einladung oben: ein Einladungslink + QR-Code,
+// falls man die E-Mail-Adresse der einzuladenden Person nicht kennt (VEL-74).
+const inviteLink = ref(null);
+const inviteQrDataUrl = ref(null);
+const inviteLinkLoading = ref(false);
+
+const generateInviteLink = async () => {
+    try {
+        inviteLinkLoading.value = true;
+        const response = await api.get(`groups/${groupId.value}/invite-link/`);
+        inviteLink.value = `${window.location.origin}/join/${response.data.token}`;
+        inviteQrDataUrl.value = await QRCode.toDataURL(inviteLink.value);
+    } catch (error) {
+        console.error("Fehler beim Erzeugen des Einladungslinks:", error);
+        showToast(error.response?.data?.error || "Es gab ein Problem beim Erzeugen des Einladungslinks.", 'error');
+    } finally {
+        inviteLinkLoading.value = false;
+    }
+}
+
+// Kopiert den erzeugten Einladungslink in die Zwischenablage.
+const copyInviteLink = async () => {
+    try {
+        await navigator.clipboard.writeText(inviteLink.value);
+        showToast('Link in die Zwischenablage kopiert.');
+    } catch (error) {
+        console.error("Fehler beim Kopieren des Links:", error);
     }
 }
 
@@ -283,6 +315,8 @@ onMounted(() => {
                 </HeaderButton>
             </PageHeader>
 
+            <GroupTabsMenu :group-id="groupId" active="members" />
+
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
                     <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-640Zm0 400Z"/>
@@ -370,6 +404,27 @@ onMounted(() => {
                     <div id="popup-actions">
                         <button @click="showPopup = false" id="cancel-btn">Abbrechen</button>
                         <button @click="inviteMember" id="create-btn">Einladen</button>
+                    </div>
+
+                    <!-- Alternative: Einladung per Link/QR-Code, falls die E-Mail-Adresse
+                         der einzuladenden Person nicht bekannt ist. -->
+                    <div class="invite-link-section">
+                        <button
+                            type="button"
+                            @click="generateInviteLink"
+                            id="invite-link-btn"
+                            :disabled="inviteLinkLoading"
+                        >
+                            {{ inviteLinkLoading ? 'Lädt...' : 'Einladungslink / QR-Code erzeugen' }}
+                        </button>
+
+                        <div v-if="inviteLink" class="invite-link-result">
+                            <img v-if="inviteQrDataUrl" :src="inviteQrDataUrl" alt="QR-Code zum Beitreten" class="invite-qr-code">
+                            <div class="invite-link-row">
+                                <input type="text" :value="inviteLink" readonly>
+                                <button type="button" @click="copyInviteLink" id="copy-link-btn">Kopieren</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -825,6 +880,65 @@ onMounted(() => {
     #create-btn {
         background-color: var(--color-primary);
         color: var(--color-on-primary);
+    }
+
+    /* Einladungslink / QR-Code (VEL-74) */
+    .invite-link-section {
+        border-top: 1px solid var(--color-border);
+        padding-top: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    #invite-link-btn {
+        border: 1px solid var(--color-border);
+        background-color: var(--color-bg-page);
+        color: var(--color-text);
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    #invite-link-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .invite-link-result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    .invite-qr-code {
+        width: 10rem;
+        height: 10rem;
+    }
+    .invite-link-row {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    .invite-link-row input {
+        flex: 1;
+        min-width: 0;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        color: var(--color-text-muted);
+        background-color: var(--color-bg-page);
+    }
+    #copy-link-btn {
+        border: none;
+        border-radius: var(--radius-md);
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        background-color: var(--color-primary);
+        color: var(--color-on-primary);
+        flex-shrink: 0;
     }
 
     .loading-state {

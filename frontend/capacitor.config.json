@@ -4,6 +4,11 @@
   "webDir": "dist",
   "server": {
     "androidScheme": "http"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": false
+    }
   }
 }
 
