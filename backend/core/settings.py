@@ -34,7 +34,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', default=False)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.0.2.2'] if DEBUG else ['167.233.33.166']
+ALLOWED_HOSTS = ['167.233.33.166', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -99,36 +99,24 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny'
     ],
 }
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'NAME': env('DB_NAME'),
-            'USER': env('DB_USER'),
-            'PASSWORD': env('DB_PASSW'),
-            'HOST': env('DB_HOST'),
-            'PORT': env('DB_PORT'),
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSW'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'NAME': env('DEV_DB_NAME'),
-            'USER': env('DEV_DB_USER'),
-            'PASSWORD': env('DEV_DB_PASSW'),
-            'HOST': env('DEV_DB_HOST'),
-            'PORT': env('DEV_DB_PORT'),
-        }
-    }
-
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -189,14 +177,6 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-}
 
 
 
@@ -231,21 +211,5 @@ if platform.system() == "Windows":
                     GEOS_LIBRARY_PATH = os.path.join(path, geos_files[0])
             except Exception:
                 pass
-
-            break
-
-# AUTOMATISCHER GDAL/GEOS-LOADER FÜR macOS (Homebrew)
-# Django findet die Homebrew-Bibliotheken nicht immer selbst, v. a. auf Apple Silicon
-# (/opt/homebrew) statt Intel (/usr/local). Der eigene Pfad aus der .env hat Vorrang.
-elif platform.system() == "Darwin":
-    brew_lib_dirs = [
-        os.getenv("MACOS_GDAL_LIB_PATH"),  # 1. Prio: Eigener Pfad aus lokaler .env
-        "/opt/homebrew/lib",               # 2. Prio: Apple Silicon (M1/M2/...)
-        "/usr/local/lib",                  # 3. Prio: Intel-Macs
-    ]
-
-    for lib_dir in brew_lib_dirs:
-        if lib_dir and os.path.exists(os.path.join(lib_dir, "libgdal.dylib")):
-            GDAL_LIBRARY_PATH = os.path.join(lib_dir, "libgdal.dylib")
-            GEOS_LIBRARY_PATH = os.path.join(lib_dir, "libgeos_c.dylib")
+                
             break

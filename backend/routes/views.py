@@ -14,7 +14,7 @@ from django.contrib.gis.geos import LineString
 
 from django.http import HttpResponse
 from django.core.serializers import serialize
-from .models import Route, GroupRideIntersection, UserPerformanceBucket
+from .models import Route, GroupRideIntersection, UserPerformanceBucket, RouteLike
 from groups.models import Group, Membership
 
 
@@ -168,7 +168,7 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
         routes = Route.objects.filter(user=request.user)
         
         # 2. Die Strecken mit dem Serializer in JSON umwandeln
-        serializer = RouteListSerializer(routes, many=True)
+        serializer = RouteListSerializer(routes, many=True, context={'request': request})
         
         # 3. Die JSON-Daten zurück an das Frontend schicken
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -190,7 +190,7 @@ class RouteDetailView(APIView):
             route.group_id = request.data['group_id']
         route.save()
 
-        serializer = RouteListSerializer(route)
+        serializer = RouteListSerializer(route, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def delete(self, request, strecken_id):
@@ -201,6 +201,37 @@ class RouteDetailView(APIView):
         
         route.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# Liken/Entliken einer fremden Route (z.B. von den "letzten 3 Fahrten" auf einem fremden Profil)
+class RouteLikeView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, strecken_id):
+        try:
+            route = Route.objects.get(pk=strecken_id)
+        except Route.DoesNotExist:
+            return Response({"error": "Strecke nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
+
+        if route.user == request.user:
+            return Response({"error": "Eigene Routen können nicht geliked werden."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Nur Nutzer mit gemeinsamer Gruppe dürfen liken - gleiche Sichtbarkeitsgrenze wie PublicUserProfileView
+        shared_group_exists = Membership.objects.filter(
+            user=request.user, status='Joined',
+            group_id__in=Membership.objects.filter(user=route.user, status='Joined').values('group_id')
+        ).exists()
+        if not shared_group_exists:
+            return Response({"error": "Keine Berechtigung."}, status=status.HTTP_403_FORBIDDEN)
+
+        RouteLike.objects.get_or_create(route=route, user=request.user)
+        return Response({"like_count": route.likes.count(), "liked_by_me": True})
+
+    def delete(self, request, strecken_id):
+        RouteLike.objects.filter(route_id=strecken_id, user=request.user).delete()
+        like_count = RouteLike.objects.filter(route_id=strecken_id).count()
+        return Response({"like_count": like_count, "liked_by_me": False})
 
 
 # Einheitliche km-Statistik -> für Lasche, Profil, Bestenliste

@@ -15,6 +15,7 @@ import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
 import { useFavorite } from '@/composables/useFavorite.js'
 import { usePerformanceView } from '@/composables/usePerformanceView.js'
+import { useUserStore } from '@/store/userStore'
 import L from 'leaflet'
 //import StreckenView from './StreckenView.vue'
 import LascheModal from '@/components/LascheModal.vue'
@@ -28,6 +29,7 @@ const totalkm = ref(0);
 const { showStravaImport } = useStravaImport();
 
 const { initializeMap, availableLayers, activeLayerId, isAttributionVisible, toggleAttribution, closeAttribution, isAttributionTarget } = useMap();
+const userStore = useUserStore();
 const { isPinMode, setPinMode } = usePinMode();
 const pinLatLng = ref(null);
 const attributionButton = ref(null); // Template-Ref für Klick-außerhalb-Erkennung
@@ -154,7 +156,10 @@ const fetchGroups = async () => {
 
 onMounted(() => {
 
-  map.value = initializeMap('map');
+  const savedCenter = (userStore.latitude !== null && userStore.longitude !== null)
+    ? [userStore.latitude, userStore.longitude]
+    : undefined;
+  map.value = initializeMap('map', savedCenter);
   mapInstance = map.value;
   map.value.on('click', handleMapClick);
 

@@ -59,6 +59,17 @@ class GroupRideIntersection(models.Model):
         return f"Schnittmenge {self.group.name} am {self.date}"
 
 
+class RouteLike(models.Model):
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='route_likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'route'], name='unique_user_route_like')
+        ]
+
+
 class UserPerformanceBucket(models.Model):
     """Eine Rasterzelle (siehe routes/performance.py, PERFORMANCE_GRID_SIZE_METERS) für die
     Leistungs-Ansicht (Puls/Tempo/Watt) eines Users. Wird beim Hochladen einer Route inkrementell

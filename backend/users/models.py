@@ -18,6 +18,10 @@ class UserProfile(models.Model):
     # Wenn deaktiviert, werden keine Push-Benachrichtigungen mehr verschickt
     # (durchgesetzt serverseitig in send_push_notifications, nicht nur clientseitig).
     notifications_enabled = models.BooleanField(default=True)
+    onboarding_completed = models.BooleanField(default=False)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    location_name = models.CharField(max_length=255, blank=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
