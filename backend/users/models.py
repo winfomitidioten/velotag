@@ -30,3 +30,14 @@ class StravaToken(models.Model):
 
     def __str__(self):
         return f"Strava Token für {self.user.username}"
+
+# Speichert die Push-Token der Geraete eines Nutzers (siehe utils/notifications.py).
+# Ein Nutzer kann mehrere Geraete haben, push_token ist eindeutig pro Geraet/App-Installation.
+class UserDevice(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='devices')
+    push_token = models.CharField(max_length=255, unique=True)
+    platform = models.CharField(max_length=50, default='android')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Device von {self.user.username} ({self.platform})"

@@ -14,7 +14,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 NOMINATIM_USER_AGENT = 'velotag-app/1.0 (contact: support@velotag.de)'
 
 from .serializers import UserProfileSerializer
-from .models import UserProfile
+from .models import UserProfile, UserDevice
 
 from groups.models import Membership
 from routes.models import Route
@@ -269,7 +269,27 @@ class LogoutView(APIView):
         request.user.auth_token.delete();
         return Response(status=204);
 
-#Für die Profilansicht anderer Leute 
+# Speichert den FCM-Push-Token eines Geraets fuer den eingeloggten Nutzer (siehe
+# App.vue: setupAndroidPush() ruft diesen Endpoint nach PushNotifications.register() auf).
+class DeviceView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('token')
+        platform = request.data.get('platform', 'android')
+
+        if not token:
+            return Response({'error': 'Token fehlt'}, status=400)
+
+        device, created = UserDevice.objects.update_or_create(
+            push_token=token,
+            defaults={'user': request.user, 'platform': platform}
+        )
+
+        return Response({'status': 'success', 'created': created})
+
+#Für die Profilansicht anderer Leute
 class PublicUserProfileView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]

@@ -5,12 +5,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken
-from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView, SetGroupFavoriteView, RemoveFavoriteView, GetGroupFavoriteView, GroupTransferAdminView, GroupLeaderboardView
+from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView, SetGroupFavoriteView, RemoveFavoriteView, GetGroupFavoriteView, GroupTransferAdminView, GroupInviteLinkView, GroupJoinByTokenView, GroupLeaderboardView
 from django.conf.urls.static import static
 from django.conf import settings
 from users.views import CustomObtainAuthToken
 
-from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken, PublicUserProfileView, OnboardingView, GeocodeView, GeocodeReverseView
+from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken, PublicUserProfileView, DeviceView, OnboardingView, GeocodeView, GeocodeReverseView
+
 
 from .views.strava import strava_status, strava_connect, strava_callback, get_activities, import_activity
 
@@ -31,6 +32,7 @@ urlpatterns = [
     path('api/geocode/', GeocodeView.as_view(), name='geocode'),
     path('api/geocode/reverse/', GeocodeReverseView.as_view(), name='geocode-reverse'),
     path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
+    path('api/user/save-push-token/', DeviceView.as_view(), name='user-save-push-token'),
 
     # Strava
     path('api/strava/status/', strava_status),
@@ -45,6 +47,8 @@ urlpatterns = [
     path('api/groups/<int:pk>/', GroupDetailView.as_view(), name='group-detail'),
     path('api/logout/', LogoutView.as_view()),
     path('api/groups/<int:pk>/invite/', GroupInviteAdmin.as_view(), name='group-invite-admin'),
+    path('api/groups/<int:pk>/invite-link/', GroupInviteLinkView.as_view(), name='group-invite-link'),
+    path('api/groups/join/', GroupJoinByTokenView.as_view(), name='group-join-by-token'),
     path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
     path('api/groups/<int:pk>/leave', GroupLeaveView.as_view(), name="group-leave"),
     path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick"),

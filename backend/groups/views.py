@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.core import signing
 from rest_framework.views import APIView
 from rest_framework import status, permissions
 from django.db.models import Q, Sum, Count
@@ -8,6 +9,7 @@ from .models import Group, Membership
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from users.models import User
+from utils.notifications import send_push_notifications
 from routes.models import Route
 # Create your views here.
 
@@ -223,18 +225,123 @@ class GroupInviteAdmin(APIView):
                     )
             Membership.objects.create(user=user_to_add, group=group)
             serializer = GroupSerializer(group, context={'request': request})
+            send_push_notifications(
+                user=user_to_add,
+                title="Neue Gruppeneinladung",
+                body=f"{request.user.username} hat dich in eine Gruppe eingeladen",
+                data_payload={
+                    "type": "group_invitation"
+                }
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Group.DoesNotExist:
             return Response(
-                {"error": "Gruppe wurde nicht gefunden."}, 
+                {"error": "Gruppe wurde nicht gefunden."},
                 status=status.HTTP_404_NOT_FOUND
             )
         except User.DoesNotExist:
             return Response(
-                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."}, 
+                {"error": "Es existiert kein Nutzer mit dieser E-Mail-Adresse."},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
+
+# Salt + Gueltigkeitsdauer fuer die per Link/QR-Code verteilten Einladungs-Tokens
+# (siehe GroupInviteLinkView / GroupJoinByTokenView unten).
+GROUP_INVITE_LINK_SALT = 'group-invite-link'
+GROUP_INVITE_LINK_MAX_AGE = 60 * 60 * 24 * 7  # 7 Tage gueltig
+
+
+class GroupInviteLinkView(APIView):
+    """
+    Erzeugt einen signierten, zeitlich begrenzten Einladungs-Token fuer eine Gruppe.
+    Damit koennen ein Einladungslink und ein QR-Code gebaut werden, ueber die neue
+    Mitglieder beitreten koennen, ohne dass der Admin ihre E-Mail-Adresse kennen muss
+    (Alternative zu GroupInviteAdmin, das die direkte E-Mail-Einladung abdeckt).
+    Der Token selbst speichert nur die Gruppen-ID, es wird also keine Datenbank-
+    aenderung fuer diese Funktion benoetigt.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            group = Group.objects.get(pk=pk)
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if group.admin != request.user:
+            return Response(
+                {"error": "Nur der Admin darf einen Einladungslink erzeugen."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        token = signing.dumps({'group_id': group.id}, salt=GROUP_INVITE_LINK_SALT)
+        return Response({"token": token}, status=status.HTTP_200_OK)
+
+
+class GroupJoinByTokenView(APIView):
+    """
+    Tritt einer Gruppe ueber einen von GroupInviteLinkView erzeugten Token bei
+    (Klick auf den Einladungslink oder Scan des QR-Codes). Der eingeloggte Nutzer
+    wird direkt als 'Joined'-Mitglied aufgenommen - er hat den Link/Code ja aktiv
+    selbst genutzt, es ist also keine zusaetzliche Annahme wie bei der
+    E-Mail-Einladung (Pending -> accept) noetig.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('token')
+        if not token:
+            return Response(
+                {"error": "Ein Einladungs-Token wird benötigt."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            data = signing.loads(token, salt=GROUP_INVITE_LINK_SALT, max_age=GROUP_INVITE_LINK_MAX_AGE)
+        except signing.SignatureExpired:
+            return Response(
+                {"error": "Dieser Einladungslink ist abgelaufen."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except signing.BadSignature:
+            return Response(
+                {"error": "Dieser Einladungslink ist ungültig."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            group = Group.objects.get(pk=data['group_id'])
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Gruppe wurde nicht gefunden."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        membership = Membership.objects.filter(user=request.user, group=group).first()
+        if membership and membership.status == 'Joined':
+            return Response(
+                {"error": "Du bist bereits Mitglied dieser Gruppe."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if membership:
+            # War z.B. schon 'Pending' durch eine separate E-Mail-Einladung -
+            # der Link bestaetigt den Beitritt dann direkt.
+            membership.status = 'Joined'
+            membership.save()
+        else:
+            Membership.objects.create(user=request.user, group=group, status='Joined')
+
+        serializer = GroupSerializer(group, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class UserInvitationsView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
