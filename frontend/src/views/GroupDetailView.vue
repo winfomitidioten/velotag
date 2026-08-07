@@ -3,11 +3,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import HeaderButton from '@/components/HeaderButton.vue';
+import GroupTabsMenu from '@/components/GroupTabsMenu.vue';
 import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 import { useUserStore } from '@/store/userStore'
 import PageHeader from '@/components/PageHeader.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useToast } from '@/composables/useToast';
+import QRCode from 'qrcode';
+import { Capacitor } from '@capacitor/core';
 import { usePageTitle } from '@/composables/usePageTitle';
 import { isMobile } from '@/composables/viewport';
 
@@ -103,13 +106,47 @@ const inviteMember = async () => {
         const response = await api.post(`groups/${groupId.value}/invite/`, {
             email: newMemberMail.value
         });
-    
+
         group.value = response.data;
         showPopup.value = false;
         newMemberMail.value = ""
     } catch(error) {
         console.error("Fehler beim Einladen:", error.response?.data || error.message);
         showToast(error.response?.data?.error || "Es gab ein Problem beim Hinzufügen.", 'error');
+    }
+}
+
+// Alternative zur direkten E-Mail-Einladung oben: ein Einladungslink + QR-Code,
+// falls man die E-Mail-Adresse der einzuladenden Person nicht kennt (VEL-74).
+const inviteLink = ref(null);
+const inviteQrDataUrl = ref(null);
+const inviteLinkLoading = ref(false);
+
+const generateInviteLink = async () => {
+    try {
+        inviteLinkLoading.value = true;
+        const response = await api.get(`groups/${groupId.value}/invite-link/`);
+        // window.location.origin zeigt in der nativen App auf http://localhost (WebView-intern,
+        // von außen nicht erreichbar) - dort brauchen wir die echte Produktions-Adresse, damit der
+        // Link/QR-Code auf einem anderen Gerät funktioniert.
+        const baseUrl = Capacitor.isNativePlatform() ? 'http://167.233.33.166' : window.location.origin;
+        inviteLink.value = `${baseUrl}/join/${response.data.token}`;
+        inviteQrDataUrl.value = await QRCode.toDataURL(inviteLink.value);
+    } catch (error) {
+        console.error("Fehler beim Erzeugen des Einladungslinks:", error);
+        showToast(error.response?.data?.error || "Es gab ein Problem beim Erzeugen des Einladungslinks.", 'error');
+    } finally {
+        inviteLinkLoading.value = false;
+    }
+}
+
+// Kopiert den erzeugten Einladungslink in die Zwischenablage.
+const copyInviteLink = async () => {
+    try {
+        await navigator.clipboard.writeText(inviteLink.value);
+        showToast('Link in die Zwischenablage kopiert.');
+    } catch (error) {
+        console.error("Fehler beim Kopieren des Links:", error);
     }
 }
 
@@ -171,7 +208,7 @@ const handleConfirm = () => {
 const deleteMember = async () => {
     try{
         actionBusy.value = true;
-        const response = await api.delete(`groups/${groupId.value}/kick`, {
+        const response = await api.delete(`groups/${groupId.value}/kick/`, {
             data: { email: memberToDelete.value }
         });
 
@@ -281,6 +318,7 @@ onMounted(() => {
                 </HeaderButton>
             </PageHeader>
 
+            <GroupTabsMenu :group-id="groupId" active="members" />
 
             <button v-if="group.is_admin" @click="showPopup = true" class="mobile-fab-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
@@ -372,6 +410,27 @@ onMounted(() => {
                     <div id="popup-actions">
                         <button @click="showPopup = false" id="cancel-btn">Abbrechen</button>
                         <button @click="inviteMember" id="create-btn">Einladen</button>
+                    </div>
+
+                    <!-- Alternative: Einladung per Link/QR-Code, falls die E-Mail-Adresse
+                         der einzuladenden Person nicht bekannt ist. -->
+                    <div class="invite-link-section">
+                        <button
+                            type="button"
+                            @click="generateInviteLink"
+                            id="invite-link-btn"
+                            :disabled="inviteLinkLoading"
+                        >
+                            {{ inviteLinkLoading ? 'Lädt...' : 'Einladungslink / QR-Code erzeugen' }}
+                        </button>
+
+                        <div v-if="inviteLink" class="invite-link-result">
+                            <img v-if="inviteQrDataUrl" :src="inviteQrDataUrl" alt="QR-Code zum Beitreten" class="invite-qr-code">
+                            <div class="invite-link-row">
+                                <input type="text" :value="inviteLink" readonly>
+                                <button type="button" @click="copyInviteLink" id="copy-link-btn">Kopieren</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -883,6 +942,65 @@ onMounted(() => {
     #create-btn {
         background-color: var(--color-primary);
         color: var(--color-on-primary);
+    }
+
+    /* Einladungslink / QR-Code (VEL-74) */
+    .invite-link-section {
+        border-top: 1px solid var(--color-border);
+        padding-top: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    #invite-link-btn {
+        border: 1px solid var(--color-border);
+        background-color: var(--color-bg-page);
+        color: var(--color-text);
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    #invite-link-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .invite-link-result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    .invite-qr-code {
+        width: 10rem;
+        height: 10rem;
+    }
+    .invite-link-row {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    .invite-link-row input {
+        flex: 1;
+        min-width: 0;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        color: var(--color-text-muted);
+        background-color: var(--color-bg-page);
+    }
+    #copy-link-btn {
+        border: none;
+        border-radius: var(--radius-md);
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        background-color: var(--color-primary);
+        color: var(--color-on-primary);
+        flex-shrink: 0;
     }
 
     .loading-state {

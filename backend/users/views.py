@@ -1,3 +1,5 @@
+import requests
+
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User, update_last_login
@@ -8,6 +10,8 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
+NOMINATIM_USER_AGENT = 'velotag-app/1.0 (contact: support@velotag.de)'
 
 from .serializers import UserProfileSerializer
 from .models import UserProfile, UserDevice
@@ -39,6 +43,11 @@ class ProfileView(APIView):
         mail = request.data.get('user.email')
         password = request.data.get('password')
         profilbild = request.data.get('profilbild')
+        group_invites_enabled = request.data.get('group_invites_enabled')
+        notifications_enabled = request.data.get('notifications_enabled')
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        location_name = request.data.get('location_name')
 
         if firstname is not None:
             user.first_name = firstname
@@ -49,7 +58,7 @@ class ProfileView(APIView):
         if password:
             user.set_password(password)
         user.save()
-        
+
         if firstname is not None:
             profile.firstname = firstname
         if lastname is not None:
@@ -59,7 +68,33 @@ class ProfileView(APIView):
 
         if profilbild and not isinstance(profilbild, str):
             profile.profilbild = profilbild
-        
+
+        if group_invites_enabled is not None:
+            if isinstance(group_invites_enabled, str):
+                profile.group_invites_enabled = group_invites_enabled.lower() == 'true'
+            else:
+                profile.group_invites_enabled = bool(group_invites_enabled)
+
+        if notifications_enabled is not None:
+            if isinstance(notifications_enabled, str):
+                profile.notifications_enabled = notifications_enabled.lower() == 'true'
+            else:
+                profile.notifications_enabled = bool(notifications_enabled)
+        has_coords = latitude not in (None, '') and longitude not in (None, '')
+        if has_coords:
+            try:
+                lat_value = float(latitude)
+                lon_value = float(longitude)
+            except (TypeError, ValueError):
+                return Response(
+                    {'error': 'Ungültige Standort-Koordinaten.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            profile.latitude = lat_value
+            profile.longitude = lon_value
+        if location_name:
+            profile.location_name = location_name
+
         profile.save()
 
         serializer = UserProfileSerializer(profile, context={'request': request})
@@ -80,8 +115,6 @@ class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
     def post(self, request):
-        first_name = request.data.get('first_name')
-        last_name = request.data.get('last_name')
         email = request.data.get('email')
         password = request.data.get('password')
 
@@ -90,20 +123,18 @@ class RegisterView(APIView):
                 {'error': 'Bitte füllen Sie alle Pflichtfelder (E-Mail und Passwort) aus.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         if User.objects.filter(email=email).exists():
             return Response(
                 {'error': 'Ein Konto mit dieser E-Mail-Adresse existiert bereits.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             user = User.objects.create_user(
                 username=email,
                 email=email,
-                password=password,
-                first_name=first_name,
-                last_name=last_name
+                password=password
             )
 
             token, created = Token.objects.get_or_create(user=user)
@@ -120,6 +151,129 @@ class RegisterView(APIView):
                 {'error': f'Ein interner Fehler ist aufgetreten: {str(e)}\n Bitte wenden Sie sich an den Support oder versuchen Sie es später noch einmal.'}
             )
 
+class OnboardingView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request):
+        user = request.user
+        profile, created = UserProfile.objects.get_or_create(user=user)
+
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        profilbild = request.data.get('profilbild')
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        location_name = request.data.get('location_name')
+
+        if not first_name or not last_name:
+            return Response(
+                {'error': 'Vorname und Nachname sind Pflichtfelder.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        has_coords = latitude not in (None, '') and longitude not in (None, '')
+        if not has_coords and not location_name:
+            return Response(
+                {'error': 'Bitte gib deinen Standort an (Sensor oder manuelle Eingabe).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        lat_value = None
+        lon_value = None
+        if has_coords:
+            try:
+                lat_value = float(latitude)
+                lon_value = float(longitude)
+            except (TypeError, ValueError):
+                return Response(
+                    {'error': 'Ungültige Standort-Koordinaten.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+
+        profile.firstname = first_name
+        profile.lastname = last_name
+        if profilbild and not isinstance(profilbild, str):
+            profile.profilbild = profilbild
+        if has_coords:
+            profile.latitude = lat_value
+            profile.longitude = lon_value
+        if location_name:
+            profile.location_name = location_name
+        profile.onboarding_completed = True
+        profile.save()
+
+        serializer = UserProfileSerializer(profile, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class GeocodeView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        query = request.query_params.get('query')
+        if not query:
+            return Response(
+                {'error': 'Bitte gib einen Suchbegriff an.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            response = requests.get(
+                'https://nominatim.openstreetmap.org/search',
+                params={'q': query, 'format': 'json', 'limit': 1},
+                headers={'User-Agent': NOMINATIM_USER_AGENT},
+                timeout=5
+            )
+            response.raise_for_status()
+            results = response.json()
+        except (requests.RequestException, ValueError):
+            return Response(
+                {'error': 'Geocoding-Dienst ist aktuell nicht erreichbar.'},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+
+        if not results:
+            return Response({'error': 'Ort nicht gefunden.'}, status=status.HTTP_404_NOT_FOUND)
+
+        result = results[0]
+        return Response({
+            'latitude': float(result['lat']),
+            'longitude': float(result['lon']),
+            'display_name': result.get('display_name', query)
+        }, status=status.HTTP_200_OK)
+
+class GeocodeReverseView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        lat = request.query_params.get('lat')
+        lon = request.query_params.get('lon')
+
+        display_name = ''
+        if lat and lon:
+            try:
+                response = requests.get(
+                    'https://nominatim.openstreetmap.org/reverse',
+                    params={'lat': lat, 'lon': lon, 'format': 'json'},
+                    headers={'User-Agent': NOMINATIM_USER_AGENT},
+                    timeout=5
+                )
+                response.raise_for_status()
+                display_name = response.json().get('display_name', '')
+            except (requests.RequestException, ValueError):
+                # Reverse-Geocoding ist rein kosmetisch (Anzeige "deine Region") -
+                # ein Fehler hier darf den Onboarding-Flow nicht blockieren
+                display_name = ''
+
+        return Response({'display_name': display_name}, status=status.HTTP_200_OK)
+
 class LogoutView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -128,7 +282,27 @@ class LogoutView(APIView):
         request.user.auth_token.delete();
         return Response(status=204);
 
-#Für die Profilansicht anderer Leute 
+# Speichert den FCM-Push-Token eines Geraets fuer den eingeloggten Nutzer (siehe
+# App.vue: setupAndroidPush() ruft diesen Endpoint nach PushNotifications.register() auf).
+class DeviceView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('token')
+        platform = request.data.get('platform', 'android')
+
+        if not token:
+            return Response({'error': 'Token fehlt'}, status=400)
+
+        device, created = UserDevice.objects.update_or_create(
+            push_token=token,
+            defaults={'user': request.user, 'platform': platform}
+        )
+
+        return Response({'status': 'success', 'created': created})
+
+#Für die Profilansicht anderer Leute
 class PublicUserProfileView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]

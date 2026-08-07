@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useSettingsStore } from '@/store/settingsStore.js';
 
 const settings = useSettingsStore();
@@ -10,10 +10,13 @@ const themes = [
     { value: 'dark', label: 'Dunkel'},
 ];
 
-const activeIndex = computed(() => 
+const activeIndex = computed(() =>
     themes.findIndex(t => t.value === settings.theme)
 );
 
+onMounted(() => {
+    settings.loadGroupInvitesSetting();
+});
 </script>
 
 <template>
@@ -55,13 +58,12 @@ const activeIndex = computed(() =>
                     </span>
                 </label>
 
-                <label class="toggle-row" :class="{ disabled: !settings.notificationsEnabled }">
+                <label class="toggle-row">
                     <span class="toggle-label">Gruppeneinladungen</span>
                     <span class="switch">
                         <input
                             type="checkbox"
                             v-model="settings.groupInvitesEnabled"
-                            :disabled="!settings.notificationsEnabled"
                         />
                         <span class="track"></span>
                     </span>
