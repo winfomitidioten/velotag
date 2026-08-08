@@ -185,13 +185,16 @@ onMounted(async () => {
   const token = localStorage.getItem('auth_token');
   if (token && token !== 'undefined') {
     try {
-      await userStore.fetchProfile();
+
+      await userStore.ensureProfile();
+
       // Die Root-Route leitet beim (Kalt-)Start immer erst auf /login um (siehe
       // router/index.js) - mit gültigem Token wollen wir stattdessen direkt zur Karte,
       // statt den Nutzer bei jedem App-Neustart erneut das Login-Formular sehen zu lassen.
       if (route.path === '/login' || route.path === '/') {
         router.push('/map');
       }
+
     } catch {
       localStorage.removeItem('auth_token');
       router.push('/login');

@@ -154,7 +154,16 @@ const fetchGroups = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+
+  // Bei einem harten Neuladen (F5) ist das Profil (und damit der gespeicherte Standort)
+  // noch nicht geladen, wenn Karte.vue mountet - ohne dieses Warten würde die Karte
+  // fälschlicherweise auf den Wiesbaden-Fallback statt den echten Standort zentrieren
+  try {
+    await userStore.ensureProfile();
+  } catch {
+    // Fehlerbehandlung (z.B. ungültiger Token) übernimmt App.vue
+  }
 
   const savedCenter = (userStore.latitude !== null && userStore.longitude !== null)
     ? [userStore.latitude, userStore.longitude]
