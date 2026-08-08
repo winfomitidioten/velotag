@@ -42,7 +42,10 @@ defineEmits(['confirm', 'cancel']);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1100; /* über den Modals (1001) */
+    /* Muss über BaseModal und dem Strava-Picker (beide 10002) liegen: der Dialog wird
+       typischerweise aus einem offenen Modal heraus geöffnet (z.B. "Foto löschen?" in
+       PhotoPinGalleryModal). Nur der AppToast (10004) liegt noch darüber. */
+    z-index: 10003;
 }
 
 .confirm-box {

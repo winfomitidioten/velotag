@@ -4,10 +4,10 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/api/api';
 import HeaderButton from '@/components/HeaderButton.vue';
 import GroupTabsMenu from '@/components/GroupTabsMenu.vue';
-import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
 import { useUserStore } from '@/store/userStore'
 import PageHeader from '@/components/PageHeader.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import BaseModal from '@/components/BaseModal.vue';
 import { useToast } from '@/composables/useToast';
 import QRCode from 'qrcode';
 import { Capacitor } from '@capacitor/core';
@@ -25,15 +25,6 @@ const loading = ref(false)
 const showPopup = ref(false)
 const newMemberMail = ref("")
 
-// Bearbeiten der Gruppe (Name/Beschreibung/Bild) - eigener Popup-Zustand,
-// getrennt vom Einladen-Popup oben.
-const showEditPopup = ref(false)
-const editName = ref("")
-const editDescription = ref("")
-const editSelectedFile = ref(null)
-const editPreviewImage = ref(null)
-const editRemoveProfilbild = ref(false)
-
 const userStore = useUserStore()
 
 const goToProfile = (member) => {
@@ -50,53 +41,6 @@ const fetchGroup = async () => {
         console.error('Fehler beim Laden der Gruppe: ', err)
     } finally {
         loading.value = false;
-    }
-}
-
-// Öffnet den Bearbeiten-Popup und füllt ihn mit den aktuellen Gruppendaten vor.
-const openEditPopup = () => {
-    editName.value = group.value.name;
-    editDescription.value = group.value.description || "";
-    editSelectedFile.value = null;
-    editPreviewImage.value = null;
-    editRemoveProfilbild.value = false;
-    showEditPopup.value = true;
-}
-
-const onEditPhotoAdded = (photos) => {
-    const photo = photos[0];
-    if (!photo) return;
-    editSelectedFile.value = photo.file;
-    editPreviewImage.value = photo.previewUrl;
-    editRemoveProfilbild.value = false;
-}
-
-// Entfernt das Bild ohne ein neues auszuwählen (Akzeptanzkriterium: löschen ohne Ersatz).
-const removeEditPicture = () => {
-    editSelectedFile.value = null;
-    editPreviewImage.value = null;
-    editRemoveProfilbild.value = true;
-}
-
-const updateGroup = async () => {
-    if (!editName.value.trim()) return;
-    try {
-        const formData = new FormData();
-        formData.append('name', editName.value);
-        formData.append('description', editDescription.value); // leerer String entfernt die Beschreibung
-
-        if (editSelectedFile.value) {
-            formData.append('profilbild', editSelectedFile.value);
-        } else if (editRemoveProfilbild.value) {
-            formData.append('remove_profilbild', 'true');
-        }
-
-        const response = await api.patch(`groups/${groupId.value}/`, formData);
-        group.value = response.data;
-        showEditPopup.value = false;
-    } catch (error) {
-        console.error("Fehler beim Bearbeiten der Gruppe:", error);
-        alert(error.response?.data?.error || "Es gab ein Problem beim Speichern der Änderungen.");
     }
 }
 
@@ -381,9 +325,12 @@ onMounted(() => {
                 </div>
             </main>
 
-            <div v-if="showPopup" @click.self="showPopup = false" id="popup-overlay">
-                <div id="popup-content">
-                    <h3>Mitglieder einladen</h3>
+            <!-- BaseModal statt eigenem Overlay: dessen z-index (10002) liegt über
+                 AppHeader/TabBar (10000), sonst schauen der Bearbeiten-Button und die
+                 TabBar über dem Fenster hervor. -->
+            <BaseModal v-if="showPopup" width="min(28rem, 88vw)" @close="showPopup = false">
+                <div class="invite-modal">
+                    <h2>Mitglieder einladen</h2>
                     <input v-model="newMemberMail" type="email" placeholder="max@mail.de" @keyup.enter="inviteMember">
                     <div id="popup-actions">
                         <button @click="showPopup = false" id="cancel-btn">Abbrechen</button>
@@ -411,33 +358,7 @@ onMounted(() => {
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div v-if="showEditPopup" @click.self="showEditPopup = false" id="popup-overlay">
-                <div id="popup-content">
-                    <h3>Gruppe bearbeiten</h3>
-                    <input v-model="editName" type="text" placeholder="Gruppenname">
-                    <textarea v-model="editDescription" placeholder="Beschreibung (optional)" rows="3"></textarea>
-
-                    <img v-if="editPreviewImage" :src="editPreviewImage" alt="Gruppenbild" class="group-photo-preview">
-                    <img v-else-if="group.profilbild && !editRemoveProfilbild" :src="group.profilbild" alt="Gruppenbild" class="group-photo-preview">
-
-                    <CameraGalleryPicker :multiple="false" :has-photos="!!editPreviewImage" @photos-added="onEditPhotoAdded" />
-                    <button
-                        v-if="(group.profilbild && !editRemoveProfilbild) || editPreviewImage"
-                        type="button"
-                        @click="removeEditPicture"
-                        id="remove-picture-btn"
-                    >
-                        Bild entfernen
-                    </button>
-
-                    <div id="popup-actions">
-                        <button @click="showEditPopup = false" id="cancel-btn">Abbrechen</button>
-                        <button @click="updateGroup" id="create-btn">Speichern</button>
-                    </div>
-                </div>
-            </div>
+            </BaseModal>
 
             <ConfirmDialog
                 v-if="confirmAction"
@@ -763,43 +684,24 @@ onMounted(() => {
         color: var(--color-danger);
     }
 
-    #popup-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(44, 62, 80, 0.4); 
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 999;
-        backdrop-filter: blur(4px); 
-        padding: 1rem;
-        box-sizing: border-box;
-    }
-
-    #popup-content {
-        background: var(--color-bg-card);
-        padding: 1.5rem;
-        border-radius: var(--radius-lg);
-        width: 100%;
-        max-width: 28rem;
-        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1);
+    /* Der Einladen-Dialog liegt in BaseModal, das Overlay, Rahmen, Hintergrund und
+       Schließen-Button mitbringt - hier nur noch der innere Aufbau. */
+    .invite-modal {
         display: flex;
         flex-direction: column;
         gap: 1.25rem;
-        box-sizing: border-box;
+        text-align: left; /* BaseModal zentriert seinen Inhalt */
     }
-    #popup-content h3 {
+    .invite-modal h2 {
         margin: 0;
         font-size: 1.25rem;
         font-weight: 600;
         color: var(--color-text);
+        text-align: left;
     }
-    #popup-content input[type="email"],
-    #popup-content input[type="text"],
-    #popup-content textarea {
+
+    .invite-modal input[type="email"],
+    .invite-modal input[type="text"] {
         width: 100%;
         padding: 0.85rem 1rem;
         font-size: 1rem;
@@ -810,31 +712,10 @@ onMounted(() => {
         color: var(--color-text);
         box-sizing: border-box;
         background-color: var(--color-bg-page);
-        resize: vertical;
     }
-    #popup-content input[type="email"]:focus,
-    #popup-content input[type="text"]:focus,
-    #popup-content textarea:focus {
+    .invite-modal input[type="email"]:focus,
+    .invite-modal input[type="text"]:focus {
         border-color: var(--color-primary);
-    }
-    .group-photo-preview {
-        width: 5rem;
-        height: 5rem;
-        border-radius: var(--radius-md);
-        object-fit: cover;
-        align-self: center;
-    }
-    #remove-picture-btn {
-        background: none;
-        border: none;
-        color: var(--color-text-muted);
-        text-decoration: underline;
-        cursor: pointer;
-        font-size: 0.85rem;
-        align-self: center;
-    }
-    #remove-picture-btn:hover {
-        color: #ef4444;
     }
     #popup-actions {
         display: flex;

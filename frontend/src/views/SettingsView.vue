@@ -1,8 +1,20 @@
 <script setup>
 import { computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useSettingsStore } from '@/store/settingsStore.js';
+import { useUserStore } from '@/store/userStore';
 
 const settings = useSettingsStore();
+const userStore = useUserStore();
+const router = useRouter();
+
+// Gleiche Abmelde-Logik wie im Profil-Dropdown der DesktopNavBar: Token verwerfen,
+// Store leeren und zum Login - der Router-Guard lässt ohne Token nichts anderes zu.
+const handleLogout = async () => {
+    localStorage.removeItem('auth_token');
+    userStore.clearUser();
+    await router.push('/login');
+};
 
 const themes = [
     { value: 'system', label: 'System' },
@@ -93,6 +105,13 @@ onMounted(() => {
                     </svg>
                 </a>
             </section>
+
+            <button type="button" class="logout-button" @click="handleLogout">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+                    <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z"/>
+                </svg>
+                Abmelden
+            </button>
         </main>
     </div>
 </template>
@@ -100,6 +119,11 @@ onMounted(() => {
 <style scoped>
 .page-container {
     min-height: 100vh;
+    /* flex-shrink: 0, da #app ein Flex-Container mit fester Höhe ist - ohne das wird
+       der Container auf die Fensterhöhe gestaucht und das padding-bottom landet nicht
+       unter dem letzten Element (der Abmelde-Button verschwindet hinter der TabBar).
+       Gleiches Muster wie in StreckenView.vue und PublicUserProfile.vue. */
+    flex-shrink: 0;
     padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
     padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
     background-color: var(--color-bg-page);
@@ -318,6 +342,41 @@ onMounted(() => {
 }
 .switch input:checked + .track::before {
     transform: translateX(20px);
+}
+
+/* --- Abmelden --- */
+/* Steht bewusst außerhalb der Karten-Sections und in Rot: kein Einstellungs-Wert,
+   sondern eine Aktion, die die Sitzung beendet. */
+.logout-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.9rem 1.25rem;
+    border: 1px solid var(--color-danger-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.logout-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Nur mit echtem Zeiger: auf Touch bliebe die Fläche nach dem Antippen hängen. */
+@media (hover: hover) {
+    .logout-button:hover {
+        background-color: var(--color-danger);
+        color: var(--color-on-primary);
+        border-color: var(--color-danger);
+    }
 }
 
 /* --- Größere Bildschirme --- */
