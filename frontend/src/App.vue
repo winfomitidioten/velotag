@@ -55,7 +55,7 @@ onMounted(async () => {
   const token = localStorage.getItem('auth_token');
   if (token && token !== 'undefined') {
     try {
-      await userStore.fetchProfile();
+      await userStore.ensureProfile();
     } catch {
       localStorage.removeItem('auth_token');
       router.push('/login');
