@@ -14,7 +14,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 NOMINATIM_USER_AGENT = 'velotag-app/1.0 (contact: support@velotag.de)'
 
 from .serializers import UserProfileSerializer
-from .models import UserProfile
+from .models import UserProfile, UserDevice
 
 from groups.models import Membership
 from routes.models import Route
@@ -43,6 +43,8 @@ class ProfileView(APIView):
         mail = request.data.get('user.email')
         password = request.data.get('password')
         profilbild = request.data.get('profilbild')
+        group_invites_enabled = request.data.get('group_invites_enabled')
+        notifications_enabled = request.data.get('notifications_enabled')
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
         location_name = request.data.get('location_name')
@@ -67,6 +69,17 @@ class ProfileView(APIView):
         if profilbild and not isinstance(profilbild, str):
             profile.profilbild = profilbild
 
+        if group_invites_enabled is not None:
+            if isinstance(group_invites_enabled, str):
+                profile.group_invites_enabled = group_invites_enabled.lower() == 'true'
+            else:
+                profile.group_invites_enabled = bool(group_invites_enabled)
+
+        if notifications_enabled is not None:
+            if isinstance(notifications_enabled, str):
+                profile.notifications_enabled = notifications_enabled.lower() == 'true'
+            else:
+                profile.notifications_enabled = bool(notifications_enabled)
         has_coords = latitude not in (None, '') and longitude not in (None, '')
         if has_coords:
             try:
@@ -269,7 +282,27 @@ class LogoutView(APIView):
         request.user.auth_token.delete();
         return Response(status=204);
 
-#Für die Profilansicht anderer Leute 
+# Speichert den FCM-Push-Token eines Geraets fuer den eingeloggten Nutzer (siehe
+# App.vue: setupAndroidPush() ruft diesen Endpoint nach PushNotifications.register() auf).
+class DeviceView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('token')
+        platform = request.data.get('platform', 'android')
+
+        if not token:
+            return Response({'error': 'Token fehlt'}, status=400)
+
+        device, created = UserDevice.objects.update_or_create(
+            push_token=token,
+            defaults={'user': request.user, 'platform': platform}
+        )
+
+        return Response({'status': 'success', 'created': created})
+
+#Für die Profilansicht anderer Leute
 class PublicUserProfileView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]

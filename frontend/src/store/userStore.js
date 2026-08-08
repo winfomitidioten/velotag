@@ -29,6 +29,18 @@ export const useUserStore = defineStore('user', () => {
         onboardingCompleted.value = response.data.onboarding_completed ?? false;
     };
 
+    // Beim harten Neuladen (F5) sind mehrere Komponenten (App.vue, Karte.vue, ...) gleichzeitig
+    // auf ein geladenes Profil angewiesen - ensureProfile teilt sich einen einzigen laufenden
+    // Request statt jede Komponente einzeln fetchProfile() aufrufen zu lassen
+    let pendingFetch = null;
+    function ensureProfile() {
+        if (onboardingCompleted.value !== null) return Promise.resolve();
+        if (!pendingFetch) {
+            pendingFetch = fetchProfile().finally(() => { pendingFetch = null; });
+        }
+        return pendingFetch;
+    };
+
     function clearUser() {
         id.value = null;
         firstname.value = '';
@@ -44,6 +56,6 @@ export const useUserStore = defineStore('user', () => {
     return {
         id, firstname, lastname, mail, initials, profileImage,
         latitude, longitude, locationName, onboardingCompleted,
-        fetchProfile, clearUser
+        fetchProfile, ensureProfile, clearUser
     };
 });
