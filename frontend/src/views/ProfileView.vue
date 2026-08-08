@@ -28,12 +28,25 @@
     const loading = ref(false)
     const selectedFile = ref(null)
     const previewImage = ref(null)
+    const removeProfilbild = ref(false)
+
+    // Ist gerade überhaupt ein Bild gesetzt? Steuert den "Bild entfernen"-Button und
+    // die Platzhalter-Darstellung (gleiche Logik wie in GroupEditView).
+    const hasPhoto = computed(() => !!previewImage.value || (!!profile.value.profilbild && !removeProfilbild.value))
 
     const onProfilePhotoAdded = (photos) => {
         const photo = photos[0];
         if (!photo) return;
         selectedFile.value = photo.file;
         previewImage.value = photo.previewUrl;
+        removeProfilbild.value = false;
+    }
+
+    // Entfernt das Bild ohne ein neues auszuwählen
+    const removePicture = () => {
+        selectedFile.value = null;
+        previewImage.value = null;
+        removeProfilbild.value = true;
     }
 
     // --- Standort ---
@@ -133,13 +146,10 @@
             }
             if(selectedFile.value){
                 formData.append('profilbild', selectedFile.value)
+            } else if (removeProfilbild.value) {
+                formData.append('remove_profilbild', 'true')
             }
-            if (latitude.value !== null && longitude.value !== null) {
-                formData.append('latitude', latitude.value);
-                formData.append('longitude', longitude.value);
-            }
-            if (locationName.value) formData.append('location_name', locationName.value);
-
+            
             const response = await api.patch('profil/', formData)
 
             profile.value = response.data
@@ -151,6 +161,8 @@
             newPassword.value = ""
             confirmPassword.value = ""
             selectedFile.value = null
+            previewImage.value = null
+            removeProfilbild.value = false
             saved.value = true;
             setTimeout(() => saved.value = false, 2500);
         } catch(err){
@@ -175,14 +187,7 @@
             </svg>
         </button>
     </Teleport>
-    <PageHeader v-else>
-        <button type="button" class="settings-btn" @click="router.push('/settings')" aria-label="Einstellungen öffnen">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-        </button>
-    </PageHeader>
+    <PageHeader v-else></PageHeader>
 
     <div id="outer-box">
         <form id="formular" @submit.prevent="updateProfile">
@@ -196,18 +201,20 @@
                         v-slot="{ isNative, takePhoto, pickFromGallery, onFilesSelected }"
                     >
                         <div id="profile-picture">
-                            <img :src="previewImage || profile.profilbild || '/profile_pic.jpg'" id="picture" alt="Profilbild">
+                            <img v-if="previewImage" :src="previewImage" id="picture" alt="Profilbild">
+                            <img v-else-if="profile.profilbild && !removeProfilbild" :src="profile.profilbild" id="picture" alt="Profilbild">
+                            <div v-else id="picture" class="picture-placeholder" />
 
                             <!-- Web: Klick öffnet den Datei-Dialog des Browsers direkt (mobile Browser
                                  bieten dort selbst schon Kamera + Galerie als Auswahl an). -->
-                            <label v-if="!isNative" for="profile-photo-upload" class="photo-edit-overlay" aria-label="Profilbild ändern">
+                            <label v-if="!isNative" for="profile-photo-upload" class="photo-edit-overlay" :class="{ 'photo-edit-overlay-persistent': !hasPhoto }" aria-label="Profilbild ändern">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
                                     <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
                                 </svg>
                             </label>
                             <!-- Native App: Kamera und Galerie sind getrennte Plugin-Aufrufe, daher
                                  hier explizit zur Auswahl stellen statt direkt eine Aktion auszuführen. -->
-                            <button v-else type="button" class="photo-edit-overlay" @click="showPhotoMenu = true" aria-haspopup="true" :aria-expanded="showPhotoMenu" aria-label="Profilbild ändern">
+                            <button v-else type="button" class="photo-edit-overlay" :class="{ 'photo-edit-overlay-persistent': !hasPhoto }" @click="showPhotoMenu = true" aria-haspopup="true" :aria-expanded="showPhotoMenu" aria-label="Profilbild ändern">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
                                     <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
                                 </svg>
@@ -237,6 +244,15 @@
                     <div id="profile-text">
                         <h3>Profilbild</h3>
                         <p>Wähle ein neues Profilbild aus</p>
+                        <button
+                            v-if="hasPhoto"
+                            type="button"
+                            class="remove-picture-btn"
+                            :disabled="saving"
+                            @click="removePicture"
+                        >
+                            Bild entfernen
+                        </button>
                     </div>
                 </div>
             </div>
@@ -552,6 +568,38 @@
     #profile-picture:hover .photo-edit-overlay,
     #profile-picture:focus-within .photo-edit-overlay {
         opacity: 1;
+    }
+
+    /* Ohne Bild ist der Stift dauerhaft sichtbar - er signalisiert hier ein leeres,
+       ausfüllbares Feld statt eine Aktion auf einem vorhandenen Bild (wie GroupEditView) */
+    .photo-edit-overlay-persistent {
+        opacity: 1;
+        background-color: rgba(0, 0, 0, 0.25);
+    }
+
+    /* Platzhalter, wenn kein Profilbild hinterlegt ist */
+    .picture-placeholder {
+        width: 100%;
+        height: 100%;
+        background-color: var(--color-primary-soft);
+    }
+
+    .remove-picture-btn {
+        margin-top: 0.5rem;
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 0.85rem;
+        padding: 0;
+    }
+    .remove-picture-btn:hover:not(:disabled) {
+        color: var(--color-danger);
+    }
+    .remove-picture-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 
     .visually-hidden-input {

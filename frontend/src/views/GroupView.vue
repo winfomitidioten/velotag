@@ -171,7 +171,7 @@
        mit abgerundeten Ecken, Icon in Primärfarbe, wie .btn_ebenen_preview) */
     .mobile-fab-btn {
         position: fixed;
-        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 42px);
+        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 16px);
         right: 10px;
         z-index: 90;
         background-color: var(--color-bg-card);

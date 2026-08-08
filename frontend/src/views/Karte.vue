@@ -28,6 +28,12 @@ const rideCount= ref(0);
 const totalkm = ref(0);
 const { showStravaImport } = useStravaImport();
 
+// Nur der Lasche-Button wird bei offenen Overlays ausgeblendet: er sitzt unten mittig,
+// also genau dort, wo die Sheets hochfahren, und liegt mit z-index 9999 über dem
+// Strava-Modal (2000). Pill und Ebenen-Button liegen bei z-index 500 und schimmern
+// bewusst unter dem Overlay durch, wie der Rest der Karte auch.
+const anyOverlayOpen = computed(() => showStravaImport.value || showRides.value || showLayers.value);
+
 const { initializeMap, availableLayers, activeLayerId, isAttributionVisible, toggleAttribution, closeAttribution, isAttributionTarget } = useMap();
 const userStore = useUserStore();
 const { isPinMode, setPinMode } = usePinMode();
@@ -292,7 +298,7 @@ watch(selectedGroupId, (newGroupId) => {
     </svg>
   </button>
 
-  <div v-if="!showStravaImport && !showRides && !showLayers" class="map_controls_pill">
+  <div class="map_controls_pill">
     <button class="btn_pin_mode" :class="{ active: isPinMode }" @click="setPinMode(!isPinMode)" title="Foto anpinnen">
       <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
         <path d="M440-440ZM120-120q-33 0-56.5-23.5T40-200v-480q0-33 23.5-56.5T120-760h126l74-80h240v80H355l-73 80H120v480h640v-360h80v360q0 33-23.5 56.5T760-120H120Zm640-560v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM440-260q75 0 127.5-52.5T620-440q0-75-52.5-127.5T440-620q-75 0-127.5 52.5T260-440q0 75 52.5 127.5T440-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Z"/>
@@ -310,13 +316,16 @@ watch(selectedGroupId, (newGroupId) => {
     <GpxUploadModal v-if="showModal" @close="showModal = false" />
   </div>
 
-  <div class="toggle-switch-container" @click="isGroupView = !isGroupView" title="Ansicht wechseln">
-    <div class="toggle-option" :class="{ active: !isGroupView }">Solo</div>
-    <div class="toggle-option" :class="{ active: isGroupView }">Group</div>
-    <div class="toggle-slider" :class="{ 'is-group': isGroupView }"></div>
-  </div>
+  <!-- Toggle und Gruppenauswahl als ein Stapel: gleiche Breite und der 1px-Abstand
+       ergeben sich so von selbst, statt aus zwei aufeinander abgestimmten top-Werten -->
+  <div class="map-top-controls">
+    <div class="toggle-switch-container" @click="isGroupView = !isGroupView" title="Ansicht wechseln">
+      <div class="toggle-option" :class="{ active: !isGroupView }">Solo</div>
+      <div class="toggle-option" :class="{ active: isGroupView }">Group</div>
+      <div class="toggle-slider" :class="{ 'is-group': isGroupView }"></div>
+    </div>
 
-  <div v-if="isGroupView" class="group-dropdown" ref="groupDropdown">
+    <div v-if="isGroupView" class="group-dropdown" ref="groupDropdown">
     <button
       type="button"
       class="group-dropdown-trigger"
@@ -324,7 +333,9 @@ watch(selectedGroupId, (newGroupId) => {
       @click="showGroupDropdown = !showGroupDropdown"
       title="Gruppe auswählen"
     >
-      <svg v-if="selectedGroupId === favoriteGroupId" class="star-icon" viewBox="0 -960 960 960">
+      <!-- Stern immer im Layout lassen (nur unsichtbar), damit Trigger-Text und
+           Listen-Einträge auf derselben Linie beginnen -->
+      <svg class="star-icon" :class="{ 'is-placeholder': selectedGroupId !== favoriteGroupId }" viewBox="0 -960 960 960">
         <path d="m233-120 65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Z"/>
       </svg>
       <span class="group-dropdown-label">{{ selectedGroupName }}</span>
@@ -341,18 +352,18 @@ watch(selectedGroupId, (newGroupId) => {
         :class="{ selected: group.id === selectedGroupId }"
         @click="selectGroup(group.id)"
       >
-        <svg v-if="group.id === favoriteGroupId" class="star-icon" viewBox="0 -960 960 960">
+        <svg class="star-icon" :class="{ 'is-placeholder': group.id !== favoriteGroupId }" viewBox="0 -960 960 960">
           <path d="m233-120 65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Z"/>
         </svg>
         <span>{{ group.name }}</span>
       </li>
     </ul>
+    </div>
   </div>
 
   <LayersSelectionModal v-if="showLayers" :is-group-view="isGroupView" @close="showLayers = false"/>
 
-  <button v-if="!showRides && !showLayers" class="btn_lasche" @click="showRides = true">{{ rideCount }} Rides · {{ totalkm }} km</button>
-  <LascheModal v-if="showRides" @close="showRides = false" />
+  <LascheModal v-model:open="showRides" :ride-count="rideCount" :totalkm="totalkm" />
 
 </template>
 
@@ -374,7 +385,7 @@ watch(selectedGroupId, (newGroupId) => {
      zeigt nur noch den Text als abgerundete Pille statt sich als Lineal zu verbreitern.
      :deep(), da Leaflet dieses Element dynamisch selbst ins DOM einfügt */
   :deep(.map-scale-control) {
-    margin-bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 68px) !important;
+    margin-bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + var(--lasche-clearance) + 52px) !important;
     margin-left: 10px;
     opacity: 0;
     pointer-events: none;
@@ -403,7 +414,7 @@ watch(selectedGroupId, (newGroupId) => {
   :deep(.map-attribution-control) {
     position: fixed !important;
     left: 10px !important; /* identisch mit .btn_map_info, damit die linke Kante zusammenfällt */
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px) !important; /* gleiche Zeile wie .btn_map_info */
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + var(--lasche-clearance) + 12px) !important; /* gleiche Zeile wie .btn_map_info */
     margin: 0 !important;
     box-sizing: border-box;
     height: 34px; /* exakt so hoch wie .btn_map_info, statt größer/versetzt zu wirken */
@@ -488,24 +499,6 @@ watch(selectedGroupId, (newGroupId) => {
     line-height: 1;
   }
 
-  /* Upload Button "+"
-     z-index 500: über der Karte/Leaflet-Controls, aber unter allen Modals (>=1001),
-     damit er beim Öffnen des Ebenen- oder Upload-Modals dahinter verschwindet */
-  /* .btn_popup {
-    position: absolute;
-    bottom: calc(var(--safe-bottom) + 15px);
-    right: 10px;
-    z-index: 500;
-    color: white;
-    font-size: 30px;
-    background-color: var(--color-primary);
-    height: 50px;
-    width: 50px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer; // Zeigt die Hand beim Hovern
-  } **/
-
   /* Pin-Modus: cursor: copy zeigt in den meisten Browsern automatisch
    ein kleines "+" am Mauszeiger - passendes Signal für "hier etwas hinzufügen" */
   #map.pin-mode-active {
@@ -526,13 +519,12 @@ watch(selectedGroupId, (newGroupId) => {
     pointer-events: none;
   }
 
-
   .pin-mode-banner {
   position: fixed;
   /* Muss unter dem Solo/Group-Toggle (top: app-header-height + 12px, height: 40px)
      durchrutschen, sonst überlappen sich beide - gleicher Versatz wie beim
      .group-dropdown, das direkt unter dem Toggle sitzt. */
-  top: calc(var(--safe-top) + var(--app-header-height) + 75px);
+  top: calc(var(--safe-top) + var(--app-header-height) + 12px);
   left: 50%;
   transform: translateX(-50%);
   max-width: calc(100% - 140px);
@@ -552,7 +544,8 @@ watch(selectedGroupId, (newGroupId) => {
      Desktop-Breite (dort bleibt der größere Rand von 140px erhalten) */
   @media (max-width: 767px) {
     .pin-mode-banner {
-      max-width: calc(100% - 32px);
+      max-width: calc(100% - 15 px);
+      top: calc(var(--safe-top) + var(--app-header-height) + 75px);
     }
   }
 
@@ -575,12 +568,14 @@ watch(selectedGroupId, (newGroupId) => {
     width: 14px;
     height: 14px;
   }
-
+  
   .btn_ebenen_preview,
   .map_controls_pill {
+    box-sizing: border-box;
     position: absolute;
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 32px);
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + var(--lasche-clearance) + 16px);
     right: 10px;
+    width: 50px;
     z-index: 500;
     display: flex;
     flex-direction: column;
@@ -596,12 +591,9 @@ watch(selectedGroupId, (newGroupId) => {
   .btn_popup,
   .btn_pin_mode {
     height: 50px;
-    width: 50px;
-    border: none;
     outline: none;
     appearance: none;
     -webkit-appearance: none;
-    box-shadow: none;
     padding: 0;
     display: flex;
     align-items: center;
@@ -612,18 +604,22 @@ watch(selectedGroupId, (newGroupId) => {
     transition: color 0.2s ease;
   }
 
+  .btn_popup,
+  .btn_pin_mode {
+    width: 100%;
+    border: none;
+    box-shadow: none;
+  }
+
   .btn_ebenen_preview {
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 138px);
-    right: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    border: 1.5px solid var(--color-primary);
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + var(--lasche-clearance) + 124px);
   }
 
   /* Info-Button für den Kartennachweis: unten links, unterhalb der Maßstabsanzeige,
      dezent (kleiner + blasser als die übrigen Karten-Buttons) */
   .btn_map_info {
     position: absolute;
-    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px);
+    bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + var(--lasche-clearance) + 12px);
     left: 10px;
     /* Muss über Leaflets eigenem Ecken-Container liegen: .leaflet-bottom.leaflet-left
        (in dem die Attribution-Leiste steckt) hat per Leaflet-Standard-CSS z-index:1000 -
@@ -667,12 +663,24 @@ watch(selectedGroupId, (newGroupId) => {
     color: var(--color-text-muted);
   }
 
-  /* --- NEUES STYLING FÜR DEN TOGGLE SWITCH --- */
-  .toggle-switch-container {
+  /* Stapel aus Solo/Group-Toggle und Gruppenauswahl. Die gemeinsame Breite und der
+     1px-Abstand liegen hier, damit beide zwangsläufig bündig untereinander stehen. */
+  .map-top-controls {
     position: absolute;
     top: calc(var(--safe-top) + var(--app-header-height) + 12px); /* unter dem fixierten AppHeader */
     right: 10px; /* Ganz am rechten Bildschirmrand, wie die übrigen Karten-Buttons */
-    z-index: 9999;
+    /* Unter dem Schleier der Fahrten-Lasche (9998), damit der Toggle beim Aufziehen
+       mit abgedunkelt und weichgezeichnet wird statt darüber stehen zu bleiben. */
+    z-index: 9000;
+    width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  /* --- NEUES STYLING FÜR DEN TOGGLE SWITCH --- */
+  .toggle-switch-container {
+    position: relative; /* Bezugspunkt für den absolut positionierten .toggle-slider */
     background-color: var(--color-bg-card);
     border-radius: 30px;
     border: 1.5px solid var(--color-primary);
@@ -681,8 +689,9 @@ watch(selectedGroupId, (newGroupId) => {
     padding: 4px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     cursor: pointer;
-    width: 160px;
+    width: 100%;
     height: 40px;
+    flex-shrink: 0;
     user-select: none;
   }
 
@@ -718,12 +727,17 @@ watch(selectedGroupId, (newGroupId) => {
   }
 
   /* Dropdown zur Gruppenauswahl, erscheint direkt unter dem Toggle-Switch */
+  /* Trigger und Liste stehen im normalen Fluss untereinander statt absolut
+     positioniert - dadurch sind sie zwangsläufig gleich breit und stoßen
+     lückenlos aneinander. Fläche, Rundung und Schatten liegen am Container,
+     die Kinder sind transparent. */
   .group-dropdown {
-    position: absolute;
-    top: calc(var(--safe-top) + var(--app-header-height) + 60px); /* direkt unter dem Toggle-Switch */
-    right: 10px;
-    z-index: 9999;
-    width: 170px;
+    position: relative;
+    width: 100%;
+    background-color: var(--color-bg-card);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
 
   .group-dropdown-trigger {
@@ -733,62 +747,14 @@ watch(selectedGroupId, (newGroupId) => {
     height: 40px;
     padding: 0 10px;
     gap: 6px;
-    background-color: var(--color-bg-card);
+    background-color: transparent;
     border: none;
-    border-radius: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    border-radius: 0;
+    box-shadow: none;
     font-size: 13px;
     font-weight: 600;
     color: var(--color-text);
     cursor: pointer;
-    transition: border-radius 0.15s ease;
-  }
-
-  /* Übersichtslasche "^" */
-  .btn_lasche {
-    position: absolute;
-    bottom: 0px;
-    z-index: 9999; /* Button mit höchstem z-Index => garantiert immer sichtbar */
-    left: 50%;
-    transform: translateX(-50%);
-    
-    color: #e8e8e8;
-    font-size: 16px;
-    font-weight: 600;
-    
-    background-color: var(--color-primary);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px 16px 0 0;
-    
-    height: 34px;
-    width: calc(100% - 1000px);
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.15s ease;
-  }
-
-  @media (max-width: 480px) {
-      .btn_lasche {
-        width: calc(100% - 100px);
-        font-size: 14px;
-        height: 32px;
-    }
-  }
-
-  .btn_lasche:hover {
-    background-color: var(--color-primary-dark);
-  }
-
-  .btn_lasche:active {
-    background-color: var(--color-primary);
-  }
-  .group-dropdown-trigger.open {
-    border-radius: 16px 16px 0 0;
   }
 
   .group-dropdown-label {
@@ -817,20 +783,21 @@ watch(selectedGroupId, (newGroupId) => {
     flex-shrink: 0;
     fill: var(--color-warning);
   }
+  /* belegt weiter seinen Platz, damit die Texte fluchten */
+  .star-icon.is-placeholder {
+    visibility: hidden;
+  }
 
   .group-dropdown-list {
-    position: absolute;
-    top: 40px;
-    left: 0;
     width: 100%;
     max-height: 220px;
     overflow-y: auto;
     margin: 0;
     padding: 4px 0;
     list-style: none;
-    background-color: var(--color-bg-card);
-    border-radius: 0 0 16px 16px;
-    box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+    background-color: transparent;
+    /* dünne Trennlinie statt Schatten - Fläche und Rundung kommen vom Container */
+    border-top: 1px solid var(--color-border);
   }
 
   .group-dropdown-item {
@@ -845,49 +812,6 @@ watch(selectedGroupId, (newGroupId) => {
     transition: background-color 0.15s ease;
   }
 
-  /* Übersichtslasche "^" */
-  .btn_lasche {
-    position: absolute;
-    bottom: 0px;
-    z-index: 9999; /* Button mit höchstem z-Index => garantiert immer sichtbar */
-    left: 50%;
-    transform: translateX(-50%);
-    
-    color: #e8e8e8;
-    font-size: 16px;
-    font-weight: 600;
-    
-    background-color: var(--color-primary);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px 16px 0 0;
-    
-    height: 34px;
-    width: calc(100% - 1000px);
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.15s ease;
-  }
-
-  @media (max-width: 480px) {
-      .btn_lasche {
-        width: calc(100% - 100px);
-        font-size: 14px;
-        height: 32px;
-    }
-  }
-
-  .btn_lasche:hover {
-    background-color: var(--color-primary-dark);
-  }
-
-  .btn_lasche:active {
-    background-color: var(--color-primary);
-  }
   .group-dropdown-item:hover {
     background-color: var(--color-bg-hover);
   }

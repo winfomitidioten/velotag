@@ -9,7 +9,7 @@ import GroupEditView from '../views/GroupEditView.vue'
 import GroupInviteView from '../views/GroupInviteView.vue'
 import JoinGroupView from '../views/JoinGroupView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
-import PublicUserProfile from '../components/PublicUserProfile.vue'
+import PublicUserProfile from '../views/PublicUserProfile.vue'
 import { useUserStore } from '@/store/userStore';
 
 import SettingsView from '@/views/SettingsView.vue';
@@ -22,10 +22,18 @@ const routes = [
     meta: { requiresAuth: true, title: 'Karte', hideTitle: true }
   },
   {
+      // Das eigene Profil nutzt dieselbe Ansicht wie fremde Profile (/user/:id),
+      // nur ohne :id - die eigene ID kommt dort aus dem userStore.
       path: '/profile',
       name: 'profile',
-      component: ProfileView,
+      component: PublicUserProfile,
       meta: { requiresAuth: true, title: 'Profil' }
+  },
+  {
+      path: '/profile/edit',
+      name: 'profile-edit',
+      component: ProfileView,
+      meta: { requiresAuth: true, showBack: true, backTo: '/profile', title: 'Profil bearbeiten' }
   },
   {
     path: '/',
@@ -102,7 +110,7 @@ const routes = [
     path: '/rides',
     name: 'rides',
     component: () => import('../views/StreckenView.vue'),
-    meta: { requiresAuth: true, showBack: true }
+    meta: { requiresAuth: true, title: 'Meine Strecken' }
   },
   {
   path: '/user/:id',

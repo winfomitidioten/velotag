@@ -4,10 +4,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
 import api from '@/api/api';
 import CreateGroupModal from '@/components/CreateGroupModal.vue';
+import { useMap } from '@/composables/useMap.js';
 
 const userStore = useUserStore();
 const route = useRoute();
 const router = useRouter();
+const { resetToHome } = useMap();
 
 // /group/:id ist eine eigene Top-Level-Route (kein Kind von /group), daher würde
 // vue-router den Gruppen-Tab sonst nicht als aktiv markieren, obwohl man sich
@@ -41,6 +43,19 @@ const fetchGroups = async () => {
 const closeMenus = () => {
   showGroupsMenu.value = false;
   showProfileMenu.value = false;
+};
+
+// Heimatposition = der im Profil hinterlegte Standort; ohne gesetzten Standort
+// greift innerhalb von resetToHome() der Standard-Fallback (siehe useMap.js)
+const homeCenter = computed(() => {
+  return (userStore.latitude !== null && userStore.longitude !== null)
+    ? [userStore.latitude, userStore.longitude]
+    : undefined;
+});
+
+const handleLogoClick = () => {
+  closeMenus();
+  resetToHome(homeCenter.value);
 };
 
 const openCreateGroup = () => {
@@ -129,7 +144,7 @@ onUnmounted(() => {
 <template>
   <header class="app-header">
     <div class="app-header-inner">
-      <RouterLink to="/map" class="app-logo" @click="closeMenus">
+      <RouterLink to="/map" class="app-logo" @click="handleLogoClick">
         <img src="@/assets/logo-light.png" alt="velotag logo" class="logo-img logo-img--light" />
         <img src="@/assets/logo-dark.png" alt="velotag logo" class="logo-img logo-img--dark" />
       </RouterLink>

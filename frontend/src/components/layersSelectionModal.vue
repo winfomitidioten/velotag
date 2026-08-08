@@ -119,7 +119,7 @@ const selectPerformanceMode = (metric) => {
 
 .layer-option {
   cursor: pointer;
-  border: 2px solid var(--color-border, #ccc);
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   padding: 8px;
   transition: all 0.2s ease-in-out;
@@ -145,7 +145,7 @@ const selectPerformanceMode = (metric) => {
   border-radius: 4px;
   display: block;
   margin-bottom: 8px;
-  border: 1px solid var(--color-border, #eee);
+  border: 1px solid var(--color-border);
 }
 
 .layer-name {
@@ -178,13 +178,13 @@ const selectPerformanceMode = (metric) => {
 
 .performance-option {
   cursor: pointer;
-  border: 2px solid var(--color-border, #ccc);
+  border: 2px solid var(--color-border);
   border-radius: 20px;
   padding: 8px 16px;
-  background: white;
+  background: var(--color-bg-card);
   font-size: 14px;
   font-weight: 500;
-  color: var(--color-text, #2c3e50);
+  color: var(--color-text);
   transition: all 0.2s ease-in-out;
 }
 
@@ -195,26 +195,26 @@ const selectPerformanceMode = (metric) => {
 .performance-option.active {
   border-color: var(--color-primary);
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .performance-option.disabled {
   cursor: not-allowed;
   opacity: 0.45;
-  border-color: var(--color-border, #ccc);
-  background: #f1f5f9;
-  color: var(--color-text-muted, #64748b);
+  border-color: var(--color-border);
+  background: var(--color-bg-hover);
+  color: var(--color-text-muted);
 }
 
 .performance-option.disabled:hover {
-  border-color: var(--color-border, #ccc);
+  border-color: var(--color-border);
 }
 
 .performance-hint {
   margin: 10px 0 0 0;
   text-align: left;
   font-size: 12px;
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
 }
 
 .heatmap-style-options {
@@ -241,7 +241,7 @@ const selectPerformanceMode = (metric) => {
   gap: 10px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--color-text, #2c3e50);
+  color: var(--color-text);
   cursor: pointer;
 }
 
@@ -249,7 +249,7 @@ const selectPerformanceMode = (metric) => {
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 2px solid var(--color-border, #ccc);
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   background: none;
@@ -268,7 +268,7 @@ const selectPerformanceMode = (metric) => {
   gap: 8px;
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid var(--color-border, #eee);
+  border-top: 1px solid var(--color-border);
 }
 
 .performance-legend-bar {
@@ -281,27 +281,12 @@ const selectPerformanceMode = (metric) => {
   white-space: nowrap;
   font-size: 12px;
   font-weight: 500;
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
 }
 
 .performance-legend-empty {
   font-size: 12px;
   text-align: left;
-  color: var(--color-text-muted, #64748b);
-}
-
-/* Animation für das Hochfahren */
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  color: var(--color-text-muted);
 }
 </style>

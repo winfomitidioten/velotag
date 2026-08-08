@@ -18,7 +18,7 @@ const activeTab = computed(() => {
   if (route.name === 'rides') return 'rides';
   if (route.name === 'group' || route.name === 'group-detail') return 'group';
   if (route.name === 'group-invites') return 'group-invites';
-  if (route.name === 'profile' || route.name === 'settings') return 'profile';
+  if (route.name === 'profile' || route.name === 'profile-edit' || route.name === 'settings') return 'profile';
   return null;
 });
 </script>

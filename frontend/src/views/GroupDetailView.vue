@@ -253,16 +253,6 @@ const deleteGroup = async () =>{
     }
 };
 
-const confirmDeleteGroup = () => {
-    askConfirm({
-        title: 'Gruppe löschen?',
-        message: 'Möchtest du diese Gruppe wirklich dauerhaft löschen?',
-        confirmLabel: 'Löschen',
-        danger: true,
-        action: deleteGroup,
-    });
-}
-
 const leaveGroup = async () =>{
     try{
         actionBusy.value = true;
@@ -274,16 +264,6 @@ const leaveGroup = async () =>{
         actionBusy.value = false;
     }
 };
-
-const confirmLeaveGroup = () => {
-    askConfirm({
-        title: 'Gruppe verlassen?',
-        message: 'Möchtest du diese Gruppe wirklich verlassen?',
-        confirmLabel: 'Verlassen',
-        danger: true,
-        action: leaveGroup,
-    });
-}
 
 watch(() => route.params.id, (newId) => {
     if (newId) fetchGroup();
@@ -331,17 +311,15 @@ onMounted(() => {
                     <div class="card-main-content">
                         <img v-if="group.profilbild" :src="group.profilbild" alt="Gruppenbild" class="group-icon-box group-icon-img">
                         <div v-else class="group-icon-box">
-                        <img v-if="group.profilbild" :src="group.profilbild" alt="Gruppenbild" class="group-icon-box group-icon-img">
-                        <div v-else class="group-icon-box">
                             <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px">
                                 <path d="M40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm720 0v-120q0-44-24.5-84.5T666-434q51 6 96 20.5t84 35.5q36 20 55 44.5t19 53.5v120H760ZM247-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47Zm466 0q-47 47-113 47-11 0-28-2.5t-28-5.5q27-32 41.5-71t14.5-81q0-42-14.5-81T544-792q14-5 28-6.5t28-1.5q66 0 113 47t47 113q0 66-47 113ZM120-240h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm296.5-343.5Q440-607 440-640t-23.5-56.5Q393-720 360-720t-56.5 23.5Q280-673 280-640t23.5 56.5Q327-560 360-560t56.5-23.5ZM360-240Zm0-400Z"/>
                             </svg>
                         </div>
+
                         <div class="group-info">
                             <h3>{{ group.name }}</h3>
                             <span>{{ group.member_count }} Mitglieder</span>
                         </div>
-
 
                         <div class="button-group">
                             <button v-if="group.is_admin" @click="showPopup = true" class="action-btn desktop-invite-btn">
@@ -387,8 +365,8 @@ onMounted(() => {
 
                                 <!-- Adminrolle übergeben: nur für den aktuellen Admin sichtbar, nicht bei sich selbst -->
                                 <div v-if="group.is_admin && member.email !== group.admin_email" class="make-admin" @click="askTransferAdmin(member.email)" title="Adminrolle übergeben">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px">
-                                        <path d="M240-200 40-400l200-200 56 56-104 104h480v80H192l104 104-56 56Zm480-360-56-56 104-104H288v-80h480L664-704l56-56 200 200-200 200Z"/>
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                                        <path d="M280-160 80-360l200-200 56 57-103 103h287v80H233l103 103-56 57Zm400-240-56-57 103-103H440v-80h287L624-743l56-57 200 200-200 200Z"/>
                                     </svg>
                                 </div>
 
@@ -476,12 +454,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-    @media (max-width: 480px) {
-    .field-row {
-            flex-direction: column;
-            gap: 0;
-        }
-    }
     .page-container {
         min-height: 100vh;
         padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
@@ -500,33 +472,6 @@ onMounted(() => {
         }
     }
 
-    header h3 {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin: 0;
-        padding-left: 130px;
-        color: var(--color-text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .desktop-edit-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        background-color: var(--color-danger);
-        color: var(--color-on-primary);
-        border: none;
-        /* Auf schmalen Handys nur das Icon zeigen (padding gleich für beide Achsen),
-           damit zwei Header-Buttons nebeneinander nicht überlaufen. Text kommt erst
-           ab 480px zurück, siehe Media Query weiter unten. */
-        padding: 0.5rem;
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        font-weight: 600;
-    }
-
     .desktop-edit-btn {
         display: flex;
         align-items: center;
@@ -534,20 +479,13 @@ onMounted(() => {
         background-color: var(--color-bg-page);
         color: var(--color-text);
         border: 1px solid var(--color-border);
+        /* Auf schmalen Handys nur das Icon zeigen (padding gleich für beide Achsen),
+           damit zwei Header-Buttons nebeneinander nicht überlaufen. Text kommt erst
+           ab 480px zurück, siehe Media Query weiter unten. */
         padding: 0.5rem;
         border-radius: var(--radius-md);
         cursor: pointer;
         font-weight: 600;
-    }
-    .desktop-edit-btn:hover {
-        border-color: var(--color-primary);
-        color: var(--color-primary);
-    }
-
-    /* Text-Label der beiden Header-Buttons erst ab Tablet-Breite zeigen (siehe oben) */
-    .desktop-create-btn span,
-    .desktop-edit-btn span {
-        display: none;
     }
     .desktop-edit-btn:hover {
         border-color: var(--color-primary);
@@ -574,7 +512,7 @@ onMounted(() => {
        Quadrat mit abgerundeten Ecken, Icon in Primärfarbe, wie .btn_ebenen_preview) */
     .mobile-fab-btn {
         position: fixed;
-        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 42px);
+        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 16px);
         right: 10px;
         z-index: 90;
         background-color: var(--color-bg-card);
@@ -671,19 +609,6 @@ onMounted(() => {
         height: 1.5rem;
         fill: var(--color-primary);
     }
-    .group-icon-img {
-        object-fit: cover;
-    }
-
-    .group-description {
-        margin: 0;
-        font-size: 0.9rem;
-        line-height: 1.4;
-        color: var(--color-text-muted);
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-
     .group-icon-img {
         object-fit: cover;
     }
@@ -816,28 +741,26 @@ onMounted(() => {
         width: 2rem;
         height: 2rem;
         border-radius: 50%;
+        color: var(--color-text-muted);
         transition: background-color 0.2s ease, transform 0.1s ease;
         flex-shrink: 0;
     }
 
-    .make-admin svg {
-        fill: #94a3b8;
-    }
-    .make-admin:hover {
-        background-color: #e8f7f3;
-    }
-    .make-admin:hover svg {
-        fill: var(--color-primary);
+    /* Farbe kommt über currentColor vom Container, damit beide Icons im
+       Light- und Darkmode identisch aussehen. */
+    .make-admin svg,
+    .delete-member svg {
+        fill: currentColor;
     }
 
-    .delete-member svg {
-        fill: var(--color-text-muted);
+    .make-admin:hover {
+        background-color: var(--color-primary-soft);
+        color: var(--color-primary);
     }
+
     .delete-member:hover {
         background-color: var(--color-danger-bg);
-    }
-    .delete-member:hover svg {
-        fill: var(--color-danger);
+        color: var(--color-danger);
     }
 
     #popup-overlay {
@@ -877,13 +800,9 @@ onMounted(() => {
     #popup-content input[type="email"],
     #popup-content input[type="text"],
     #popup-content textarea {
-    #popup-content input[type="email"],
-    #popup-content input[type="text"],
-    #popup-content textarea {
         width: 100%;
         padding: 0.85rem 1rem;
         font-size: 1rem;
-        font-family: inherit;
         font-family: inherit;
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
@@ -892,11 +811,7 @@ onMounted(() => {
         box-sizing: border-box;
         background-color: var(--color-bg-page);
         resize: vertical;
-        resize: vertical;
     }
-    #popup-content input[type="email"]:focus,
-    #popup-content input[type="text"]:focus,
-    #popup-content textarea:focus {
     #popup-content input[type="email"]:focus,
     #popup-content input[type="text"]:focus,
     #popup-content textarea:focus {
@@ -1018,9 +933,6 @@ onMounted(() => {
 
 
     @media (min-width: 480px) {
-        header h3 {
-            padding-left: 95px; 
-        }
         .page-content {
             padding: 3rem 2rem;
         }
@@ -1029,20 +941,10 @@ onMounted(() => {
         }
         .mobile-fab-btn {
             display: none;
-            bottom: calc(var(--safe-bottom) + var(--tab-bar-height) + 28px);
-            right: 10px;
         }
         .desktop-edit-btn {
             padding: 0.5rem 1rem;
         }
-        .desktop-edit-btn span {
-            display: inline;
-        }
-        .desktop-create-btn,
-        .desktop-edit-btn {
-            padding: 0.5rem 1rem;
-        }
-        .desktop-create-btn span,
         .desktop-edit-btn span {
             display: inline;
         }

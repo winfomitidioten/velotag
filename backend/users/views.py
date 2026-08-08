@@ -66,8 +66,13 @@ class ProfileView(APIView):
         if mail is not None:
             profile.mail = mail
 
+        # Löschen ohne Ersatz: remove_profilbild="true" entfernt das Bild, ohne dass ein
+        # neues hochgeladen werden muss (gleiches Verhalten wie beim Gruppenbild).
         if profilbild and not isinstance(profilbild, str):
             profile.profilbild = profilbild
+        elif str(request.data.get('remove_profilbild', '')).lower() == 'true':
+            profile.profilbild = None
+
 
         if group_invites_enabled is not None:
             if isinstance(group_invites_enabled, str):

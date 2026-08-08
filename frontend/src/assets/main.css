@@ -35,12 +35,20 @@
   /* Höhe der Inhaltszeile des globalen AppHeader (ohne --safe-top).
      Andere Komponenten (Karte-Controls, Seiten-Padding) rechnen damit,
      um nicht unter dem fixierten Header zu verschwinden. */
-  --app-header-height: 52px;
+  --app-header-height: 43px;
 
   /* Höhe der fixierten Bottom-TabBar (ohne --safe-bottom). Komponenten mit
      schwebenden Controls am unteren Rand (Karte-Controls, FABs) rechnen
      damit, um nicht hinter der TabBar zu verschwinden. */
-  --tab-bar-height: 56px;
+  --tab-bar-height: 52px;
+
+  /* Höhe der Übersichtslasche am unteren Kartenrand (nur Karte.vue). */
+  --lasche-height: 38px;
+
+  /* Platz, den die schwebenden Karten-Controls über der Lasche freihalten.
+     Bewusst getrennt von --lasche-height: auf Desktop entfällt dieser Abstand
+     (siehe unten), die Lasche selbst bleibt dort aber gleich hoch. */
+  --lasche-clearance: var(--lasche-height);
 }
 
 /* Ab hier Desktop-Menüleiste (DesktopNavBar) statt TabBar/Mobile-Header -
@@ -52,6 +60,10 @@
   :root {
     --app-header-height: 56px;
     --tab-bar-height: 0px;
+    /* Die Lasche sitzt mittig, die Karten-Controls stehen an den Rändern - auf der
+       breiten Desktop-Ansicht überschneiden sie sich nicht, also darf der Abstand
+       weg und die Buttons rutschen nach unten. */
+    --lasche-clearance: 0px;
   }
 }
 
@@ -111,4 +123,10 @@
 #app {
   width: 100%;
   min-height: 100vh;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }

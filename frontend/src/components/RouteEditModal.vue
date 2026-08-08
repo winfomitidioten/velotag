@@ -226,7 +226,7 @@
   display: flex;
   align-items: center;
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
   padding: 0.2rem 0.6rem;
   border-radius: 1rem;
   font-size: 0.82rem;
@@ -235,7 +235,7 @@
 .remove-btn {
   background: none;
   border: none;
-  color: white;
+  color: var(--color-on-primary);
   margin-left: 0.35rem;
   cursor: pointer;
   font-size: 1rem;
@@ -290,7 +290,7 @@
 }
 
 .dropdown-list li.selected {
-  background: color-mix(in srgb, var(--color-primary) 10%, white);
+  background: var(--color-primary-soft);
 }
 
 .dropdown-list input[type="checkbox"] {
@@ -304,7 +304,7 @@
 .modal-actions {
   display: flex;
   gap: 0.75rem;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 button {
@@ -324,7 +324,7 @@ button:disabled {
 
 .btn-primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -332,32 +332,32 @@ button:disabled {
 }
 
 .btn-secondary {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--color-bg-close-btn);
+  color: var(--color-text-muted);
 }
 
 .btn-secondary:hover {
-  background: #e2e8f0;
+  background: var(--color-bg-hover);
 }
 
 .btn-danger {
-  background: #ef4444;
-  color: white;
+  background: var(--color-danger);
+  color: var(--color-on-primary);
 }
 
 .btn-danger:hover {
-  background: #dc2626;
+  background: var(--color-danger-dark);
 }
 
 .btn-danger-ghost {
   background: none;
-  border: 1px solid #ef4444;
-  color: #ef4444;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
   width: 100%;
 }
 
 .btn-danger-ghost:hover {
-  background: #fef2f2;
+  background: var(--color-danger-bg);
 }
 
 /* Löschen-Bereich */
@@ -372,7 +372,7 @@ button:disabled {
 .confirm-text {
   margin: 0;
   font-size: 0.9rem;
-  color: #ef4444;
+  color: var(--color-danger);
   font-weight: 500;
 }
 </style>
