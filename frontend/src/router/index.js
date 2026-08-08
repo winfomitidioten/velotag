@@ -1,11 +1,12 @@
-
 import { createRouter, createWebHistory } from 'vue-router';
 import ProfileView from '../views/ProfileView.vue'
 import Karte from '../views/Karte.vue';
 import LoginRegister from '@/views/LoginRegister.vue';
 import GroupView from '../views/GroupView.vue'
 import GroupDetailView from '../views/GroupDetailView.vue'
+import GroupLeaderboardView from '../components/GroupLeaderboardView.vue'
 import GroupInviteView from '../views/GroupInviteView.vue'
+import JoinGroupView from '../views/JoinGroupView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
 import PublicUserProfile from '../components/PublicUserProfile.vue'
 import { useUserStore } from '@/store/userStore';
@@ -55,9 +56,22 @@ const routes = [
     meta: { requiresAuth: true, showBack: true, backTo: '/group' }
   },
   {
+    path: '/group/:id/leaderboard',
+    name: 'group-leaderboard',
+    component: GroupLeaderboardView,
+    meta: { requiresAuth: true, showBack: true, backTo: '/group' }
+  },
+  {
     path: '/group/invites',
     name: 'group-invites',
     component: GroupInviteView,
+    meta: { requiresAuth: true, showBack: true }
+  },
+  {
+    // Ziel des Einladungslinks/QR-Codes aus GroupDetailView.vue (VEL-74).
+    path: '/join/:token',
+    name: 'group-join',
+    component: JoinGroupView,
     meta: { requiresAuth: true, showBack: true }
   },
   {

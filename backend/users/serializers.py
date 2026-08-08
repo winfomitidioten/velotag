@@ -14,7 +14,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'firstname', 'lastname', 'mail', 'profilbild', 'onboarding_completed', 'latitude', 'longitude', 'location_name']
+        fields = ['id', 'firstname', 'lastname', 'mail', 'profilbild', 'onboarding_completed', 'latitude', 'longitude', 'location_name', 'group_invites_enabled', 'notifications_enabled']
 
     def get_id(self, obj):
         return obj.user.id
