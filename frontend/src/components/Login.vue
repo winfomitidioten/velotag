@@ -47,6 +47,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/userStore';
 import api from '@/api/api';
+import { consumePendingRedirect } from '@/utils/pendingRedirect';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -68,7 +69,10 @@ const handleLogin = async () => {
         });
         localStorage.setItem('auth_token', response.data.token);
         await userStore.fetchProfile();
-        router.push('/map');
+        // Onboarding-Pflicht greift beim nächsten Routenwechsel automatisch über den
+        // Router-Guard (router/index.js) - das gemerkte Ziel (z.B. Einladungslink)
+        // bleibt dabei erhalten, siehe OnboardingView.vue.
+        router.push(consumePendingRedirect() ?? '/map');
     } catch (error) {
         if (error.response) {
             const data = error.response.data;

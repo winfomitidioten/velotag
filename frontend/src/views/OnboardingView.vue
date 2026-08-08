@@ -5,6 +5,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import api from '@/api/api';
 import { useUserStore } from '@/store/userStore';
 import CameraGalleryPicker from '@/components/CameraGalleryPicker.vue';
+import { consumePendingRedirect } from '@/utils/pendingRedirect';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -103,7 +104,9 @@ const completeOnboarding = async () => {
 
         await api.post('onboarding/', formData);
         await userStore.fetchProfile();
-        router.push('/map');
+        // Gemerktes Ziel von vor dem Onboarding (z.B. Einladungslink) übernehmen,
+        // siehe router/index.js und pendingRedirect.js.
+        router.push(consumePendingRedirect() ?? '/map');
     } catch {
         submitError.value = 'Das hat leider nicht geklappt. Bitte versuche es noch einmal.';
     } finally {
