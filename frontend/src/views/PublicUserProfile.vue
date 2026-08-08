@@ -145,6 +145,14 @@ onMounted(fetchProfile)
   background-color: var(--color-bg-page);
 }
 
+/* Das SVG bringt nur eine viewBox mit, keine width/height-Attribute - ohne diese
+   Regel fällt es auf die Standardgröße eines ersetzten Elements zurück und ist im
+   40px-Button nicht als Zahnrad erkennbar. */
+.settings-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
 .profile-header {
   display: flex;
   flex-direction: column;

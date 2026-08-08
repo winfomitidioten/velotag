@@ -140,6 +140,11 @@
 <style scoped>
 .page-container {
   min-height: 100vh;
+  /* flex-shrink: 0, da #app ein Flex-Container mit fester Höhe ist - ohne das
+     wird der Container auf die Fensterhöhe gestaucht, der Inhalt läuft darüber
+     hinaus und das padding-bottom sitzt nicht mehr unter der letzten Zeile
+     (die dann hinter der TabBar verschwindet). */
+  flex-shrink: 0;
   padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
   padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 22px);
   background-color: var(--color-bg-page);

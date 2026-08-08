@@ -28,11 +28,11 @@ const rideCount= ref(0);
 const totalkm = ref(0);
 const { showStravaImport } = useStravaImport();
 
-// Nur der Lasche-Button wird bei offenen Overlays ausgeblendet: er sitzt unten mittig,
-// also genau dort, wo die Sheets hochfahren, und liegt mit z-index 9999 über dem
-// Strava-Modal (2000). Pill und Ebenen-Button liegen bei z-index 500 und schimmern
-// bewusst unter dem Overlay durch, wie der Rest der Karte auch.
-const anyOverlayOpen = computed(() => showStravaImport.value || showRides.value || showLayers.value);
+// Lasche und Solo/Group-Umschalter werden ausgeblendet, solange der Strava-Picker
+// offen ist: der Picker deckt die Karte komplett ab, ihr Griff bzw. Toggle würden
+// sonst nur als Fremdkörper darüber liegen (siehe showStravaImport im Template).
+// Pill und Ebenen-Button liegen bei z-index 500 und schimmern bewusst unter dem
+// Overlay durch, wie der Rest der Karte auch.
 
 const { initializeMap, availableLayers, activeLayerId, isAttributionVisible, toggleAttribution, closeAttribution, isAttributionTarget } = useMap();
 const userStore = useUserStore();
@@ -66,14 +66,6 @@ const onPhotoUpdated = (updatedPhoto) => {
 };
 
 let mapInstance = null;
-
-// Karte wird per <keep-alive> am Leben gehalten, onMounted läuft also nur einmal.
-// Nach einem Strava-Import (Picker schließt) müssen die neuen Routen daher aktiv nachgeladen werden
-watch(showStravaImport, (isOpen, wasOpen) => {
-  if (!isOpen && wasOpen && mapInstance) {
-    drawUserMap(mapInstance);
-  }
-});
 
 const isGroupView = ref(false);
 const { favoriteGroupId } = useFavorite()
@@ -122,15 +114,25 @@ const loadPerformanceView = async (metric, forceRefresh = false) => {
 };
 
 // Karte wird per <keep-alive> am Leben gehalten, onMounted läuft also nur einmal.
-// Nach einem Strava-Import (Picker schließt) müssen die neuen Routen daher aktiv nachgeladen werden
+// Nach einem Strava-Import (Picker schließt) müssen die neuen Routen daher aktiv nachgeladen werden.
+// Wichtig: isGroupView/selectedGroupId mitgeben - ohne den Ansichtsstatus trifft drawUserMap
+// weder den Solo- noch den Gruppen-Zweig und würde die Karte nur leeren, statt neu zu zeichnen.
 watch(showStravaImport, (isOpen, wasOpen) => {
   if (!isOpen && wasOpen && map.value) {
     if (performanceMetric.value) {
       // Neue Route(n) könnten importiert worden sein - zwischengespeicherten Stand verwerfen
       loadPerformanceView(performanceMetric.value, true);
-    } else {
-      drawUserMap(map.value);
+      return;
     }
+
+    const groupId = isGroupView.value ? selectedGroupId.value : undefined;
+    drawUserMap(map.value, isGroupView.value, groupId).then(stats => {
+      // Zähler in der Lasche mitziehen, sonst steht dort nach dem Import noch der alte Stand
+      if (stats) {
+        rideCount.value = stats.rideCount;
+        totalkm.value = stats.totalkm;
+      }
+    });
   }
 });
 
@@ -327,7 +329,7 @@ watch(selectedGroupId, (newGroupId) => {
 
   <!-- Toggle und Gruppenauswahl als ein Stapel: gleiche Breite und der 1px-Abstand
        ergeben sich so von selbst, statt aus zwei aufeinander abgestimmten top-Werten -->
-  <div class="map-top-controls">
+  <div v-if="!showStravaImport" class="map-top-controls">
     <div class="toggle-switch-container" @click="isGroupView = !isGroupView" title="Ansicht wechseln">
       <div class="toggle-option" :class="{ active: !isGroupView }">Solo</div>
       <div class="toggle-option" :class="{ active: isGroupView }">Group</div>
@@ -372,7 +374,7 @@ watch(selectedGroupId, (newGroupId) => {
 
   <LayersSelectionModal v-if="showLayers" :is-group-view="isGroupView" @close="showLayers = false"/>
 
-  <LascheModal v-model:open="showRides" :ride-count="rideCount" :totalkm="totalkm" />
+  <LascheModal v-if="!showStravaImport" v-model:open="showRides" :ride-count="rideCount" :totalkm="totalkm" />
 
 </template>
 
@@ -549,12 +551,19 @@ watch(selectedGroupId, (newGroupId) => {
   font-size: 13px;
   }
 
-  /* Auf dem Handy darf der Banner näher an die Bildschirmränder gehen als auf
-     Desktop-Breite (dort bleibt der größere Rand von 140px erhalten) */
+  /* Auf dem Handy nutzt der Banner fast die volle Breite (nur 12px Luft je Seite),
+     auf Desktop-Breite bleibt der größere Rand von 140px erhalten.
+     width zusätzlich zu max-width, damit der kurze Text den Banner nicht wieder
+     zusammenschrumpfen lässt; border-box, weil das Padding sonst oben drauf käme. */
   @media (max-width: 767px) {
     .pin-mode-banner {
-      max-width: calc(100% - 15 px);
+      box-sizing: border-box;
+      width: calc(100% - 24px);
+      max-width: calc(100% - 24px);
       top: calc(var(--safe-top) + var(--app-header-height) + 75px);
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.35;
     }
   }
 

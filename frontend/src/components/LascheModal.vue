@@ -104,10 +104,10 @@ const toggle = () => {
 }
 
 // --- Daten -----------------------------------------------------------------
-const lastThreeRides = computed(() =>
+const recentRides = computed(() =>
     [...rides.value]
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 3)
+        .slice(0, 4)
 )
 
 const formatDate = (isoString) =>
@@ -173,10 +173,10 @@ onMounted(fetchRides)
       <h2 class="sheet-title">Deine letzten Fahrten</h2>
 
       <p v-if="loading" class="status-text">Fahrten werden geladen...</p>
-      <p v-else-if="lastThreeRides.length === 0" class="status-text">Noch keine Fahrten hochgeladen</p>
+      <p v-else-if="recentRides.length === 0" class="status-text">Noch keine Fahrten hochgeladen</p>
 
       <div v-else class="rides-container">
-        <div v-for="ride in lastThreeRides" :key="ride.strecken_id" class="ride-box">
+        <div v-for="ride in recentRides" :key="ride.strecken_id" class="ride-box">
             <RouteOutline :polyline="ride.polyline_map" :size="80" class="ride-thumb" />
             <span class="ride-name">{{ ride.strecken_name }}</span>
             <div class="ride-meta">

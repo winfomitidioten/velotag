@@ -164,8 +164,10 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
     permission_classes = [IsAuthenticated] # Nur eingeloggte User dürfen ihre Strecken sehen
 
     def get(self, request):
-        # 1. Alle Strecken des aktuellen Users aus der DB holen
-        routes = Route.objects.filter(user=request.user)
+        # 1. Alle Strecken des aktuellen Users aus der DB holen - neueste zuerst.
+        # Ohne order_by ist die Reihenfolge nicht garantiert (Postgres liefert sie
+        # in der Reihenfolge, in der er die Zeilen findet).
+        routes = Route.objects.filter(user=request.user).order_by('-created_at')
         
         # 2. Die Strecken mit dem Serializer in JSON umwandeln
         serializer = RouteListSerializer(routes, many=True)

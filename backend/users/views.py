@@ -329,12 +329,12 @@ class PublicUserProfileView(APIView):
         profile, _ = UserProfile.objects.get_or_create(user=target_user)
         profile_data = UserProfileSerializer(profile, context={'request': request}).data
 
-        last_three = Route.objects.filter(user=target_user).order_by('-created_at')[:3]
+        recent_rides = Route.objects.filter(user=target_user).order_by('-created_at')[:4]
 
         return Response({
             "profile": profile_data,
             "stats": Route.get_stats_for_user(target_user),
-            "recentRides": RouteListSerializer(last_three, many=True).data
+            "recentRides": RouteListSerializer(recent_rides, many=True).data
         }, status=status.HTTP_200_OK)
 
 
