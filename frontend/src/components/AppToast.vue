@@ -30,7 +30,7 @@ const { message, type, visible } = useToast();
     font-weight: 600;
     text-align: center;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    z-index: 1200; /* über ConfirmDialog (1100) und BaseModal (1001) */
+    z-index: 10004; /* über ConfirmDialog (10003), BaseModal und Strava-Picker (10002) */
 }
 
 .app-toast-success {

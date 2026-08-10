@@ -4,11 +4,6 @@ from django.contrib.auth.models import User
 # Create your models here.
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-
-    firstname = models.CharField(max_length=150, blank=True)
-    lastname = models.CharField(max_length=150, blank=True)
-    mail = models.EmailField(blank=True)
-
     profilbild = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
 
     # Solo-Profil: wenn deaktiviert, darf niemand mehr diesen Nutzer in eine Gruppe einladen

@@ -3,10 +3,10 @@
     import api from '@/api/api';
     import { useRouter } from 'vue-router'
     import { useFavorite } from '@/composables/useFavorite.js'
-    import PageHeader from '@/components/PageHeader.vue';
     import HeaderButton from '@/components/HeaderButton.vue';
+    import PageHeader from '@/components/PageHeader.vue';
     import CreateGroupModal from '@/components/CreateGroupModal.vue';
-
+    import { isMobile } from '@/composables/viewport';
 
     const groups = ref([])
     const loading = ref(false)
@@ -67,10 +67,12 @@
 
 <template>
     <div class="page-container">
-        <PageHeader title="Meine Gruppen">
+        <Teleport v-if="isMobile" to="#app-header-actions">
+            <HeaderButton @click="showPopup = true ">+ Neue Gruppe</HeaderButton>
+        </Teleport>
+        <PageHeader v-else>
             <HeaderButton @click="showPopup = true ">+ Neue Gruppe</HeaderButton>
         </PageHeader>
-
 
         <button class="mobile-fab-btn" @click="showPopup = true">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
@@ -148,32 +150,42 @@
 <style scoped>
     .page-container {
         min-height: 100vh;
+        padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+        padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
         background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
     }
 
-    /* --- MOBILE BUTTON (FLOATING ACTION BUTTON) --- */
+    /* Ab Desktop-Breite übernimmt PageHeader (sticky, eigener margin-top) den
+       Versatz unter der DesktopNavBar - sonst würde der Abstand doppelt zählen. */
+    @media (min-width: 768px) {
+        .page-container {
+            padding-top: 0;
+        }
+    }
+
+    /* --- MOBILE BUTTON (FLOATING ACTION BUTTON) ---
+       Gleicher Look wie die schwebenden Buttons auf der Karte (weißes Quadrat
+       mit abgerundeten Ecken, Icon in Primärfarbe, wie .btn_ebenen_preview) */
     .mobile-fab-btn {
         position: fixed;
-        bottom: 2rem;
-        right: 1.5rem;
+        bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 16px);
+        right: 10px;
         z-index: 90;
-        background-color: var(--color-primary);
-        color: var(--color-on-primary);
-        border: none;
+        background-color: var(--color-bg-card);
+        color: var(--color-primary);
+        border-radius: 20px;
+        border: 1.5px solid var(--color-primary);
         cursor: pointer;
-
-        /* Macht den Button mobil kreisrund */
-        width: 3.5rem;
-        height: 3.5rem;
-        border-radius: 50%;
+        width: 50px;
+        height: 50px;
         padding: 0;
-
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.4);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         transition: all 0.2s ease;
     }
 
@@ -183,8 +195,8 @@
 
     /* Das SVG-Icon innerhalb des mobilen Kreises formatieren */
     .mobile-fab-btn svg {
-        width: 1.75rem;
-        height: 1.75rem;
+        width: 1.5rem;
+        height: 1.5rem;
     }
 
     .page-content {

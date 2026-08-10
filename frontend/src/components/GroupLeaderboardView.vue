@@ -149,7 +149,7 @@ onMounted(() => {
         align-items: center;
         width: 3rem;
         height: 3rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         border-radius: var(--radius-md);
         flex-shrink: 0;
     }
@@ -218,16 +218,16 @@ onMounted(() => {
     }
 
     .leaderboard-item.gold {
-        border-color: #f6c85f;
-        background-color: #fdf7e8;
+        border-color: var(--color-gold-border);
+        background-color: var(--color-gold-bg);
     }
     .leaderboard-item.silver {
-        border-color: #c7ccd1;
-        background-color: #f4f5f6;
+        border-color: var(--color-silver-border);
+        background-color: var(--color-silver-bg);
     }
     .leaderboard-item.bronze {
-        border-color: #d79b6a;
-        background-color: #fbf1e8;
+        border-color: var(--color-bronze-border);
+        background-color: var(--color-bronze-bg);
     }
 
     .rank-box {
@@ -253,16 +253,16 @@ onMounted(() => {
         border-radius: 50%;
     }
     .medal.gold {
-        color: #b8860b;
-        background-color: #f6e3a1;
+        color: var(--color-gold);
+        background-color: var(--color-gold-soft);
     }
     .medal.silver {
-        color: #6b7280;
-        background-color: #e5e7eb;
+        color: var(--color-silver);
+        background-color: var(--color-silver-soft);
     }
     .medal.bronze {
-        color: #8b4513;
-        background-color: #edd0b3;
+        color: var(--color-bronze);
+        background-color: var(--color-bronze-soft);
     }
 
     .member-avatar-img {
@@ -280,7 +280,7 @@ onMounted(() => {
         align-items: center;
         width: 2.2rem;
         height: 2.2rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         color: var(--color-primary);
         font-weight: 600;
         font-size: 0.95rem;
@@ -307,7 +307,7 @@ onMounted(() => {
 
     .admin-badge {
         font-size: 0.7rem;
-        background-color: #e8f7f3;
+        background-color: var(--color-primary-soft);
         color: var(--color-primary);
         padding: 0.1rem 0.4rem;
         border-radius: var(--radius-sm);

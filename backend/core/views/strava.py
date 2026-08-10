@@ -204,6 +204,10 @@ def import_activity(request, activity_id):
         puls_stream=streams.get('heartrate', {}).get('data'),
         zeit_stream=zeit_stream,
         watt_stream=streams.get('watts', {}).get('data'),
+        # Strava liefert die Distanz bereits in Metern - ohne diese Zeile bliebe das
+        # Feld auf dem Default 0 und importierte Fahrten zaehlten nicht in die
+        # Kilometer-Statistik (Lasche, Profil, Gruppen-Leaderboard).
+        distance_meters=detail.get('distance') or 0,
         strava_activity_id=activity_id,
         geom=line_geom,
         start_time=start,

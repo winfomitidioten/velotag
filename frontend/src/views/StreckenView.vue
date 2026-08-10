@@ -2,7 +2,10 @@
     import { ref, onMounted } from 'vue'
     import api from '@/api/api'
     import RouteEditModal from '@/components/RouteEditModal.vue'
-    import PageHeader from '@/components/PageHeader.vue'
+    import RouteOutline from '@/components/RouteOutline.vue'
+    import { usePageTitle } from '@/composables/usePageTitle'
+
+    const { setPageTitle } = usePageTitle()
 
     const strecken = ref([])       // Array der Strecken vom Backend
     const loading = ref(false)     // Ladeindikator
@@ -46,6 +49,7 @@
     })}
 
     onMounted(() => {
+        setPageTitle('Meine Strecken')
         fetchStrecken()
     })
 
@@ -54,9 +58,9 @@
 
 <template>
     <div class="page-container">
-        <PageHeader title="Meine Strecken">
+        <div class="strecken-meta-row">
             <span class="count-badge">{{ strecken.length }} Strecken</span>
-        </PageHeader>
+        </div>
 
         <main class="page-content">
 
@@ -83,11 +87,7 @@
           class="table-row"
         >
           <div class="row-name">
-            <div class="row-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px">
-                <path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 294q122-112 181-203.5T720-560q0-117-76.5-188.5T480-820q-87 0-163.5 71.5T240-560q0 75 59 166.5T480-186Zm0 106Q319-217 239.5-334.5T160-560q0-150 96.5-245T480-900q127 0 223.5 95T800-560q0 112-79.5 229.5T480-80Zm0-480Z"/>
-              </svg>
-            </div>
+            <RouteOutline :polyline="strecke.polyline_map" :size="40" class="row-thumb" />
             <div class="row-name-text">
               <span>{{ strecke.strecken_name }}</span>
               <div v-if="strecke.groups && strecke.groups.length" class="group-badges">
@@ -95,12 +95,31 @@
               </div>
             </div>
           </div>
-          <span>{{ formatDate(strecke.created_at) }}</span>
-          <span>{{ formatDuration(strecke.duration_seconds) }}</span>
-          <span>{{ strecke.avg_puls != null ? strecke.avg_puls + ' BPM' : '—' }}</span>
-          <span>{{ strecke.avg_watt != null ? strecke.avg_watt + ' W' : '—' }}</span>
+          <!-- Auf Desktop löst sich dieser Wrapper per display:contents auf, seine Kinder
+               sitzen dann direkt in den Tabellenspalten. Auf Mobil wird er zum eigenen
+               Raster mit Beschriftungen, da dort die Kopfzeile ausgeblendet ist. -->
+          <div class="row-stats">
+            <span class="stat">
+              <span class="stat-label">Datum</span>
+              <span class="stat-value">{{ formatDate(strecke.created_at) }}</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">Dauer</span>
+              <span class="stat-value">{{ formatDuration(strecke.duration_seconds) }}</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">Ø HF</span>
+              <span class="stat-value">{{ strecke.avg_puls != null ? strecke.avg_puls + ' BPM' : '—' }}</span>
+            </span>
+            <span class="stat">
+              <span class="stat-label">Ø Watt</span>
+              <span class="stat-value">{{ strecke.avg_watt != null ? strecke.avg_watt + ' W' : '—' }}</span>
+            </span>
+          </div>
           <button class="edit-btn" @click.stop="editingRoute = strecke" title="Bearbeiten">
-            ✏️
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+              <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+            </svg>
           </button>
         </div>
 
@@ -121,9 +140,27 @@
 <style scoped>
 .page-container {
   min-height: 100vh;
+  /* flex-shrink: 0, da #app ein Flex-Container mit fester Höhe ist - ohne das
+     wird der Container auf die Fensterhöhe gestaucht, der Inhalt läuft darüber
+     hinaus und das padding-bottom sitzt nicht mehr unter der letzten Zeile
+     (die dann hinter der TabBar verschwindet). */
+  flex-shrink: 0;
+  padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+  padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height) + 22px);
   background-color: var(--color-bg-page);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Sitzt direkt unter dem fixierten AppHeader - kein eigener top-Offset nötig,
+   da .page-container bereits per --app-header-height genau bis dorthin
+   Platz macht und diese Zeile einfach im normalen Fluss direkt danach folgt.
+   Ändert sich die Header-Höhe, verschiebt sich das automatisch mit. */
+.strecken-meta-row {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 2rem 0;
 }
 
 .count-badge {
@@ -165,7 +202,7 @@
   grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 2.5rem;
   padding: 0.9rem 1.5rem;
   gap: 1rem;
-  align-items: center;
+  align-items: left;
 }
 
 .table-header {
@@ -198,29 +235,31 @@
 .row-name {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  text-align: left;
   gap: 0.75rem;
   font-weight: 600;
+  min-width: 0;
 }
 
-.row-icon {
-  width: 2.2rem;
-  height: 2.2rem;
+/* Streckenvorschau statt generischem Pin-Icon - gleiche Darstellung wie in der Lasche */
+.row-thumb {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  color: var(--color-primary);
   background-color: var(--color-primary-soft);
   border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.row-icon svg {
-  fill: var(--color-primary);
+  padding: 2px;
 }
 
 .row-name-text {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .group-badges {
@@ -232,7 +271,7 @@
 .group-badge {
   font-size: 0.7rem;
   font-weight: 500;
-  background-color: color-mix(in srgb, var(--color-primary) 15%, white);
+  background-color: var(--color-primary-soft);
   color: var(--color-primary);
   padding: 0.1rem 0.5rem;
   border-radius: 0.8rem;
@@ -256,8 +295,100 @@
 }
 
 .edit-btn:hover {
-  background-color: color-mix(in srgb, var(--color-primary) 12%, white);
+  background-color: var(--color-primary-soft);
   color: var(--color-primary);
+}
+
+/* Auf Desktop nehmen die vier Werte direkt an den Tabellenspalten teil,
+   die Beschriftungen stehen in der Kopfzeile. */
+.row-stats {
+  display: contents;
+}
+.stat-label {
+  display: none;
+}
+
+/* --- Mobil: aus jeder Tabellenzeile wird eine eigene Karte ---
+   Sechs Spalten nebeneinander sind auf Handybreite nicht lesbar, daher stapeln
+   sich hier Name und Werte, und die Kopfzeile entfällt zugunsten von Labels. */
+@media (max-width: 768px) {
+  .page-content {
+    padding: 1rem;
+  }
+
+  .table-card {
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .table-header {
+    display: none;
+  }
+
+  .table-row {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-md);
+  }
+
+  .row-name {
+    /* Platz für den Bearbeiten-Button oben rechts freihalten */
+    padding-right: 2.5rem;
+  }
+
+  .row-name-text > span {
+    font-size: 0.95rem;
+  }
+
+  .row-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+  }
+
+  .stat-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .edit-btn {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    justify-self: auto;
+  }
 }
 
 

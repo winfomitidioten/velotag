@@ -13,7 +13,7 @@
   --color-bg-card:      #ffffff;   /* Karten/Box Hintergrund */
   --color-bg-card-rgb:  255, 255, 255; /* Für halbtransparente Karten-Flächen (z.B. Pillen auf der Karte) */
   --color-bg-close-btn: #f1f5f9;   /* Hintergrund für den Schließ-Button */
-  --color-bg-hover:     #f1f5f9;   /* Hover-/Hintergrund für dezente Flächen (z.B. Listen-Items) */
+  --color-bg-hover:     #dde2e7e8;   /* Hover-/Hintergrund für dezente Flächen (z.B. Listen-Items) */
   --color-bg-input:     #f8fafc;   /* Hintergrund für Inputs/Dropzones */
   --color-text:         #1a1a1a;   /* Haupttext */
   --color-text-muted:   #888888;   /* grauer Text */
@@ -27,15 +27,60 @@
   --color-success-text:  #2f6b2f;  /* Text auf Erfolgs-Badges */
   --color-warning:       #f59e0b; /* Amber für Warnhinweise/Sterne */
 
+  /* Medaillenränge der Bestenliste (GroupLeaderboardView): je Rang die Fläche und
+     der Rahmen der Listenzeile sowie Fläche (-soft) und Icon-Farbe der Medaille. */
+  --color-gold:          #b8860b;
+  --color-gold-bg:       #fdf7e8;
+  --color-gold-border:   #f6c85f;
+  --color-gold-soft:     #f6e3a1;
+  --color-silver:        #6b7280;
+  --color-silver-bg:     #f4f5f6;
+  --color-silver-border: #c7ccd1;
+  --color-silver-soft:   #e5e7eb;
+  --color-bronze:        #8b4513;
+  --color-bronze-bg:     #fbf1e8;
+  --color-bronze-border: #d79b6a;
+  --color-bronze-soft:   #edd0b3;
+
+  --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 16px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   /* Höhe der Inhaltszeile des globalen AppHeader (ohne --safe-top).
-     Andere Komponenten (PageHeader, Karte-Controls, back-button) rechnen
-     damit, um nicht unter dem fixierten Header zu verschwinden. */
-  --app-header-height: 56px;
+     Andere Komponenten (Karte-Controls, Seiten-Padding) rechnen damit,
+     um nicht unter dem fixierten Header zu verschwinden. */
+  --app-header-height: 43px;
+
+  /* Höhe der fixierten Bottom-TabBar (ohne --safe-bottom). Komponenten mit
+     schwebenden Controls am unteren Rand (Karte-Controls, FABs) rechnen
+     damit, um nicht hinter der TabBar zu verschwinden. */
+  --tab-bar-height: 52px;
+
+  /* Höhe der Übersichtslasche am unteren Kartenrand (nur Karte.vue). */
+  --lasche-height: 38px;
+
+  /* Platz, den die schwebenden Karten-Controls über der Lasche freihalten.
+     Bewusst getrennt von --lasche-height: auf Desktop entfällt dieser Abstand
+     (siehe unten), die Lasche selbst bleibt dort aber gleich hoch. */
+  --lasche-clearance: var(--lasche-height);
+}
+
+/* Ab hier Desktop-Menüleiste (DesktopNavBar) statt TabBar/Mobile-Header -
+   Breakpoint muss zu MOBILE_BREAKPOINT in composables/viewport.js passen.
+   --app-header-height auf die höhere Desktop-Leiste (Logo+Nav) umstellen,
+   --tab-bar-height auf 0, da auf Desktop keine TabBar existiert und sonst
+   unten unnötiger Leerraum reserviert würde. */
+@media (min-width: 768px) {
+  :root {
+    --app-header-height: 56px;
+    --tab-bar-height: 0px;
+    /* Die Lasche sitzt mittig, die Karten-Controls stehen an den Rändern - auf der
+       breiten Desktop-Ansicht überschneiden sie sich nicht, also darf der Abstand
+       weg und die Buttons rutschen nach unten. */
+    --lasche-clearance: 0px;
+  }
 }
 
 /* Darkmode: Theme greift, wenn der Store data-theme="dark" gesetzt hat */
@@ -59,6 +104,21 @@
   --color-success-bg:    rgba(34, 197, 94, 0.18);
   --color-success-text:  #86efac;
   --color-warning:       #fbbf24;
+
+  /* Medaillen: die hellen Pastellflächen wären auf dunklem Grund zu grell, daher
+     als transparente Tints auf --color-bg-page, und die Icon-Farben deutlich heller. */
+  --color-gold:          #fbbf24;
+  --color-gold-bg:       rgba(246, 200, 95, 0.12);
+  --color-gold-border:   rgba(246, 200, 95, 0.45);
+  --color-gold-soft:     rgba(246, 200, 95, 0.22);
+  --color-silver:        #cbd5e1;
+  --color-silver-bg:     rgba(203, 213, 225, 0.10);
+  --color-silver-border: rgba(203, 213, 225, 0.35);
+  --color-silver-soft:   rgba(203, 213, 225, 0.20);
+  --color-bronze:        #e0a06a;
+  --color-bronze-bg:     rgba(215, 155, 106, 0.12);
+  --color-bronze-border: rgba(215, 155, 106, 0.42);
+  --color-bronze-soft:   rgba(215, 155, 106, 0.22);
 }
 
 /* System: übernimmt die Systemeinstellungen des Endgeräts aus dem OS (kein data-theme gesetzt) */
@@ -82,6 +142,20 @@
     --color-success-bg:    rgba(34, 197, 94, 0.18);
     --color-success-text:  #86efac;
     --color-warning:       #fbbf24;
+
+    /* siehe Kommentar im data-theme='dark'-Block oben */
+    --color-gold:          #fbbf24;
+    --color-gold-bg:       rgba(246, 200, 95, 0.12);
+    --color-gold-border:   rgba(246, 200, 95, 0.45);
+    --color-gold-soft:     rgba(246, 200, 95, 0.22);
+    --color-silver:        #cbd5e1;
+    --color-silver-bg:     rgba(203, 213, 225, 0.10);
+    --color-silver-border: rgba(203, 213, 225, 0.35);
+    --color-silver-soft:   rgba(203, 213, 225, 0.20);
+    --color-bronze:        #e0a06a;
+    --color-bronze-bg:     rgba(215, 155, 106, 0.12);
+    --color-bronze-border: rgba(215, 155, 106, 0.42);
+    --color-bronze-soft:   rgba(215, 155, 106, 0.22);
   }
 }
 
@@ -94,4 +168,10 @@
 #app {
   width: 100%;
   min-height: 100vh;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
