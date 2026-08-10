@@ -50,11 +50,13 @@ class RouteListSerializer(serializers.ModelSerializer):
     avg_puls = serializers.SerializerMethodField()
     avg_watt = serializers.SerializerMethodField()
     groups = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
+    liked_by_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Route
 
-        fields = ['strecken_id', 'strecken_name', 'created_at', 'duration_seconds', 'avg_puls', 'avg_watt', 'group_id', 'groups', 'polyline_map']
+        fields = ['strecken_id', 'strecken_name', 'created_at', 'duration_seconds', 'avg_puls', 'avg_watt', 'group_id', 'groups', 'polyline_map', 'like_count', 'liked_by_me']
 
 
     
@@ -91,7 +93,16 @@ class RouteListSerializer(serializers.ModelSerializer):
     def get_groups(self,obj):
         if not obj.group_id:
             return []
-        return list(Group.objects.filter(id__in=obj.group_id).values('id', 'name')) # groups liefert id, name für die Badges in der Liste 
+        return list(Group.objects.filter(id__in=obj.group_id).values('id', 'name')) # groups liefert id, name für die Badges in der Liste
+
+    def get_like_count(self, obj):
+        return obj.likes.count()
+
+    def get_liked_by_me(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.likes.filter(user=request.user).exists()
 
 
 # # schlankerer Serializer ohne Polyline und mit berechneten Werten für die Strecken Liste
