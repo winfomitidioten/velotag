@@ -83,7 +83,7 @@ const setupAndroidPush = async () => {
       const data = action.notification.data;
 
       if (data && data.type == 'group_invitation') {
-        router.push('group/invites');
+        router.push('/group/invites');
       }
     });
 
