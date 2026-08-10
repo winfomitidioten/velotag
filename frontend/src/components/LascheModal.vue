@@ -182,6 +182,7 @@ onMounted(fetchRides)
             <div class="ride-meta">
               <span class="ride-date">{{ formatDate(ride.created_at) }}</span>
               <span class="ride-duration">{{ formatDuration(ride.duration_seconds) }}</span>
+              <span class="ride-likes">❤ {{ ride.like_count ?? 0 }}</span>
             </div>
         </div>
       </div>
@@ -356,5 +357,14 @@ onMounted(fetchRides)
   color: var(--color-text-muted);
   font-size: 0.75rem;
   margin-top: 4px;
+}
+
+/* Nur Anzeige, kein Button: die Lasche listet die eigenen Fahrten, und die
+   lassen sich laut RouteLikeView nicht liken. Gleiche Darstellung wie in
+   StreckenView.vue, nur in Primärfarbe, damit das Herz in der kleinen
+   Kachel nicht untergeht. */
+.ride-likes {
+  margin-top: 2px;
+  color: var(--color-primary);
 }
 </style>
