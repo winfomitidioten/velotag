@@ -8,11 +8,12 @@ from django.db import IntegrityError
 from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
+from rest_framework import status, permissions, serializers
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 NOMINATIM_USER_AGENT = 'velotag-app/1.0 (contact: support@velotag.de)'
 
@@ -33,6 +34,7 @@ class ProfileView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = UserProfileSerializer
 
     def get(self, request):
         user = request.user
@@ -111,6 +113,7 @@ class ProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CustomObtainAuthToken(ObtainAuthToken):
+    @extend_schema(responses=inline_serializer('LoginResponse', {'token': serializers.CharField()}))
     def post(self, request, *args, **kwargs):
         # Hier stand ein Debug-Log, das request.data (inklusive Klartext-Passwort) in eine
         # Datei geschrieben hat. Entfernt: Anmeldedaten gehören unter keinen Umständen
@@ -125,6 +128,11 @@ class CustomObtainAuthToken(ObtainAuthToken):
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
+
+    @extend_schema(responses=inline_serializer('RegisterResponse', {
+        'message': serializers.CharField(),
+        'token': serializers.CharField(),
+    }))
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -187,6 +195,7 @@ class OnboardingView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = UserProfileSerializer
 
     def post(self, request):
         user = request.user
@@ -247,6 +256,11 @@ class GeocodeView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('GeocodeResponse', {
+        'latitude': serializers.FloatField(),
+        'longitude': serializers.FloatField(),
+        'display_name': serializers.CharField(),
+    }))
     def get(self, request):
         query = request.query_params.get('query')
         if not query:
@@ -284,6 +298,7 @@ class GeocodeReverseView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('GeocodeReverseResponse', {'display_name': serializers.CharField()}))
     def get(self, request):
         lat = request.query_params.get('lat')
         lon = request.query_params.get('lon')
@@ -339,6 +354,14 @@ class PublicUserProfileView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('PublicUserProfileResponse', {
+        'profile': UserProfileSerializer(),
+        'stats': inline_serializer('UserStats', {
+            'rideCount': serializers.IntegerField(),
+            'totalKm': serializers.IntegerField(),
+        }),
+        'recentRides': RouteListSerializer(many=True),
+    }))
     def get(self, request, pk):
         try:
             target_user = User.objects.get(pk=pk)
@@ -370,6 +393,10 @@ class DeviceView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('DeviceResponse', {
+        'status': serializers.CharField(),
+        'created': serializers.BooleanField(),
+    }))
     def post(self, request):
         token = request.data.get('token')
         platform = request.data.get('platform', 'android')

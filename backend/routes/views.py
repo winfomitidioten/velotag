@@ -1,7 +1,8 @@
 from rest_framework.views import APIView, csrf_exempt
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema, inline_serializer
 from .serializers import RouteSerializer
 from .serializers import RouteListSerializer
 from .models import Route
@@ -61,8 +62,9 @@ class RouteCreateView(APIView): #Zweck: Diese View empfängt die POST-Anfrage vo
     authentication_classes = [TokenAuthentication] # Wir zwingen die View, NUR den Token zu akzeptieren (ignoriert CSRF)
 
     # Nur eingeloggte User dürfen Strecken hochladen
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('RouteCreateResponse', {'message': serializers.CharField()}))
     def post(self, request):
         # 1. Das JSON-Paket aus Vue an den Serializer übergeben
         serializer = RouteSerializer(data=request.data)
@@ -94,7 +96,8 @@ class RouteCreateView(APIView): #Zweck: Diese View empfängt die POST-Anfrage vo
 class RouteMapView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
+    @extend_schema(responses=RouteSerializer(many=True))
     def get(self, request):
         group_id = request.GET.get('group_id')
 
@@ -120,6 +123,19 @@ class RoutePerformanceView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('PerformanceResponse', {
+        'metrics': inline_serializer('PerformanceMetricsMeta', {
+            'puls': inline_serializer('MetricMinMax', {'min_value': serializers.FloatField(allow_null=True), 'max_value': serializers.FloatField(allow_null=True)}),
+            'tempo': inline_serializer('MetricMinMax2', {'min_value': serializers.FloatField(allow_null=True), 'max_value': serializers.FloatField(allow_null=True)}),
+            'watt': inline_serializer('MetricMinMax3', {'min_value': serializers.FloatField(allow_null=True), 'max_value': serializers.FloatField(allow_null=True)}),
+        }),
+        'segments': inline_serializer('PerformanceSegment', {
+            'coordinates': serializers.ListField(child=serializers.FloatField()),
+            'puls': inline_serializer('MetricValue', {'value': serializers.FloatField(), 'count': serializers.IntegerField()}, required=False, allow_null=True),
+            'tempo': inline_serializer('MetricValue2', {'value': serializers.FloatField(), 'count': serializers.IntegerField()}, required=False, allow_null=True),
+            'watt': inline_serializer('MetricValue3', {'value': serializers.FloatField(), 'count': serializers.IntegerField()}, required=False, allow_null=True),
+        }, many=True),
+    }))
     def get(self, request):
         buckets = UserPerformanceBucket.objects.filter(user=request.user)
 
@@ -163,6 +179,7 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
     authentication_classes = [TokenAuthentication] # Wir zwingen die View, NUR den Token zu akzeptieren (ignoriert CSRF)
     permission_classes = [IsAuthenticated] # Nur eingeloggte User dürfen ihre Strecken sehen
 
+    @extend_schema(responses=RouteListSerializer(many=True))
     def get(self, request):
         # 1. Alle Strecken des aktuellen Users aus der DB holen - neueste zuerst.
         # Ohne order_by ist die Reihenfolge nicht garantiert (Postgres liefert sie
@@ -178,9 +195,10 @@ class RouteListView(APIView): #Zweck: Diese View empfängt die GET-Anfrage vom F
 class RouteDetailView(APIView): 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = RouteListSerializer
 
     # teilweise Update: schickt nut die Felder, die geändert werden können, nicht das ges. Objekt wie bei put
-    def patch(self, request, strecken_id): 
+    def patch(self, request, strecken_id):
         try:
             route = Route.objects.get(pk=strecken_id, user=request.user)
         except Route.DoesNotExist:
@@ -210,6 +228,10 @@ class RouteLikeView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('RouteLikeResponse', {
+        'like_count': serializers.IntegerField(),
+        'liked_by_me': serializers.BooleanField(),
+    }))
     def post(self, request, strecken_id):
         try:
             route = Route.objects.get(pk=strecken_id)
@@ -230,6 +252,10 @@ class RouteLikeView(APIView):
         RouteLike.objects.get_or_create(route=route, user=request.user)
         return Response({"like_count": route.likes.count(), "liked_by_me": True})
 
+    @extend_schema(responses=inline_serializer('RouteUnlikeResponse', {
+        'like_count': serializers.IntegerField(),
+        'liked_by_me': serializers.BooleanField(),
+    }))
     def delete(self, request, strecken_id):
         RouteLike.objects.filter(route_id=strecken_id, user=request.user).delete()
         like_count = RouteLike.objects.filter(route_id=strecken_id).count()
@@ -241,6 +267,10 @@ class RouteStatsView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('RouteStatsResponse', {
+        'rideCount': serializers.IntegerField(),
+        'totalKm': serializers.IntegerField(),
+    }))
     def get(self, request):
         return Response(Route.get_stats_for_user(request.user), status=status.HTTP_200_OK)
 
