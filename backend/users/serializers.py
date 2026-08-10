@@ -20,14 +20,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return obj.user.id
 
 
+    # Name und E-Mail stehen ausschließlich am User. Die gleichnamigen Felder auf
+    # UserProfile wurden mit Migration 0010 entfernt - die frühere Fallback-Kette
+    # "obj.user.first_name or obj.firstname" warf deshalb bei jedem frisch
+    # registrierten Konto einen AttributeError (first_name ist dort leer, also
+    # wertete Python den rechten Operanden aus) und ließ /api/profil/ mit 500 enden.
     def get_firstname(self, obj):
-        return obj.user.first_name or obj.firstname
+        return obj.user.first_name
 
     def get_lastname(self, obj):
-        return obj.user.last_name or obj.lastname
+        return obj.user.last_name
 
     def get_mail(self, obj):
-        return obj.user.email or obj.mail
+        return obj.user.email
     
     def get_profilbild(self, obj):
         if obj.profilbild:

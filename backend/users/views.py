@@ -66,12 +66,10 @@ class ProfileView(APIView):
             user.set_password(password)
         user.save()
 
-        if firstname is not None:
-            profile.firstname = firstname
-        if lastname is not None:
-            profile.lastname = lastname
-        if mail is not None:
-            profile.mail = mail
+        # Name und E-Mail sind oben schon am User gesetzt worden. Hier standen bis eben
+        # zusätzlich profile.firstname/lastname/mail - Felder, die es seit Migration 0010
+        # nicht mehr gibt. Die Zuweisungen legten nur flüchtige Instanzattribute an, die
+        # kein save() je in die Datenbank geschrieben hat.
 
         # Löschen ohne Ersatz: remove_profilbild="true" entfernt das Bild, ohne dass ein
         # neues hochgeladen werden muss (gleiches Verhalten wie beim Gruppenbild).
@@ -237,8 +235,9 @@ class OnboardingView(APIView):
         user.last_name = last_name
         user.save()
 
-        profile.firstname = first_name
-        profile.lastname = last_name
+        # Der Name liegt am User (siehe oben). profile.firstname/lastname gibt es seit
+        # Migration 0010 nicht mehr - die Zuweisungen hier waren wirkungslos, weil
+        # profile.save() nur echte Modellfelder schreibt.
         if profilbild and not isinstance(profilbild, str):
             profile.profilbild = profilbild
         if has_coords:
