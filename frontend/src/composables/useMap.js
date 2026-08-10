@@ -137,22 +137,27 @@ export function useMap() {
         mapInstance.value.flyTo(center ?? DEFAULT_CENTER, 11, { duration: 1 });
     };
 
-    const toggleAttribution = () => {
-        isAttributionVisible.value = !isAttributionVisible.value;
-        if (attributionContainer) {
-            attributionContainer.classList.toggle('is-visible', isAttributionVisible.value);
-        }
+    const setAttributionVisible = (visible) => {
+        isAttributionVisible.value = visible;
+        if (!attributionContainer) return;
+        attributionContainer.classList.toggle('is-visible', visible);
+
+        // Leaflets Ecken-Container (.leaflet-bottom.leaflet-left) trägt per Standard-CSS
+        // z-index:1000 und bildet damit einen Stacking-Context. Die Leiste darin kann aus
+        // eigener Kraft nie über das Lasche-Sheet (z-index 9999) steigen - egal welchen
+        // z-index sie selbst bekommt. Deshalb wird der Container mit angehoben, solange
+        // der Nachweis offen ist (Styling siehe .attribution-open in Karte.vue).
+        attributionContainer.parentElement?.classList.toggle('attribution-open', visible);
     };
+
+    const toggleAttribution = () => setAttributionVisible(!isAttributionVisible.value);
 
     // Schließt den Kartennachweis nur, falls er offen ist (z.B. bei einem Klick irgendwo
     // auf die Karte) - im Gegensatz zu toggleAttribution kein Umschalten, damit ein
     // Karten-Klick ihn nicht versehentlich wieder öffnet
     const closeAttribution = () => {
         if (!isAttributionVisible.value) return;
-        isAttributionVisible.value = false;
-        if (attributionContainer) {
-            attributionContainer.classList.remove('is-visible');
-        }
+        setAttributionVisible(false);
     };
 
     // Für Klick-außerhalb-Erkennung (document-weiter Listener in Karte.vue): die Leiste

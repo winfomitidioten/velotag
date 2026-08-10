@@ -476,10 +476,33 @@ watch(selectedGroupId, (newGroupId) => {
     pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
   }
+  /* Solange der Nachweis offen ist, hebt useMap.js diese Klasse auf Leaflets Ecken-
+     Container. Nötig, weil dessen z-index:1000 einen Stacking-Context bildet: die Leiste
+     darin bliebe sonst hinter dem aufgezogenen Lasche-Sheet (z-index 9999). */
+  :deep(.leaflet-bottom.leaflet-left.attribution-open) {
+    z-index: 10000;
+  }
+
   :deep(.map-attribution-control.is-visible) {
     opacity: 1;
     transform: scaleX(1);
     pointer-events: auto;
+
+    /* Auf schmalen Displays ist der Nachweis breiter als die Pille (max-width 100vw-20px)
+       und das Strava-Logo am rechten Ende fiel unter overflow:hidden komplett weg.
+       Jetzt lässt sich der Inhalt seitlich wischen. pan-x, damit Leaflet die Geste nicht
+       als Karten-Verschiebung abfängt. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  /* Ein sichtbarer Balken würde die 34px hohe Pille sprengen - gewischt bzw. mit
+     Trackpad/Shift+Rad gescrollt wird trotzdem. */
+  :deep(.map-attribution-control)::-webkit-scrollbar {
+    height: 0;
+    background: transparent;
   }
   :deep(.map-attribution-control a) {
     color: var(--color-primary);
@@ -693,6 +716,10 @@ watch(selectedGroupId, (newGroupId) => {
     background-color: var(--color-primary);
     color: var(--color-on-primary);
     box-shadow: 0 2px 10px rgba(var(--color-primary-rgb), 0.5);
+    /* Muss mit der ausgefahrenen Leiste über das Lasche-Sheet steigen (siehe
+       .attribution-open oben) - sonst läge der Button als Einziges dahinter und
+       die Pille sähe an ihrem linken Ende leer aus. */
+    z-index: 10001;
   }
 
   .pill-divider {
