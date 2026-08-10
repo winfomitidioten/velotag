@@ -166,7 +166,7 @@ onMounted(fetchRides)
       @touchcancel="onTouchEnd"
     >
       <span class="sheet-grip" aria-hidden="true"></span>
-      <span class="sheet-handle-text">{{ rideCount }} Rides · {{ totalkm }} km</span>
+      <span class="sheet-handle-text">{{ rideCount }} Fahrten · {{ totalkm }} km</span>
     </button>
 
     <div class="sheet-body">

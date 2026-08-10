@@ -49,7 +49,7 @@
     })}
 
     onMounted(() => {
-        setPageTitle('Meine Strecken')
+        setPageTitle('Meine Fahrten')
         fetchStrecken()
     })
 
@@ -59,15 +59,15 @@
 <template>
     <div class="page-container">
         <div class="strecken-meta-row">
-            <span class="count-badge">{{ strecken.length }} Strecken</span>
+            <span class="count-badge">{{ strecken.length }} Fahrten</span>
         </div>
 
         <main class="page-content">
 
-      <p v-if="loading" class="status-text">Strecken werden geladen...</p>
+      <p v-if="loading" class="status-text">Fahrten werden geladen...</p>
 
       <p v-else-if="strecken.length === 0" class="status-text">
-        Noch keine Strecken hochgeladen. Gehe zur Karte und lade eine GPX-Datei hoch.
+        Noch keine Fahrten hochgeladen. Gehe zur Karte und lade eine GPX-Datei hoch.
       </p>
 
       <div v-else class="table-card">
@@ -206,7 +206,9 @@
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 1fr 2.5rem;
+  /* Datum bekommt mehr Anteil als die kurzen Zahlenspalten, die Likes-Spalte ("♥ 3")
+     entsprechend weniger - sonst reicht die Breite für "13. Aug. 2026" nicht. */
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 0.7fr 2.5rem;
   padding: 0.9rem 1.5rem;
   gap: 1rem;
   align-items: left;
@@ -399,10 +401,13 @@
 
   .row-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    /* Nicht repeat(4, 1fr): das Datum braucht spürbar mehr Platz als "1:23 h" oder
+       "142 BPM" - mit gleich breiten Spalten musste ausgerechnet es umbrechen. */
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
     gap: 0.5rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--color-border);
+    align-items: start;
   }
 
   .stat {
@@ -424,9 +429,10 @@
   .stat-value {
     font-size: 0.85rem;
     font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* Kein nowrap/ellipsis mehr: bei vier gleich breiten Spalten war das Datum der
+       längste Wert und wurde als einziger abgeschnitten ("13. Aug. 2..."). Es darf
+       jetzt hinter dem Monat umbrechen, statt Information zu verlieren. */
+    overflow-wrap: break-word;
   }
 
   .edit-btn {

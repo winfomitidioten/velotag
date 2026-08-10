@@ -61,6 +61,16 @@ const medalForRank = (rank) => {
     return null;
 }
 
+// from= merkt sich die Bestenliste, damit "Zurück" im Profil hierher führt und nicht
+// auf die Karte (ausgewertet in der backTo-Funktion der user-profile-Route).
+const goToProfile = (member) => {
+    router.push({
+        name: 'user-profile',
+        params: { id: member.id },
+        query: { from: route.fullPath }
+    })
+}
+
 // Voller Name falls vorhanden, sonst Fallback auf den Usernamen.
 const displayName = (member) => {
     if (member.first_name || member.last_name) {
@@ -144,12 +154,14 @@ onMounted(() => {
                             <span v-else class="rank-number">{{ member.rank }}</span>
                         </div>
 
-                        <img v-if="member.profilbild" :src="member.profilbild" alt="Profilbild" class="member-avatar-img"/>
-                        <div v-else class="member-avatar">
+                        <img v-if="member.profilbild" :src="member.profilbild" alt="Profilbild"
+                             class="member-avatar-img" @click="goToProfile(member)"/>
+                        <div v-else class="member-avatar" @click="goToProfile(member)">
                             {{ displayName(member).charAt(0).toUpperCase() }}
                         </div>
 
-                        <div class="member-info-text">
+                        <div class="member-info-text" @click="goToProfile(member)" role="button" tabindex="0"
+                             @keydown.enter="goToProfile(member)" @keydown.space.prevent="goToProfile(member)">
                             <span class="member-name">{{ displayName(member) }}</span>
                             <span v-if="member.email === group?.admin_email" class="admin-badge">Admin</span>
                         </div>
@@ -359,6 +371,7 @@ onMounted(() => {
         object-fit: cover;
         border: 2px solid var(--color-primary);
         flex-shrink: 0;
+        cursor: pointer;
     }
 
     .member-avatar {
@@ -373,14 +386,23 @@ onMounted(() => {
         font-size: 0.95rem;
         border-radius: 50%;
         flex-shrink: 0;
+        cursor: pointer;
     }
 
+    /* Bild und Name führen zum öffentlichen Profil, wie in der Mitgliederansicht.
+       Die km-Angabe rechts liegt außerhalb und löst das nicht mit aus. */
     .member-info-text {
         display: flex;
         align-items: center;
         gap: 0.4rem;
         flex-grow: 1;
         min-width: 0;
+        cursor: pointer;
+    }
+
+    .member-info-text:hover .member-name,
+    .member-info-text:focus-visible .member-name {
+        color: var(--color-primary);
     }
 
     .member-name {

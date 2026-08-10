@@ -439,6 +439,23 @@ watch(selectedGroupId, (newGroupId) => {
     font-weight: 600;
     color: var(--color-text) !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+    /* Leaflet schreibt bei jedem Zoom-Schritt eine neue Inline-Breite und einen neuen
+       Text ("500 m" -> "1 km"). Die Pille sprang dadurch in Breite und Höhe, was
+       während des Zoomens wie ein Verziehen aussah. Feste Zeilenhöhe und Mindestbreite
+       halten die Form konstant, die Breite wächst nur noch weich mit. */
+    box-sizing: border-box;
+    min-width: 4.5rem;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    white-space: nowrap;
+    /* Leaflets Standard-CSS setzt hier einen weißen Textschatten, der im Dark Mode
+       als heller Rand um die Ziffern liegt. */
+    text-shadow: none !important;
+    transition: width 0.15s ease;
   }
 
   /* Kartennachweis (L.control.attribution): standardmäßig unsichtbar, umschließt den
