@@ -28,6 +28,8 @@ def decode_polyline_to_postgis(polyline_str):#Hilfsfunktion, die den Google Enco
     coordinates = []
     
     while index < len(polyline_str):
+        # Google Encoded Polyline Format: Base64-artige Zeichen pro Delta, Bit 0x20 markiert ein
+        # Folgebyte, danach ZigZag-Dekodierung (~result>>1 bzw. result>>1) fürs Vorzeichen
         shift, result = 0, 0
         while True:
             byte = ord(polyline_str[index]) - 63
@@ -51,9 +53,11 @@ def decode_polyline_to_postgis(polyline_str):#Hilfsfunktion, die den Google Enco
         lng += dlng
 
         # WICHTIG: PostGIS braucht zwingend (Longitude, Latitude)! Format drehen!!
-        coordinates.append((lng / 1e5, lat / 1e5))
+        coordinates.append((lng / 1e5, lat / 1e5))  # Format kodiert mit Faktor 1e5 (5 Nachkommastellen Präzision)
         
     return coordinates
+# csrf_exempt nötig, weil Djangos CSRF-Middleware schon vor der DRF-Authentication greift -
+# TokenAuthentication allein würde die Prüfung nicht umgehen
 @method_decorator(csrf_exempt, name='dispatch')
 
 class RouteCreateView(APIView): #Zweck: Diese View empfängt die POST-Anfrage vom Frontend, 
@@ -84,6 +88,8 @@ class RouteCreateView(APIView): #Zweck: Diese View empfängt die POST-Anfrage vo
                     line_geom = LineString(coords, srid=4326)
             
             # 4. Beim Speichern übergeben wir jetzt NICHT NUR den user, sondern auch geom!
+            # Enthält der Request zusätzlich 'coordinates', überschreibt RouteSerializer.create()
+            # dieses geom trotzdem wieder (siehe serializers.py) - dort gewinnt dann 'coordinates'
             serializer.save(user=request.user, geom=line_geom)
             # 3. Speichern und die user_id automatisch aus dem Request/Token ziehen
             
@@ -105,6 +111,8 @@ class RouteMapView(APIView):
             try:
                 group_id_int = int(group_id)
                 
+                # Anders als group_intersections_geojson/RouteLikeView: hier wird nicht geprüft,
+                # ob request.user überhaupt Mitglied dieser Gruppe ist
                 routes = Route.objects.filter(group_id__contains=group_id_int)
                 
             except ValueError:
@@ -207,7 +215,7 @@ class RouteDetailView(APIView):
         if 'strecken_name' in request.data:
             route.strecken_name = request.data['strecken_name']
         if 'group_id' in request.data:
-            route.group_id = request.data['group_id']
+            route.group_id = request.data['group_id']  # ungeprüft übernommen - sollte eine Liste von IDs sein (siehe signals.py)
         route.save()
 
         serializer = RouteListSerializer(route, context={'request': request})

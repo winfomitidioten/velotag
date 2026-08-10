@@ -102,6 +102,8 @@ const completeOnboarding = async () => {
         if (locationName.value) formData.append('location_name', locationName.value);
 
         await api.post('onboarding/', formData);
+        // Muss vor dem Push abgeschlossen sein: sonst sieht der Router-Guard noch
+        // onboardingCompleted=false und schickt sofort zurück zu /onboarding.
         await userStore.fetchProfile();
         router.push('/map');
     } catch {

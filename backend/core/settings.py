@@ -34,7 +34,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', default=False)
 
-ALLOWED_HOSTS = ['167.233.33.166', 'localhost', '127.0.0.1', '10.0.2.2']
+ALLOWED_HOSTS = ['167.233.33.166', 'localhost', '127.0.0.1', '10.0.2.2']  # 10.0.2.2: Alias des Host-Rechners im Android-Emulator
 
 # Application definition
 
@@ -72,7 +72,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'capacitor://localhost',
+    'capacitor://localhost',  # Origin der Capacitor-WebView (iOS/Android-App), kein http/https
     'http://localhost',
 ]
 
@@ -101,7 +101,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.permissions.AllowAny'
+        'rest_framework.permissions.AllowAny'  # wirkungslos: DRF verknüpft die Liste mit AND, IsAuthenticated bleibt Pflicht
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
@@ -118,7 +118,7 @@ SPECTACULAR_SETTINGS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',  # GIS-Backend, braucht GDAL/GEOS (siehe Loader-Block unten)
         'NAME': env('DB_NAME'),
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSW'),
@@ -174,7 +174,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Strava Werte aus der .env
-from decouple import config
+from decouple import config  # anderes Env-Package als "environ" oben, liest aber dieselbe .env-Datei
 STRAVA_CLIENT_ID       = config('STRAVA_CLIENT_ID')
 STRAVA_CLIENT_SECRET   = config('STRAVA_CLIENT_SECRET')
 STRAVA_REDIRECT_URI    = config('STRAVA_REDIRECT_URI')

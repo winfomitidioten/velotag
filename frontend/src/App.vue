@@ -228,7 +228,7 @@ onMounted(async () => {
       router.push('/login');
     }
   } else {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_token'); // räumt auch den Fall auf, dass der String "undefined" gespeichert war
   }
 });
 

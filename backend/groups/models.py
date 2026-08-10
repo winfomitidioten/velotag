@@ -7,7 +7,7 @@ class Group(models.Model):
     name = models.CharField(max_length=150, blank=False)
     description = models.TextField(blank=True, default='')
     profilbild = models.ImageField(upload_to='group_pics/', null=True, blank=True)
-    admin = models.ForeignKey(User, on_delete=models.CASCADE, related_name='administered_groups')
+    admin = models.ForeignKey(User, on_delete=models.CASCADE, related_name='administered_groups')  # CASCADE: löscht man den Admin-User, verschwindet die ganze Gruppe mit
     members = models.ManyToManyField(User, related_name='group_memberships', through='Membership')
 
     def __str__(self):
@@ -16,7 +16,7 @@ class Group(models.Model):
 class Membership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
-    status = models.CharField(max_length=150, blank=False, default='Pending')
+    status = models.CharField(max_length=150, blank=False, default='Pending')  # Freitext statt choices: verwendete Werte sind 'Pending' und 'Joined' (siehe views.py)
 
     is_favorite = models.BooleanField(default=False)
 

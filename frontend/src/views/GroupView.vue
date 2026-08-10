@@ -35,6 +35,7 @@
         console.error('Fehler beim Speichern des Favoriten:', err);
         // Rollback: Wenn das Backend einen Fehler wirft,
         // springt das Dropdown automatisch wieder auf den alten Wert zurück
+        // Achtung: ändert denselben Ref, den dieser watch beobachtet - der Handler läuft dadurch nochmal (mit vertauschten Werten)
         favoriteGroupId.value = oldId;
     }
     });
@@ -46,6 +47,7 @@
             groups.value = response.data;
 
             const favoriteGroup = groups.value.find(g => g.is_favorite === true);
+            // Löst denselben watch wie ein Nutzerklick aus - beim ersten Laden ggf. redundanter (aber harmloser) POST an /favorite/
             favoriteGroupId.value = favoriteGroup ? favoriteGroup.id : null;
 
         } catch(err) {
@@ -81,20 +83,7 @@
         </button>
 
         <main class="page-content">
-            <!--
             
-            <div class="favorite-selector">
-                <span class="selector-label">Favorit:</span>
-                <select v-model="favoriteGroupId" class="clean-select">
-                    <option :value="null">Keine ausgewählt</option>
-                    <option v-for="group in groups" :key="group.id" :value="group.id">
-                        {{ group.name }}
-                    </option>
-                </select>
-            </div>
-            -->
-            
-
             <div id="group-grid">
                 <div v-for="group in groups" :key="group.id" class="group-card"
                 @click="router.push({ name: 'group-detail', params: { id: group.id } })">

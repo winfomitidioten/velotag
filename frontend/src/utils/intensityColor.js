@@ -41,6 +41,8 @@ export function intensityColor(value, minValue, maxValue, metric) {
   }
 
   const span = upper.stop - lower.stop
+  // Schutz vor Division durch 0, falls COLOR_STOPS je zwei benachbarte, gleiche stop-Werte
+  // enthält (aktuell nicht der Fall, da alle stops streng aufsteigend sind).
   const localT = span === 0 ? 0 : (t - lower.stop) / span
 
   const r = Math.round(lerp(lower.color[0], upper.color[0], localT))
@@ -60,6 +62,8 @@ export function intensityGradientCss(metric, minValue, maxValue) {
   }
 
   const extremePct = Math.min(100, Math.max(0, ((TEMPO_EXTREME_KMH - minValue) / (maxValue - minValue)) * 100))
+  // Normale Farbskala auf [0, extremePct]% stauchen, damit der Verlauf genau an der Position
+  // von TEMPO_EXTREME_KMH nahtlos in Lila übergeht, statt an einem festen Prozentsatz.
   const scaledStops = COLOR_STOPS.map(s => `rgb(${s.color.join(',')}) ${(s.stop * extremePct).toFixed(1)}%`).join(', ')
   const purpleRgb = `rgb(${EXTREME_COLOR.join(',')})`
   return `linear-gradient(90deg, ${scaledStops}, ${purpleRgb} ${extremePct.toFixed(1)}%, ${purpleRgb} 100%)`

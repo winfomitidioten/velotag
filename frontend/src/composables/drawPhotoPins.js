@@ -20,6 +20,8 @@ export function resetPhotoPinState() {
 function groupPinsByLocation(pins) {
     const groups = new Map();
     for (const pin of pins) {
+        // 6 Nachkommastellen (~11cm) als "gleiche Stelle" - Fotos an praktisch
+        // demselben Punkt landen so auf einem gemeinsamen Pin mit Zähler-Badge
         const key = `${pin.latitude.toFixed(6)}, ${pin.longitude.toFixed(6)}`;
         if (!groups.has(key)) {
             groups.set(key, {latitude: pin.latitude, longitude: pin.longitude, photos: [] });

@@ -91,6 +91,8 @@ export async function drawUserMap(map, isGroupViewStatus, groupId = null) {//asy
                 style: {
                     color: colourLine,
                     weight: 4,          // Zeichnet genau EINE 4px dicke Linie in der Mitte!
+                    // Heatmap-Logik wie unten bei der Solo-Ansicht: Opazität sinkt mit der
+                    // Routenanzahl, Mindestwert verhindert quasi unsichtbare Linien
                     opacity: Math.max(0.05, 1 / numberOfGroupRoutes),
                     lineJoin: 'round',
                     lineCap: 'round'

@@ -244,14 +244,14 @@ class GroupInviteAdmin(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-            target_profile, _ = UserProfile.objects.get_or_create(user=user_to_add)
+            target_profile, _ = UserProfile.objects.get_or_create(user=user_to_add)  # get_or_create, falls für den Nutzer noch kein Profil existiert
             if not target_profile.group_invites_enabled:
                 return Response(
                     {"error": "Dieser Nutzer hat Gruppeneinladungen deaktiviert."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            Membership.objects.create(user=user_to_add, group=group)
+            Membership.objects.create(user=user_to_add, group=group)  # status wird nicht gesetzt -> bleibt beim Model-Default 'Pending'
             serializer = GroupSerializer(group, context={'request': request})
             send_push_notifications(
                 user=user_to_add,
@@ -440,6 +440,8 @@ class GroupLeaveView(APIView):
             )
             
         if group.admin == request.user:
+            # Admin verlässt die Gruppe: Rolle geht automatisch an ein anderes aktives Mitglied,
+            # gibt es keins mehr wird die Gruppe komplett gelöscht statt admin-los zu bleiben.
             next_active_membership = Membership.objects.filter(
                 group=group,
                 status='Joined'
@@ -483,7 +485,7 @@ class GroupKickView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
                 
-            user_to_remove = User.objects.get(email=user_mail)
+            user_to_remove = User.objects.get(email=user_mail)  # anders als bei GroupInviteAdmin/GroupTransferAdminView fehlt hier ein except User.DoesNotExist
             Membership.objects.filter(user=user_to_remove, group=group).delete()
             serializer = GroupSerializer(group, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -494,6 +496,7 @@ class GroupKickView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         except Membership.DoesNotExist:
+            # unreachable: filter().delete() wirft nie DoesNotExist, das Entfernen eines Nicht-Mitglieds "gelingt" also einfach stillschweigend
             return Response(
                 {"error": "Du bist kein aktives Mitglied dieser Gruppe."}, 
                 status=status.HTTP_403_FORBIDDEN

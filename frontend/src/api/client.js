@@ -14,6 +14,7 @@ const apiClient = axios.create({
 // save-push-token/ verlangen aber IsAuthenticated und antworten sonst immer mit 401.
 apiClient.interceptors.request.use((config) => {
     const token = localStorage.getItem('auth_token');
+    // Schützt vor dem String "undefined" (z.B. wenn response.data.token beim Login fehlte).
     if (token && token !== 'undefined') {
         config.headers.set('Authorization', `Token ${token}`);
     }

@@ -120,6 +120,8 @@
                 return
             }
         
+            // Sonderzeichen sind auf @$!%*?& beschränkt (in der Meldung unten nicht erwähnt) -
+            // andere Sonderzeichen lassen die Prüfung sonst ohne ersichtlichen Grund scheitern
             const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[a-z])[A-Za-z\d@$!%*?&]{8,20}$/
             if(!passwordRegex.test(newPassword.value)){
                 alert("Das Passwort erfüllt die Anforderungen nicht!\n\n" +

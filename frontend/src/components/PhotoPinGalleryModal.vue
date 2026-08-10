@@ -54,7 +54,7 @@ const backToGrid = () => {
 
 const showPrev = () => {
     resetEdit();
-    activeIndex.value = (activeIndex.value - 1 + props.photos.length) % props.photos.length;
+    activeIndex.value = (activeIndex.value - 1 + props.photos.length) % props.photos.length; // +length: JS liefert bei negativem Rest -1 statt length-1 (Index 0 -> letztes Foto)
 };
 
 const showNext = () => {

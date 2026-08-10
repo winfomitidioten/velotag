@@ -22,10 +22,14 @@ def update_group_intersections(sender, instance, created, **kwargs):
     if not instance.geom or not instance.start_time or not instance.group_id:
         return
 
+    # 90 Minuten Toleranz, da Mitglieder nicht exakt gleichzeitig starten/enden -
+    # großzügig genug für z.B. Pausen, ohne fahrtfremde Routen des Tages einzuschließen
     time_window_start = instance.start_time - timedelta(minutes=90)
     time_window_end = (instance.end_time or instance.start_time) + timedelta(minutes=90)
     route_date = instance.start_time.date() 
 
+    # Defensiv: group_id (JSONField) wird z.B. in RouteDetailView.patch ungeprüft übernommen -
+    # kommt es nicht als Liste an, einfach leere Liste statt Crash
     group_ids = instance.group_id if isinstance(instance.group_id, list) else []
 
     for g_id in group_ids:

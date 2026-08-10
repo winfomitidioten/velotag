@@ -33,6 +33,8 @@ export const useUserStore = defineStore('user', () => {
         latitude.value = response.data.latitude ?? null;
         longitude.value = response.data.longitude ?? null;
         locationName.value = response.data.location_name ?? '';
+        // Nach dem Laden nie mehr null: null ist exklusiv der "noch nicht geladen"-Zustand
+        // für den Router-Guard (siehe oben) - ein fehlender Serverwert zählt hier als false.
         onboardingCompleted.value = response.data.onboarding_completed ?? false;
     };
 

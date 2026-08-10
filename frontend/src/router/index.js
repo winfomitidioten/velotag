@@ -149,6 +149,9 @@ router.beforeEach((to) => {
     }
 
     const userStore = useUserStore();
+    // Tri-state: null heißt "Profil noch nicht geladen" und wird hier bewusst NICHT
+    // umgeleitet (sonst Redirect-Flackern vor Abschluss von fetchProfile) - nur explizit
+    // false/true lösen eine Weiterleitung aus.
     if (userStore.onboardingCompleted === false && to.name !== 'onboarding') {
       return { name: 'onboarding' };
     }

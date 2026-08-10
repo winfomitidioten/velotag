@@ -39,6 +39,8 @@ class RouteSerializer(serializers.ModelSerializer):
         # B) Prüfen, ob Koordinaten mitgeschickt wurden und eine Linie bilden (min. 2 Punkte)
         if coords and len(coords) >= 2:
             # Wir bauen aus der Array-Liste eine echte PostGIS-Linie im GPS-Format (SRID 4326)
+            # ACHTUNG: Überschreibt ein bereits per serializer.save(geom=...) übergebenes geom
+            # (z.B. das aus polyline_map dekodierte in RouteCreateView)!
             validated_data['geom'] = LineString(coords, srid=4326)
             
         # C) Die fertigen Daten an die Standard-Funktion weitergeben, 

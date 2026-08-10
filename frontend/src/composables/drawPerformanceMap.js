@@ -53,6 +53,8 @@ export async function drawPerformanceMap(map, metric, { forceRefresh = false } =
     map.removeLayer(currentPerformanceLayer)
     currentPerformanceLayer = null
   }
+  // Canvas- statt SVG-Renderer: deutlich performanter bei vielen Segmenten, aber ohne
+  // eigene DOM-Elemente pro Pfad - deshalb hier kein CSS-Styling wie in drawUserMap.js
   currentPerformanceLayer = L.featureGroup([], { renderer: L.canvas() }).addTo(map)
 
   const { min_value: minValue, max_value: maxValue } = data.metrics[metric]

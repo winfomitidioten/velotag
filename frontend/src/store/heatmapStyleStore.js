@@ -10,6 +10,8 @@ const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 // nichts ändert, solange der Nutzer nichts personalisiert hat.
 export const useHeatmapStyleStore = defineStore('heatmapStyle', () => {
     const storedColor = localStorage.getItem(COLOR_KEY);
+    // test(null) schlägt ebenso fehl wie bei einem ungültigen Wert - ein Rutsch, der sowohl
+    // "nichts gespeichert" als auch "kaputter Wert" einheitlich auf null (= kein Override) mappt.
     const heatmapColor = ref(HEX_COLOR_REGEX.test(storedColor) ? storedColor : null);
 
     const heatmapGlowEnabled = ref(JSON.parse(localStorage.getItem(GLOW_KEY) ?? 'false'));

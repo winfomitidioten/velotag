@@ -73,6 +73,8 @@ const handleLogin = async () => {
         if (error.response) {
             const data = error.response.data;
 
+            // non_field_errors: DRFs Standardschlüssel für Fehler des Login-Serializers,
+            // der bei falschen Zugangsdaten nicht zwischen E-Mail und Passwort unterscheidet
             if (data.non_field_errors) {
                 errorMessage.value = 'Es wurde kein Konto mit dieser E-Mail-Adresse gefunden.';
             } else {

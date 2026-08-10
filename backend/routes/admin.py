@@ -7,7 +7,7 @@ class RouteAdmin(admin.ModelAdmin):
     list_display = ('strecken_id', 'strecken_name', 'user', 'group_id', 'created_at')
     
     #Suchkriterien definieren
-    search_fields = ('strecken_name', 'user__username', 'strecken_id')
+    search_fields = ('strecken_name', 'user__username', 'strecken_id')  # tot: wird von der nächsten Zeile direkt überschrieben
     search_fields = ('strecken_name', 'user__username', 'strecken_id', 'group_id')
     
     # Filter

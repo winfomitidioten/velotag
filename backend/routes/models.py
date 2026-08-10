@@ -8,6 +8,8 @@ class Route (models.Model):
     strecken_id = models.AutoField(primary_key=True)
     strecken_name = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='routes')
+    # Trotz Name/help_text tatsächlich eine Liste von Gruppen-IDs (eine Route kann mehreren
+    # Gruppen zugeordnet sein) - siehe group_id__contains-Abfragen in views.py/signals.py
     group_id = models.JSONField(blank=True, null=True, help_text="Optional: ID der Gruppe, der die Strecke zugeordnet ist")
     polyline_map = models.TextField(blank=False, null=False, default="", help_text="Google Komprimierungsalgorithmus für Koordinaten")
     distance_meters = models.FloatField(default=0, help_text="Gesamtdistanz der Strecke in Metern, berechnet beim Upload")
@@ -15,9 +17,14 @@ class Route (models.Model):
     zeit_stream = models.JSONField(blank=False, null=False, default=list, help_text="Array: Zeitstempel für Geschwindigkeitslogik")
     watt_stream = models.JSONField(blank=True, null=True, help_text="Array: Wattwerte")
 
+    # Redundant zu zeit_stream, aber als echte indexierte Spalte gepflegt - ein JSONField lässt
+    # sich nicht effizient für die Zeitfenster-Abfragen in signals.py (Gruppen-Schnittmengen) filtern
     start_time = models.DateTimeField(db_index=True, null=True, blank=True)
     end_time = models.DateTimeField(db_index=True, null=True, blank=True)
+    # Nullable, da z.B. Strava-Importe ohne latlng-Stream keine Geometrie liefern (siehe performance.py)
     geom = gis_models.LineStringField(srid=4326, null=True, blank=True)
+    # unique=True verhindert doppelte Strava-Importe; Postgres erlaubt trotzdem beliebig viele
+    # NULLs (nicht-Strava-Routen), da NULL dort nie als gleich zu NULL zählt
     strava_activity_id = models.BigIntegerField(null=True, blank=True, unique=True)
     
     created_at = models.DateTimeField(auto_now_add=True)

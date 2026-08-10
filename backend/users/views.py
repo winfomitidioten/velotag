@@ -15,7 +15,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from drf_spectacular.utils import extend_schema, inline_serializer
 
-NOMINATIM_USER_AGENT = 'velotag-app/1.0 (contact: support@velotag.de)'
+NOMINATIM_USER_AGENT = 'velotag-app/1.0 (contact: support@velotag.de)'  # Nominatim-Nutzungsrichtlinie verlangt einen aussagekräftigen User-Agent, sonst Rate-Limit/Block
 
 from .serializers import UserProfileSerializer
 from .models import UserProfile, UserDevice
@@ -90,6 +90,7 @@ class ProfileView(APIView):
                 profile.notifications_enabled = notifications_enabled.lower() == 'true'
             else:
                 profile.notifications_enabled = bool(notifications_enabled)
+        # leerer String bei Multipart-Formular-Uploads, None bei JSON - beides muss abgefangen werden
         has_coords = latitude not in (None, '') and longitude not in (None, '')
         if has_coords:
             try:
@@ -330,6 +331,8 @@ class LogoutView(APIView):
 
 # Speichert den FCM-Push-Token eines Geraets fuer den eingeloggten Nutzer (siehe
 # App.vue: setupAndroidPush() ruft diesen Endpoint nach PushNotifications.register() auf).
+# Achtung: wird von der zweiten, gleichnamigen DeviceView-Klasse weiter unten überschrieben -
+# diese Klasse hier ist toter Code.
 class DeviceView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -388,7 +391,7 @@ class PublicUserProfileView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class DeviceView(APIView):
+class DeviceView(APIView):  # überschreibt die gleichnamige Klasse weiter oben (die ist toter Code)
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 

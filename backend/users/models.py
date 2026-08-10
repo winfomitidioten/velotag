@@ -19,7 +19,7 @@ class UserProfile(models.Model):
     location_name = models.CharField(max_length=255, blank=True)
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)  # No-op-Override, verhält sich wie ohne eigenes __init__
 
     def __str__(self):
         return f'Profil von {self.user.username}'

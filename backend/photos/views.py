@@ -29,10 +29,10 @@ class PhotoPinCreateView(APIView):
         }
 
         created = []
-        for image in images:            
+        for image in images:  # jedes Bild wird ein eigener PhotoPin mit denselben Metadaten (base_data)
             serializer = PhotoPinCreateSerializer(data={**base_data, 'image': image})
             if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # kein Rollback: bereits gespeicherte Bilder dieser Schleife bleiben bestehen
             serializer.save(user=request.user)
             created.append(serializer.data)
 
@@ -47,8 +47,8 @@ class PhotoPinListView(APIView):
         user = request.user
         joined_groups = Group.objects.filter(membership__user=user, membership__status='Joined')
         pins = PhotoPin.objects.filter(
-            Q(user=user) | Q(groups__in=joined_groups)
-        ).distinct()
+            Q(user=user) | Q(groups__in=joined_groups)  # sichtbar: eigene Pins ODER Pins, die mit einer gemeinsamen Gruppe geteilt wurden
+        ).distinct()  # distinct(), da ein Pin über mehrere gemeinsame Gruppen sonst mehrfach auftauchen würde
 
         serializer = PhotoPinListSerializer(pins, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)

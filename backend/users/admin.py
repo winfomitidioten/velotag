@@ -16,7 +16,7 @@ class CustomUserCreationForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ('email', 'password') 
+        fields = ('email', 'password')  # kein username-Feld: wird per pre_save-Signal (users/signals.py) automatisch erzeugt 
 
     def save(self, commit=True):
         user = super().save(commit=False)

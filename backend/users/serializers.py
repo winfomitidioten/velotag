@@ -53,7 +53,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             new_email = user_data.get('email', user.email)
             if new_email:
                 user.email = new_email
-                user.username = new_email
+                user.username = new_email  # muss synchron zur E-Mail bleiben, sonst matched der Login (über username) nicht mehr
 
             user.save()
         return super().update(instance, validate_data)

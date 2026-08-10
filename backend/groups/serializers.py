@@ -9,7 +9,7 @@ class GrouMemberSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'profilbild']
 
     def get_profilbild(self, obj):
-        if hasattr(obj, 'profile') and obj.profile.profilbild:
+        if hasattr(obj, 'profile') and obj.profile.profilbild:  # hasattr fängt Nutzer ohne UserProfile ab (Django wirft sonst RelatedObjectDoesNotExist)
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.profile.profilbild.url)

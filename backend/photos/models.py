@@ -8,5 +8,5 @@ class PhotoPin(models.Model):
     longitude = models.FloatField()
     image = models.ImageField(upload_to='photo_pins/')
     description = models.TextField(blank=True)
-    groups = models.ManyToManyField(Group, related_name='photo_pins', blank=True)
+    groups = models.ManyToManyField(Group, related_name='photo_pins', blank=True)  # empty = private pin, visible only to its owner (see PhotoPinListView)
     created_at = models.DateTimeField(auto_now_add=True);

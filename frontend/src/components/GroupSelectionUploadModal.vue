@@ -26,7 +26,7 @@ const dropdownRef = ref(null)
 watch(selectedGroup, (newValue) => {
   console.log("Ausgewählte Gruppe(n):", newValue)
   emit('update:selectedGroup', [...newValue])
-}, { deep: true })
+}, { deep: true }) // nötig, da toggleSelection() das Array per push/splice mutiert statt zu ersetzen - sonst feuert der Watcher nicht
 
 const fetchGroups = async () => {
     try {

@@ -13,12 +13,15 @@ export function useGPXVerarbeitung() {
 
   // --- DIE ELEGANTE LÖSUNG: Der native Polyline-Encoder ---
   // Diese Helfer-Funktion komprimiert das Array, ohne externe Pakete zu brauchen
+  // Google Encoded Polyline Format - Gegenstück zu decodePolyline in polyline.js
   const encodePolyline = (coordinates) => {
     let result = '';
     let prevLat = 0;
     let prevLng = 0;
 
     for (let i = 0; i < coordinates.length; i++) {
+      // 5 Nachkommastellen Genauigkeit (Format-Standard); dLat/dLng sind Deltas
+      // zum vorherigen Punkt statt Absolutwerten, das hält die Zahlen klein
       let lat = Math.round(coordinates[i][0] * 1e5);
       let lng = Math.round(coordinates[i][1] * 1e5);
       let dLat = lat - prevLat;
@@ -27,13 +30,16 @@ export function useGPXVerarbeitung() {
       prevLng = lng;
 
       const encodeValue = (value) => {
+        // Zickzack-Kodierung: negative Werte -> ungerade, positive -> gerade Zahl,
+        // damit der Decoder das Vorzeichen aus einem einzelnen Bit zurückgewinnen kann
         value = value < 0 ? ~(value << 1) : (value << 1);
         let encoded = '';
         while (value >= 0x20) {
+          // 5-Bit-Blöcke; gesetztes Bit 0x20 sagt dem Decoder "es folgt noch ein Block"
           encoded += String.fromCharCode((0x20 | (value & 0x1f)) + 63);
           value >>= 5;
         }
-        encoded += String.fromCharCode(value + 63);
+        encoded += String.fromCharCode(value + 63); // +63 hält das Ergebnis im druckbaren ASCII-Bereich
         return encoded;
       };
 
@@ -90,9 +96,13 @@ export function useGPXVerarbeitung() {
               const timeNode = pt.querySelector('time');
               zeitStream.push(timeNode ? timeNode.textContent : null);
 
+              // Puls steckt meist in einer geräteabhängigen XML-Namespace-Extension
+              // (z.B. Garmin gpxtpx:hr) - CSS-Selektoren matchen Namespace-Präfixe nicht
+              // zuverlässig, daher Namespace-Wildcard-Suche statt querySelector
               const hrNode = pt.getElementsByTagNameNS('*', 'hr')[0];
               pulsStream.push(hrNode ? parseInt(hrNode.textContent) : null);
 
+              // Erst unnamespacter Standard-Tag, sonst Namespace-Wildcard wie bei Puls
               const powerNode = pt.querySelector('power') || pt.getElementsByTagNameNS('*', 'power')[0];
               wattStream.push(powerNode ? parseInt(powerNode.textContent) : null);
             });
