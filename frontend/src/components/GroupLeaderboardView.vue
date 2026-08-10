@@ -1,19 +1,35 @@
 <script setup>
-import { useRoute } from 'vue-router'
-import { ref, onMounted, watch, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { onMounted, ref, watch, computed } from 'vue'
 import api from '@/api/api';
 import PageHeader from '@/components/PageHeader.vue';
+import HeaderButton from '@/components/HeaderButton.vue';
 import GroupTabsMenu from '@/components/GroupTabsMenu.vue';
+import { usePageTitle } from '@/composables/usePageTitle';
+import { useCurrentGroup } from '@/composables/useCurrentGroup';
+import { isMobile } from '@/composables/viewport';
 
+const { setPageTitle } = usePageTitle()
 
 const route = useRoute()
+const router = useRouter()
 
 // Group-ID kommt direkt aus der Route, ist also sofort verfügbar -
 // dadurch können Header und Tabs schon vor dem ersten API-Response gerendert werden.
 const groupId = computed(() => route.params.id)
-const group = ref(null)
+
+// Geteilt mit GroupDetailView: kommt man von den Mitgliedern herüber, stehen Name und
+// is_admin bereits - Titel und Bearbeiten-Button bleiben beim Tab-Wechsel unverändert
+// stehen, statt kurz zu verschwinden. Nur die Bestenliste selbst lädt sichtbar nach.
+const { currentGroup: group, enterGroup } = useCurrentGroup()
+enterGroup(groupId.value)
+
+// router.afterEach leert titleOverride bei jeder Navigation. Mit immediate steht der
+// Name direkt wieder da, wenn die Gruppe schon geladen ist - ohne Warten auf den Fetch.
+watch(group, (g) => { if (g) setPageTitle(g.name) }, { immediate: true })
+
 const leaderboard = ref([])
-const loading = ref(false)
+const loading = ref(true)
 
 // Lädt die Gruppe (für Name/Admin-Badge im Header) und die Bestenliste parallel.
 // `loading` steuert nur den Ladezustand INNERHALB der Leaderboard-Karte
@@ -26,7 +42,7 @@ const fetchGroup = async () => {
             api.get(`groups/${groupId.value}/`),
             api.get(`groups/${groupId.value}/leaderboard/`),
         ]);
-        group.value = groupResponse.data;
+        group.value = groupResponse.data; // watch oben setzt den Titel nach
         // Bestenliste kommt bereits sortiert + gerankt vom Backend (Gesamt-km über
         // ALLE Fahrten des Mitglieds, nicht nur die in dieser Gruppe).
         leaderboard.value = leaderboardResponse.data;
@@ -54,7 +70,9 @@ const displayName = (member) => {
 }
 
 watch(() => route.params.id, (newId) => {
-    if (newId) fetchGroup();
+    if (!newId) return;
+    enterGroup(newId); // Stand der vorher geöffneten Gruppe verwerfen
+    fetchGroup();
 })
 
 onMounted(() => {
@@ -67,7 +85,26 @@ onMounted(() => {
         <!-- Generischer Seitentitel wie bei den anderen Tabs (Meine Gruppen, Meine Strecken, ...).
              Header und Tabs werden unabhängig vom Ladezustand der Gruppe gerendert,
              damit sie beim Reload/Wechsel der Gruppe nicht mit verschwinden. -->
-        <PageHeader title="Bestenliste" />
+        <!-- Header-Inhalt identisch zu GroupDetailView, damit beim Wechsel zwischen
+             Mitgliedern und Bestenliste nichts im AppHeader springt oder verschwindet. -->
+        <Teleport v-if="isMobile" to="#app-header-actions">
+            <HeaderButton v-if="group?.is_admin" class="desktop-edit-btn mobile-edit-btn" @click="router.push(`/group/${groupId}/edit`)">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                    <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                </svg>
+                <span>Bearbeiten</span>
+            </HeaderButton>
+        </Teleport>
+        <!-- Auf Mobile trägt der globale AppHeader den Titel; ein zusätzlicher
+             PageHeader würde die Tab-Leiste um seine Höhe nach unten schieben. -->
+        <PageHeader v-else>
+            <HeaderButton v-if="group?.is_admin" class="desktop-edit-btn" @click="router.push(`/group/${groupId}/edit`)">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                    <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                </svg>
+                <span>Bearbeiten</span>
+            </HeaderButton>
+        </PageHeader>
         <GroupTabsMenu :group-id="groupId" active="leaderboard" />
 
         <main class="page-content">
@@ -114,7 +151,7 @@ onMounted(() => {
 
                         <div class="member-info-text">
                             <span class="member-name">{{ displayName(member) }}</span>
-                            <span v-if="member.email === group.admin_email" class="admin-badge">Admin</span>
+                            <span v-if="member.email === group?.admin_email" class="admin-badge">Admin</span>
                         </div>
 
                         <div class="km-box">
@@ -129,11 +166,61 @@ onMounted(() => {
 </template>
 
 <style scoped>
+    /* Abstände identisch zu GroupDetailView, damit die Tab-Leiste in beiden
+       Ansichten auf derselben Höhe sitzt. */
     .page-container {
         min-height: 100vh;
+        padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+        padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
         background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
+    }
+
+    /* Ab Desktop-Breite übernimmt PageHeader (sticky, eigener margin-top) den
+       Versatz unter der DesktopNavBar - sonst würde der Abstand doppelt zählen.
+       768px ist derselbe Umschaltpunkt wie MOBILE_BREAKPOINT in viewport.js,
+       ab dem oben der PageHeader gerendert wird. */
+    @media (min-width: 768px) {
+        .page-container {
+            padding-top: 0;
+        }
+    }
+
+    /* Header-Button 1:1 wie in GroupDetailView, sonst würde er beim Tab-Wechsel
+       seine Optik ändern. Teleport-Inhalt landet zwar im AppHeader, bleibt aber
+       im Scope dieser Komponente - das Styling muss also hier stehen. */
+    .desktop-edit-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        background-color: var(--color-bg-page);
+        color: var(--color-text);
+        border: 1px solid var(--color-border);
+        padding: 0.5rem;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .desktop-edit-btn:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+    }
+
+    /* Text-Label erst ab Tablet-Breite, damit im schmalen Header nichts überläuft */
+    .desktop-edit-btn span {
+        display: none;
+    }
+
+    /* Mobiler Header-Button als reines Icon ohne Rahmen/Hintergrund */
+    .mobile-edit-btn {
+        background-color: transparent;
+        border: none;
+        padding: 0.4rem;
+    }
+    .mobile-edit-btn:hover {
+        background-color: var(--color-bg-page);
     }
 
     .leaderboard-card-header {
@@ -349,6 +436,12 @@ onMounted(() => {
         }
         .leaderboard-card {
             padding: 2rem;
+        }
+        .desktop-edit-btn {
+            padding: 0.5rem 1rem;
+        }
+        .desktop-edit-btn span {
+            display: inline;
         }
     }
 </style>

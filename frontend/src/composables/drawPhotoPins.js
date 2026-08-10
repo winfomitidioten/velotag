@@ -10,6 +10,13 @@ export const activeGalleryPhotos = ref(null);
 
 let currentPhotoPinGroup = null;
 
+// Wird beim Unmount von Karte.vue aufgerufen: der Verweis ist modulweit und zeigte nach
+// einem Remount sonst auf eine Ebene der bereits zerstörten Karte.
+export function resetPhotoPinState() {
+    currentPhotoPinGroup = null;
+    activeGalleryPhotos.value = null;
+}
+
 function groupPinsByLocation(pins) {
     const groups = new Map();
     for (const pin of pins) {

@@ -4,12 +4,12 @@ import { onMounted, onUnmounted, ref, computed, watch, shallowRef } from 'vue' /
 import velotagLogo from '@/assets/velotag-logo.png'
 import api from '@/api/api'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
-import { drawUserMap } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
-import { drawPerformanceMap } from '@/composables/drawPerformanceMap.js'
+import { drawUserMap, resetUserMapState } from '@/composables/drawUserMap.js' //Import der Funktion zum Zeichnen der Karte mit den Strecken des User
+import { drawPerformanceMap, resetPerformanceState } from '@/composables/drawPerformanceMap.js'
 import LayersSelectionModal from '@/components/layersSelectionModal.vue'
 import { usePinMode } from '@/composables/usePinMode.js'
 import PhotoPinUploadModal from '@/components/PhotoPinUploadModal.vue';
-import { drawPhotoPins, activeGalleryPhotos } from '@/composables/drawPhotoPins';
+import { drawPhotoPins, activeGalleryPhotos, resetPhotoPinState } from '@/composables/drawPhotoPins';
 import PhotoPinGalleryModal from '@/components/PhotoPinGalleryModal.vue';
 import { useMap } from '@/composables/useMap.js'
 import { useStravaImport } from '@/composables/useStravaImport'
@@ -34,7 +34,7 @@ const { showStravaImport } = useStravaImport();
 // Pill und Ebenen-Button liegen bei z-index 500 und schimmern bewusst unter dem
 // Overlay durch, wie der Rest der Karte auch.
 
-const { initializeMap, availableLayers, activeLayerId, isAttributionVisible, toggleAttribution, closeAttribution, isAttributionTarget } = useMap();
+const { initializeMap, destroyMap, availableLayers, activeLayerId, isAttributionVisible, toggleAttribution, closeAttribution, isAttributionTarget } = useMap();
 const userStore = useUserStore();
 const { isPinMode, setPinMode } = usePinMode();
 const pinLatLng = ref(null);
@@ -153,6 +153,13 @@ const activeLayerPreview = computed(() => {
 
 
 
+// Als benannte Funktion, damit der Listener beim Unmount wieder abgemeldet werden kann -
+// sonst sammelt sich bei jedem Remount (Account-Wechsel) einer an, der auf die Karte
+// der bereits zerstörten Instanz zugreift.
+const handleResize = () => {
+  map.value?.invalidateSize();
+};
+
 const fetchGroups = async () => {
   try {
     const response = await api.get('groups/');
@@ -203,9 +210,7 @@ onMounted(async () => {
     }
   }, 250)
   
-  window.addEventListener('resize', () => {
-    map.value.invalidateSize()
-  })
+  window.addEventListener('resize', handleResize)
 
   // Routen und Foto-Pins aus dem Backend abfragen
   drawUserMap(map.value, isGroupView.value, favoriteGroupId.value).then(stats => {  //Übergabe der Karte an die Funktion, damit die Routen darauf gezeichnet werden können
@@ -224,6 +229,19 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('resize', handleResize);
+
+  // Karte und alle Zeichen-Composables halten ihren Zustand modulweit, überleben also
+  // einen Remount dieser Komponente. Ohne das Aufräumen zeigt die Karte nach einem
+  // Account-Wechsel nichts mehr an, weil Leaflet weiter auf den alten, aus dem DOM
+  // entfernten Container zeichnet.
+  resetUserMapState();
+  resetPerformanceState();
+  resetPhotoPinState();
+  destroyMap();
+
+  mapInstance = null;
+  map.value = null;
 })
 
 watch(isGroupView, async (newValue) => {

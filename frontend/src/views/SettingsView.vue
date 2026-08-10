@@ -86,18 +86,18 @@ onMounted(() => {
             <section class="input-group">
                 <h3 class="icon-heading">Über</h3>
                 <div class="about-row"><span>Version</span><span>0.0.0.1</span></div>
-                <a class="row-link" href="#">
+                <router-link class="row-link" to="/datenschutz">
                     <span>Datenschutz</span>
                     <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
                         <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/>
                     </svg>
-                </a>
-                <a class="row-link" href="#">
+                </router-link>
+                <router-link class="row-link" to="/impressum">
                     <span>Impressum</span>
                     <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
                         <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/>
                     </svg>
-                </a>
+                </router-link>
                 <a class="row-link" href="mailto:support@velotag.app">
                     <span>Support kontaktieren</span>
                     <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">

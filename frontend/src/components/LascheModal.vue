@@ -182,7 +182,12 @@ onMounted(fetchRides)
             <div class="ride-meta">
               <span class="ride-date">{{ formatDate(ride.created_at) }}</span>
               <span class="ride-duration">{{ formatDuration(ride.duration_seconds) }}</span>
-              <span class="ride-likes">❤ {{ ride.like_count ?? 0 }}</span>
+              <span class="ride-likes">
+                <svg viewBox="0 -960 960 960" class="heart-icon">
+                  <path d="M480-120 435-165Q276-311 172-427.5T68-643Q68-729 125-786t141-57Q312-843 355-802t125 118Q521-763 564-802t143-41Q783-843 840-786t57 143Q897-524 793-427.5T525-165l-45 45Z"/>
+                </svg>
+                {{ ride.like_count ?? 0 }}
+              </span>
             </div>
         </div>
       </div>
@@ -365,6 +370,41 @@ onMounted(fetchRides)
    Kachel nicht untergeht. */
 .ride-likes {
   margin-top: 2px;
-  color: var(--color-primary);
+  /* Gleiche Farbe wie .like-btn in PublicUserProfile.vue - das Herz selbst erbt sie
+     über fill: currentColor, deshalb muss sie hier am Elternelement stehen. */
+  color: var(--color-text-muted);
+}
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 10px;
+  margin-top: 8px;
+  border-radius: 12px;
+  color: var(--color-text-muted);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.like-btn:hover {
+  background-color: color-mix(in srgb, #e53e3e 12%, white);
+  color: #e53e3e;
+}
+
+.like-btn.liked {
+  color: #e53e3e;
+}
+
+.heart-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.like-count {
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 </style>

@@ -82,16 +82,12 @@ const routes = [
     meta: { requiresAuth: true, showBack: true, backTo: '/group' }
   },
   {
-    path: '/group/:id/leaderboard',
-    name: 'group-leaderboard',
-    component: GroupLeaderboardView,
-    meta: { requiresAuth: true, showBack: true, backTo: '/group' }
-  },
-  {
     path: '/group/invites',
     name: 'group-invites',
     component: GroupInviteView,
-    meta: { requiresAuth: true, showBack: true, title: 'Einladungen' }
+    // Kein showBack: Einladungen ist ein eigener Haupt-Tab in der AppTabBar,
+    // genau wie /group und /rides - dort gibt es nichts, wohin man "zurück" ginge.
+    meta: { requiresAuth: true, title: 'Einladungen' }
   },
   {
     // Ziel des Einladungslinks/QR-Codes aus GroupDetailView.vue (VEL-74).
@@ -111,6 +107,18 @@ const routes = [
     name: 'rides',
     component: () => import('../views/StreckenView.vue'),
     meta: { requiresAuth: true, title: 'Meine Strecken' }
+  },
+  {
+    path: '/datenschutz',
+    name: 'privacy',
+    component: ComingSoon,
+    meta: { requiresAuth: true, showBack: true, backTo: '/settings', title: 'Datenschutz' }
+  },
+  {
+    path: '/impressum',
+    name: 'imprint',
+    component: ComingSoon,
+    meta: { requiresAuth: true, showBack: true, backTo: '/settings', title: 'Impressum' }
   },
   {
   path: '/user/:id',

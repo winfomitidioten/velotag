@@ -1,13 +1,14 @@
 <script setup>
-import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-
-const route = useRoute();
+import { isMobile } from '@/composables/viewport';
 </script>
 
 <template>
     <div class="page-container">
-        <PageHeader :title="route.meta.title || 'velotag'" />
+        <!-- Nur auf dem Desktop: auf Mobile trägt der globale AppHeader den Titel,
+             ein zusätzlicher PageHeader würde den Inhalt um seine Höhe nach unten
+             schieben. Den Titel zieht PageHeader selbst aus route.meta.title. -->
+        <PageHeader v-if="!isMobile" />
 
         <main class="page-content">
             <div class="coming-soon-card">
@@ -35,11 +36,25 @@ const route = useRoute();
 </template>
 
 <style scoped>
+    /* Abstände wie in GroupDetailView/GroupLeaderboardView, damit der Inhalt auf
+       Mobile unter Safe-Area und AppHeader beginnt statt darunter zu verschwinden. */
     .page-container {
         min-height: 100vh;
+        padding-top: calc(var(--safe-top, 0px) + var(--app-header-height));
+        padding-bottom: calc(var(--safe-bottom, 0px) + var(--tab-bar-height));
         background-color: var(--color-bg-page);
         display: flex;
         flex-direction: column;
+        box-sizing: border-box;
+    }
+
+    /* Ab Desktop-Breite übernimmt PageHeader (sticky, eigener margin-top) den Versatz
+       unter der DesktopNavBar - sonst zählte er doppelt. 768px ist derselbe
+       Umschaltpunkt wie MOBILE_BREAKPOINT in viewport.js. */
+    @media (min-width: 768px) {
+        .page-container {
+            padding-top: 0;
+        }
     }
 
     .page-content {

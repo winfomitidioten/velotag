@@ -96,6 +96,20 @@ export function useMap() {
         return map;
     };
 
+    // Die Karten-Instanz lebt modulweit und überlebt damit einen Remount von Karte.vue
+    // (z.B. nach einem Account-Wechsel, siehe sessionKey im userStore). Ohne dieses
+    // Aufräumen liefert initializeMap beim nächsten Mount die alte Instanz zurück, die
+    // noch am inzwischen entfernten <div id="map"> hängt - die Karte bliebe dann leer,
+    // bis die App komplett neu startet.
+    const destroyMap = () => {
+        if (!mapInstance.value) return;
+        mapInstance.value.remove(); // baut Leaflets DOM und Event-Listener ab
+        mapInstance.value = null;
+        currentTileLayer.value = null;
+        attributionContainer = null;
+        isAttributionVisible.value = false;
+    };
+
     const setLayer = (layerId) => {
         const layerConfig = availableLayers.find(l => l.id === layerId);
         if (!layerConfig || !mapInstance.value) {
@@ -149,6 +163,7 @@ export function useMap() {
 
     return {
         initializeMap,
+        destroyMap,
         setLayer,
         resetToHome,
         availableLayers,

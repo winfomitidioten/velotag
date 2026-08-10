@@ -12,6 +12,7 @@ import { useToast } from '@/composables/useToast';
 import QRCode from 'qrcode';
 import { Capacitor } from '@capacitor/core';
 import { usePageTitle } from '@/composables/usePageTitle';
+import { useCurrentGroup } from '@/composables/useCurrentGroup';
 import { isMobile } from '@/composables/viewport';
 
 const route = useRoute()
@@ -20,7 +21,15 @@ const { showToast } = useToast()
 const { setPageTitle } = usePageTitle()
 
 const groupId = computed(() => route.params.id)
-const group = ref(null)
+
+// Geteilt mit der Bestenlisten-Ansicht, damit deren Header beim Tab-Wechsel
+// sofort steht. enterGroup verwirft den Stand, falls eine andere Gruppe geöffnet wird.
+const { currentGroup: group, enterGroup } = useCurrentGroup()
+enterGroup(groupId.value)
+
+// router.afterEach leert titleOverride bei jeder Navigation. Mit immediate steht der
+// Name direkt wieder da, wenn die Gruppe schon geladen ist - ohne Warten auf den Fetch.
+watch(group, (g) => { if (g) setPageTitle(g.name) }, { immediate: true })
 const loading = ref(false)
 const showPopup = ref(false)
 const newMemberMail = ref("")
@@ -35,8 +44,7 @@ const fetchGroup = async () => {
     try {
         loading.value = true;
         const response = await api.get(`groups/${groupId.value}/`);
-        group.value = response.data;
-        setPageTitle(group.value.name);
+        group.value = response.data; // watch oben setzt den Titel nach
     } catch(err) {
         console.error('Fehler beim Laden der Gruppe: ', err)
     } finally {
@@ -210,7 +218,9 @@ const leaveGroup = async () =>{
 };
 
 watch(() => route.params.id, (newId) => {
-    if (newId) fetchGroup();
+    if (!newId) return;
+    enterGroup(newId); // Stand der vorher geöffneten Gruppe verwerfen
+    fetchGroup();
 })
 
 onMounted(() => {

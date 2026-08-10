@@ -22,6 +22,14 @@ const onGroupPhotoAdded = (photos) => {
     previewImage.value = photo.previewUrl;
 }
 
+// Verwirft die Auswahl wieder, ohne ein neues Bild zu wählen. Anders als in
+// GroupEditView braucht es hier kein remove_profilbild-Flag: die Gruppe existiert
+// noch nicht, es gibt also serverseitig nichts zu löschen.
+const removePicture = () => {
+    selectedFile.value = null;
+    previewImage.value = null;
+}
+
 const createNewGroup = async () => {
     if (!newGroupName.value.trim()) return;
     try {
@@ -109,6 +117,16 @@ const createNewGroup = async () => {
                 </BaseModal>
             </div>
             <input v-if="!isNative" type="file" accept="image/*" id="new-group-photo-upload" class="visually-hidden-input" :disabled="saving" @change="onFilesSelected">
+
+            <button
+                v-if="previewImage"
+                type="button"
+                class="remove-picture-btn"
+                :disabled="saving"
+                @click="removePicture"
+            >
+                Bild entfernen
+            </button>
         </CameraGalleryPicker>
 
         <input
@@ -237,6 +255,27 @@ const createNewGroup = async () => {
 .photo-edit-overlay-persistent {
     opacity: 1;
     background-color: rgba(0, 0, 0, 0.25);
+}
+
+/* Sitzt unter dem Bild - gleiche Optik wie in GroupEditView, nur zentriert,
+   weil das Bild im Modal mittig steht statt in einer Spalte. */
+.remove-picture-btn {
+    display: block;
+    margin: 0.6rem auto 0;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0;
+}
+.remove-picture-btn:hover:not(:disabled) {
+    color: var(--color-danger);
+}
+.remove-picture-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .visually-hidden-input {

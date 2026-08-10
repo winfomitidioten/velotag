@@ -245,7 +245,13 @@ onUnmounted(() => {
   </template>
 
   <RouterView v-slot="{ Component }">
-    <keep-alive include="Karte">
+    <!-- sessionKey wechselt beim Logout und wirft die zwischengespeicherte Karte weg,
+         die sonst die Daten des vorherigen Accounts weiterzeigen würde (siehe userStore).
+         Der Key MUSS am <keep-alive> hängen, nicht am <component>: innen drin würde
+         nur eine zweite Instanz unter neuem Key entstehen, während die alte im Cache
+         liegen bleibt und lediglich deaktiviert wird - ihr onUnmounted (und damit das
+         Aufräumen der Leaflet-Instanz in Karte.vue) liefe dann nie. -->
+    <keep-alive include="Karte" :key="userStore.sessionKey">
       <component :is="Component" />
     </keep-alive>
   </RouterView>

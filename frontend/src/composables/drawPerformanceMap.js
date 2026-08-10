@@ -78,6 +78,14 @@ export async function drawPerformanceMap(map, metric, { forceRefresh = false } =
   return { minValue, maxValue, hasData }
 }
 
+// Wird beim Unmount von Karte.vue aufgerufen. Neben dem Layer-Verweis wird hier bewusst
+// auch der Cache verworfen: cachedData enthält die personenbezogenen Leistungswerte des
+// eingeloggten Users und darf nach einem Account-Wechsel nicht weiterverwendet werden.
+export function resetPerformanceState() {
+  currentPerformanceLayer = null
+  invalidatePerformanceCache()
+}
+
 export function clearPerformanceMap(map) {
   if (currentPerformanceLayer) {
     map.removeLayer(currentPerformanceLayer)

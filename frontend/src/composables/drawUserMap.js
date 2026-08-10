@@ -31,6 +31,15 @@ function applyHeatmapPathStyle(layer, color, glowOn) {
 let currentFeatureGroup = null;
 let colorWatchStarted = false;
 
+// Wird beim Unmount von Karte.vue aufgerufen. Beide Variablen sind modulweit und
+// überleben einen Remount: currentFeatureGroup zeigte danach auf Layer der zerstörten
+// Karte, und colorWatchStarted hätte verhindert, dass der Farb-Watcher für die neue
+// Instanz überhaupt noch registriert wird.
+export function resetUserMapState() {
+    currentFeatureGroup = null;
+    colorWatchStarted = false;
+}
+
 export function clearUserMap(map) {
     if (currentFeatureGroup) {
         map.removeLayer(currentFeatureGroup);

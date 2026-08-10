@@ -13,6 +13,13 @@ export const useUserStore = defineStore('user', () => {
     const locationName = ref('');
     const onboardingCompleted = ref(null); // null = noch nicht geladen (siehe Router-Guard)
 
+    // Wird bei jedem Logout hochgezählt und in App.vue als :key der Routen-Komponente
+    // benutzt. Ohne das überlebt die <keep-alive>-Instanz der Karte den Account-Wechsel
+    // und zeigt Routen, Fahrtenzahl und Kilometer des vorherigen Nutzers weiter.
+    // Ein Zähler statt der User-ID: die ID ist nach dem Login erst nach fetchProfile()
+    // gesetzt, die Karte würde sonst zweimal mounten und Leaflet sichtbar neu aufbauen.
+    const sessionKey = ref(0);
+
     const initials = computed(() => `${firstname.value[0] ?? ''}${lastname.value[0] ?? ''}`.toUpperCase());
 
     async function fetchProfile() {
@@ -51,11 +58,12 @@ export const useUserStore = defineStore('user', () => {
         longitude.value = null;
         locationName.value = '';
         onboardingCompleted.value = null;
+        sessionKey.value++;
     }
 
     return {
         id, firstname, lastname, mail, initials, profileImage,
-        latitude, longitude, locationName, onboardingCompleted,
+        latitude, longitude, locationName, onboardingCompleted, sessionKey,
         fetchProfile, ensureProfile, clearUser
     };
 });

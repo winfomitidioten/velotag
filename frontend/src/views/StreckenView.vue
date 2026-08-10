@@ -117,7 +117,12 @@
               <span class="stat-value">{{ strecke.avg_watt != null ? strecke.avg_watt + ' W' : '—' }}</span>
             </span>
           </div>
-          <span class="like-count">❤ {{ strecke.like_count }}</span>
+          <span class="like-count">
+              <svg viewBox="0 -960 960 960" class="heart-icon">
+                <path d="M480-120 435-165Q276-311 172-427.5T68-643Q68-729 125-786t141-57Q312-843 355-802t125 118Q521-763 564-802t143-41Q783-843 840-786t57 143Q897-524 793-427.5T525-165l-45 45Z"/>
+              </svg>
+            {{ strecke.like_count }}
+          </span>
           <button class="edit-btn" @click.stop="editingRoute = strecke" title="Bearbeiten">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
               <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
@@ -206,12 +211,43 @@
   gap: 1rem;
   align-items: left;
 }
-
-.like-count {
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 10px;
+  margin-top: 8px;
+  border-radius: 12px;
   color: var(--color-text-muted);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.like-btn:hover {
+  background-color: color-mix(in srgb, #e53e3e 12%, white);
+  color: #e53e3e;
+}
+
+.like-btn.liked {
+  color: #e53e3e;
+}
+
+.heart-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
 
 .like-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  /* Gleiche Farbe wie .like-btn in PublicUserProfile.vue - ohne diese Angabe erbt
+     das Herz über fill: currentColor die Textfarbe der Tabellenzeile. */
   color: var(--color-text-muted);
 }
 

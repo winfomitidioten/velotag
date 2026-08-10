@@ -122,10 +122,12 @@ onMounted(fetchProfile)
             @click="toggleLike(ride)"
             :title="ride.liked_by_me ? 'Gefällt mir entfernen' : 'Gefällt mir'"
           >
-            <svg viewBox="0 -960 960 960" class="heart-icon">
-              <path d="M480-120 435-165Q276-311 172-427.5T68-643Q68-729 125-786t141-57Q312-843 355-802t125 118Q521-763 564-802t143-41Q783-843 840-786t57 143Q897-524 793-427.5T525-165l-45 45Z"/>
-            </svg>
-            <span class="like-count">{{ ride.like_count }}</span>
+
+            <span class="like-count">
+              <svg viewBox="0 -960 960 960" class="heart-icon">
+                <path d="M480-120 435-165Q276-311 172-427.5T68-643Q68-729 125-786t141-57Q312-843 355-802t125 118Q521-763 564-802t143-41Q783-843 840-786t57 143Q897-524 793-427.5T525-165l-45 45Z"/>
+              </svg>{{ ride.like_count }}
+            </span>
           </button>
         </div>
       </div>
