@@ -66,8 +66,13 @@ class ProfileView(APIView):
         if mail is not None:
             profile.mail = mail
 
+        # Löschen ohne Ersatz: remove_profilbild="true" entfernt das Bild, ohne dass ein
+        # neues hochgeladen werden muss (gleiches Verhalten wie beim Gruppenbild).
         if profilbild and not isinstance(profilbild, str):
             profile.profilbild = profilbild
+        elif str(request.data.get('remove_profilbild', '')).lower() == 'true':
+            profile.profilbild = None
+
 
         if group_invites_enabled is not None:
             if isinstance(group_invites_enabled, str):
@@ -324,10 +329,30 @@ class PublicUserProfileView(APIView):
         profile, _ = UserProfile.objects.get_or_create(user=target_user)
         profile_data = UserProfileSerializer(profile, context={'request': request}).data
 
-        last_three = Route.objects.filter(user=target_user).order_by('-created_at')[:4]
+        recent_rides = Route.objects.filter(user=target_user).order_by('-created_at')[:4]
+
 
         return Response({
             "profile": profile_data,
             "stats": Route.get_stats_for_user(target_user),
-            "recentRides": RouteListSerializer(last_three, many=True, context={'request': request}).data
+            "recentRides": RouteListSerializer(recent_rides, many=True).data
         }, status=status.HTTP_200_OK)
+
+
+class DeviceView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('token')
+        platform = request.data.get('platform', 'android')
+
+        if not token:
+            return Response({'error': 'Token fehlt'}, status=400)
+
+        device, created = UserDevice.objects.update_or_create(
+            push_token = token,
+            defaults={'user': request.user, 'platform': platform}
+        )
+
+        return Response({'status': 'success', 'created': created})

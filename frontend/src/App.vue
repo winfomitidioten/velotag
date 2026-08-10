@@ -1,10 +1,12 @@
 <script setup>
 import { RouterView, useRoute, useRouter } from 'vue-router'
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import apiClient from '@/api/client'
 
 import AppHeader from '@/components/AppHeader.vue'
 import AppToast from '@/components/AppToast.vue'
+import AppTabBar from '@/components/AppTabBar.vue'
+import DesktopNavBar from '@/components/DesktopNavBar.vue'
 import StravaActivityPicker from '@/components/StravaActivityPicker.vue'
 
 import { useUserStore } from '@/store/userStore'
@@ -12,6 +14,8 @@ import { useSettingsStore } from './store/settingsStore'
 
 import { useStravaImport } from '@/composables/useStravaImport'
 import { useToast } from '@/composables/useToast'
+import { useSwipeBack } from '@/composables/useSwipeBack'
+import { isMobile, updateIsMobile } from '@/composables/viewport'
 
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
@@ -19,11 +23,12 @@ import { StatusBar, Style } from '@capacitor/status-bar'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { PushNotifications } from '@capacitor/push-notifications'
 
-useSettingsStore(); // legt den Store an, der Konstruktor wendet gespeichertes Theme sofort an
+const settingsStore = useSettingsStore(); // Konstruktor wendet gespeichertes Theme sofort an
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+
 const { showStravaImport } = useStravaImport();
 const { showToast } = useToast();
 
@@ -138,13 +143,36 @@ const setupDailyReminder = async () => {
     console.log("Fehler bei der taeglichen Erinnerung:", error)
   }
 }
-
-const goBack = () => {
-  router.push(route.meta.backTo ?? '/map');
-};
+const swipeBack = useSwipeBack();
 
 const setAppHeight = () => {
   document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+  updateIsMobile();
+};
+
+// Kompaktere Header-Höhe nur auf der Karte UND nur mobil - die Desktop-Navbar
+// nutzt dieselbe Variable (main.css, @media min-width:768px), daher hier ohne
+// Inline-Override die CSS-eigenen Werte (mobil 52px / desktop 56px) greifen lassen.
+watch([() => route.name, isMobile], ([name, mobile]) => {
+  if (mobile && name === 'map') {
+    document.documentElement.style.setProperty('--app-header-height', '28px');
+  } else {
+    document.documentElement.style.removeProperty('--app-header-height');
+  }
+}, { immediate: true });
+
+// Bei theme='system' folgt die Statusleiste der OS-Einstellung, sonst der
+// manuell gewählten
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+const updateStatusBarStyle = () => {
+  if (!Capacitor.isNativePlatform()) return;
+  const isDark = settingsStore.theme === 'dark'
+    || (settingsStore.theme === 'system' && prefersDark.matches);
+  // Style.Dark => helle Uhr/Batterie-Icons (für unseren dunklen Hintergrund im Dark Mode)
+  // Style.Light => dunkle Icons (für den hellen Hintergrund im Light Mode)
+  // (Die Namen sind entgegen der Intuition nach dem Hintergrund benannt, nicht nach der Icon-Farbe)
+  StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light });
 };
 
 onMounted(async () => {
@@ -155,9 +183,9 @@ onMounted(async () => {
     // Produktion) - eine feste Override hier wuerde das jedes Mal ueberschreiben,
     // inklusive waehrend des asynchronen Push-Registrierungs-Events oben.
     await StatusBar.setOverlaysWebView({ overlay: true });
-    // Style.Light => dunkle Uhr/Batterie-Icons, richtig für unseren hellen Hintergrund
-    // (Style.Dark ist entgegen des Namens für dunkle Hintergründe mit hellen Icons gedacht)
-    await StatusBar.setStyle({ style: Style.Light });
+    updateStatusBarStyle();
+    watch(() => settingsStore.theme, updateStatusBarStyle);
+    prefersDark.addEventListener('change', updateStatusBarStyle);
 
     // Fängt Deep Links ab: velotag://strava-callback (Backend springt nach dem
     // Strava-Login zurück in die App) sowie Gruppeneinladungslinks, egal ob als
@@ -181,7 +209,7 @@ onMounted(async () => {
 
   setAppHeight();
   window.addEventListener('resize', setAppHeight);
-  // forceViewportRecalc();
+  swipeBack.start();
   const token = localStorage.getItem('auth_token');
   if (token && token !== 'undefined') {
     try {
@@ -204,20 +232,25 @@ onMounted(async () => {
   }
 });
 
+onUnmounted(() => {
+  swipeBack.stop();
+  prefersDark.removeEventListener('change', updateStatusBarStyle);
+});
 </script>
 
 <template>
-  <AppHeader v-if="!route.meta.hideMenu && !showStravaImport" />
+  <template v-if="!route.meta.hideMenu && !showStravaImport">
+    <AppHeader v-if="isMobile" />
+    <DesktopNavBar v-else />
+  </template>
+
   <RouterView v-slot="{ Component }">
     <keep-alive include="Karte">
       <component :is="Component" />
     </keep-alive>
   </RouterView>
-  <button v-if="route.meta.showBack" class="back-button" @click="goBack" aria-label="Zurück zur Vorherigen Seite">
-    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-      <path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/>
-    </svg>
-  </button>
+
+  <AppTabBar v-if="isMobile && !route.meta.hideMenu && !showStravaImport" />
 
   <StravaActivityPicker v-if="showStravaImport" @close="showStravaImport = false" />
   <AppToast />
@@ -242,29 +275,5 @@ html, body, #app {
 #app {
   display: flex;
   flex-direction: column;
-}
-.back-button {
-  position: fixed;
-  /* Sitzt unter dem fixierten AppHeader statt daneben, seit der Hamburger-Button
-     weggefallen ist */
-  top: calc(var(--safe-top) + var(--app-header-height) + 0.5rem);
-  left: 1rem;
-  z-index: 1005;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-card);
-  color: var(--color-primary);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.back-button:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 </style>

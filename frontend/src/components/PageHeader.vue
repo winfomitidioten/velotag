@@ -1,16 +1,19 @@
 <script setup>
-defineProps({
-    title: {
-        type: String,
-        required: true,
-    },
-});
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import { usePageTitle } from '@/composables/usePageTitle';
+
+// Titel kommt aus derselben Quelle wie im mobilen AppHeader (route.meta.title,
+// überschreibbar per usePageTitle) - kein eigener Prop nötig, damit Titel auf
+// Mobile und Desktop garantiert übereinstimmen.
+const route = useRoute();
+const { titleOverride } = usePageTitle();
+const title = computed(() => titleOverride.value ?? route.meta.title ?? '');
 </script>
 
 <template>
     <header class="page-header">
         <div class="header-inner">
-            <!-- Reserviert den Platz für Hamburger + Zurück-Button -->
             <div class="header-left"></div>
             <span class="header-title">{{ title }}</span>
             <div class="header-right">
@@ -23,7 +26,7 @@ defineProps({
 <style scoped>
 .page-header {
     position: sticky;
-    /* Bleibt direkt unter dem fixierten, globalen AppHeader stehen */
+    /* Bleibt direkt unter der fixierten DesktopNavBar stehen */
     top: calc(var(--safe-top, 0px) + var(--app-header-height));
     margin-top: calc(var(--safe-top, 0px) + var(--app-header-height));
     z-index: 100;
@@ -40,7 +43,6 @@ defineProps({
     padding: 0 1rem;
 }
 
-/* Breite = Zurück-Button (44px); Hamburger ist mit dem AppHeader entfallen */
 .header-left {
     width: 44px;
     flex-shrink: 0;
@@ -69,5 +71,4 @@ defineProps({
     min-width: calc(88px + 0.75rem);
     justify-content: flex-end;
 }
-
 </style>
