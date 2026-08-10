@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser
-from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 
 from .serializers import PhotoPinCreateSerializer, PhotoPinListSerializer, PhotoPinUpdateSerializer
@@ -44,11 +43,12 @@ class PhotoPinListView(APIView):
 
     @extend_schema(responses=PhotoPinListSerializer(many=True))
     def get(self, request):
-        user = request.user
-        joined_groups = Group.objects.filter(membership__user=user, membership__status='Joined')
-        pins = PhotoPin.objects.filter(
-            Q(user=user) | Q(groups__in=joined_groups)  # sichtbar: eigene Pins ODER Pins, die mit einer gemeinsamen Gruppe geteilt wurden
-        ).distinct()  # distinct(), da ein Pin über mehrere gemeinsame Gruppen sonst mehrfach auftauchen würde
+        # Die Solo-Ansicht zeigt ausschließlich die eigenen Pins - auch die, die einer
+        # Gruppe zugeordnet sind. Fremde Pins aus gemeinsamen Gruppen erscheinen nur in
+        # der Gruppenansicht (PhotoPinGroupView weiter unten).
+        # Vorher stand hier zusätzlich Q(groups__in=joined_groups): dadurch tauchten
+        # fremde Gruppenfotos auch in der Solo-Ansicht der anderen Mitglieder auf.
+        pins = PhotoPin.objects.filter(user=request.user)
 
         serializer = PhotoPinListSerializer(pins, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
