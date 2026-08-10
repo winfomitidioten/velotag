@@ -324,7 +324,7 @@ class PublicUserProfileView(APIView):
         profile, _ = UserProfile.objects.get_or_create(user=target_user)
         profile_data = UserProfileSerializer(profile, context={'request': request}).data
 
-        last_three = Route.objects.filter(user=target_user).order_by('-created_at')[:3]
+        last_three = Route.objects.filter(user=target_user).order_by('-created_at')[:4]
 
         return Response({
             "profile": profile_data,
