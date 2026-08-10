@@ -4,6 +4,7 @@ from rest_framework import status, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema
 
 from .serializers import PhotoPinCreateSerializer, PhotoPinListSerializer, PhotoPinUpdateSerializer
 from .models import PhotoPin
@@ -14,6 +15,7 @@ class PhotoPinCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
+    @extend_schema(responses=PhotoPinCreateSerializer(many=True))
     def post(self, request):
         images = request.FILES.getlist('image')
         if not images:
@@ -40,6 +42,7 @@ class PhotoPinListView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=PhotoPinListSerializer(many=True))
     def get(self, request):
         user = request.user
         joined_groups = Group.objects.filter(membership__user=user, membership__status='Joined')
@@ -54,6 +57,7 @@ class PhotoPinGroupView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=PhotoPinListSerializer(many=True))
     def get(self, request, pk):
         try:
             group = Group.objects.get(pk=pk)
@@ -74,7 +78,8 @@ class PhotoPinDetailView(APIView):
     def get_own_pin(self, request, pk):
         # setzt den Filter auf user=request.user, damit sind "fremde" Pins nicht erreichbar
         return PhotoPin.objects.filter(pk=pk, user=request.user).first()
-    
+
+    @extend_schema(responses=PhotoPinListSerializer)
     def patch(self, request, pk):
         pin = self.get_own_pin(request, pk)
         if pin is None:

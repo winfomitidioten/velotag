@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from django.core import signing
 from rest_framework.views import APIView
-from rest_framework import status, permissions
+from rest_framework import status, permissions, serializers
 from django.db.models import Q, Sum, Count
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, inline_serializer
 from .serializers import GroupSerializer, GrouMemberSerializer
 from .models import Group, Membership
 from rest_framework.authentication import TokenAuthentication
@@ -18,7 +19,9 @@ class GroupView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]  # für den optionalen Bild-Upload
+    serializer_class = GroupSerializer
 
+    @extend_schema(responses=GroupSerializer(many=True))
     def get(self, request):
         user = request.user
         groups = Group.objects.filter(Q(membership__user=user, membership__status='Joined')).distinct()
@@ -54,6 +57,7 @@ class GroupDetailView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]  # für den optionalen Bild-Upload
+    serializer_class = GroupSerializer
 
     def get(self, request, pk):
         try:
@@ -72,6 +76,8 @@ class GroupDetailView(APIView):
                 {"error": "Gruppe wurde nicht gefunden."}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+
+    @extend_schema(responses=inline_serializer('GroupDeleteResponse', {'message': serializers.CharField()}))
     def delete(self, request, pk):
         try:
             group = Group.objects.get(pk=pk)
@@ -151,6 +157,17 @@ class GroupLeaderboardView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('LeaderboardEntry', {
+        'id': serializers.IntegerField(),
+        'username': serializers.CharField(),
+        'first_name': serializers.CharField(),
+        'last_name': serializers.CharField(),
+        'email': serializers.EmailField(),
+        'profilbild': serializers.CharField(allow_null=True),
+        'totalKm': serializers.IntegerField(),
+        'rideCount': serializers.IntegerField(),
+        'rank': serializers.IntegerField(),
+    }, many=True))
     def get(self, request, pk):
         try:
             group = Group.objects.get(pk=pk)
@@ -196,6 +213,8 @@ class GroupLeaderboardView(APIView):
 class GroupInviteAdmin(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GroupSerializer
+
     def post(self, request, pk):
         try:
             group = Group.objects.get(pk=pk)
@@ -273,6 +292,7 @@ class GroupInviteLinkView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('GroupInviteLinkResponse', {'token': serializers.CharField()}))
     def get(self, request, pk):
         try:
             group = Group.objects.get(pk=pk)
@@ -302,6 +322,7 @@ class GroupJoinByTokenView(APIView):
     """
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GroupSerializer
 
     def post(self, request):
         token = request.data.get('token')
@@ -354,13 +375,15 @@ class GroupJoinByTokenView(APIView):
 class UserInvitationsView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
-    
+
+    @extend_schema(responses=GroupSerializer(many=True))
     def get(self, request):
             user = request.user
             groups = Group.objects.filter(Q(membership__user=user, membership__status='Pending')).distinct()
             serializer = GroupSerializer(groups, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
+    @extend_schema(responses=inline_serializer('InvitationActionResponse', {'message': serializers.CharField()}))
     def post(self, request):
         group_id = request.data.get('group_id')
         action = request.data.get('action')
@@ -400,6 +423,7 @@ class GroupLeaveView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('GroupLeaveResponse', {'message': serializers.CharField()}))
     def post(self, request, pk):
         try:
             group = Group.objects.get(pk=pk)
@@ -440,6 +464,8 @@ class GroupLeaveView(APIView):
 class GroupKickView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GroupSerializer
+
     def delete(self, request, pk):
         try:
             group = Group.objects.get(pk=pk)
@@ -482,6 +508,7 @@ class GroupTransferAdminView(APIView):
     """
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GroupSerializer
 
     def post(self, request, pk):
         try:
@@ -529,6 +556,7 @@ class RemoveFavoriteView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('RemoveFavoriteResponse', {'message': serializers.CharField()}))
     def post(self, request):
         # Setzt einfach alle Favoriten des Users auf False
         Membership.objects.filter(user=request.user, is_favorite=True).update(is_favorite=False)
@@ -536,9 +564,10 @@ class RemoveFavoriteView(APIView):
 
 class GetGroupFavoriteView(APIView):
     # Authentifizierung sicherstellen (wie bei deinen anderen Views)
-    authentication_classes = [TokenAuthentication] 
+    authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('GroupFavoriteResponse', {'favorite_group_id': serializers.IntegerField(allow_null=True)}))
     def get(self, request):
         # 1. In der Membership-Tabelle nach der Zeile suchen, wo dieser User 
         # is_favorite=True gesetzt hat und (optional, aber gut) auch "Joined" ist.
@@ -565,6 +594,7 @@ class SetGroupFavoriteView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer('SetFavoriteResponse', {'message': serializers.CharField()}))
     def post(self, request, pk):
         try:
             # Prüfen, ob die Gruppe existiert
