@@ -1,8 +1,11 @@
+import logging
 import requests
 
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User, update_last_login
+from django.db import IntegrityError
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -23,6 +26,8 @@ from routes.serializers import RouteListSerializer
 
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 class ProfileView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -107,8 +112,9 @@ class ProfileView(APIView):
 
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        with open('debug_login.log', 'a', encoding='utf-8') as f:
-            f.write(f"content_type={request.content_type!r} data={dict(request.data)!r}\n")
+        # Hier stand ein Debug-Log, das request.data (inklusive Klartext-Passwort) in eine
+        # Datei geschrieben hat. Entfernt: Anmeldedaten gehören unter keinen Umständen
+        # in ein Logfile.
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
@@ -129,7 +135,13 @@ class RegisterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if User.objects.filter(email=email).exists():
+        # Die E-Mail landet auch im username, und der ist unique. Eine Prüfung nur auf
+        # email übersieht Konten, die (z.B. per createsuperuser) ohne E-Mail angelegt
+        # wurden - create_user lief dann in einen IntegrityError.
+        # __iexact, weil create_user nur die E-Mail-Domain kleinschreibt, den username
+        # aber unverändert übernimmt: sonst entstünden zu "Max@..." und "max@..." zwei
+        # Konten, und die Anmeldung mit der jeweils anderen Schreibweise scheitert.
+        if User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).exists():
             return Response(
                 {'error': 'Ein Konto mit dieser E-Mail-Adresse existiert bereits.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -151,9 +163,24 @@ class RegisterView(APIView):
                 },
                 status=status.HTTP_201_CREATED
             )
-        except Exception as e:
+        # Fällt die Prüfung oben durch ein Rennen zweier gleichzeitiger Registrierungen,
+        # fängt die Unique-Constraint der Datenbank den Rest ab.
+        except IntegrityError:
             return Response(
-                {'error': f'Ein interner Fehler ist aufgetreten: {str(e)}\n Bitte wenden Sie sich an den Support oder versuchen Sie es später noch einmal.'}
+                {'error': 'Ein Konto mit dieser E-Mail-Adresse existiert bereits.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception:
+            # Ohne status= sendet DRF HTTP 200 - das Frontend hielt den Fehlerfall dann
+            # für eine erfolgreiche Registrierung und schickte den Nutzer zum Login,
+            # obwohl gar kein Konto angelegt worden war.
+            # Details nur ins Log, nicht in die Antwort: str(e) kann interne Angaben
+            # (Tabellen-/Spaltennamen) preisgeben.
+            logger.exception('Registrierung fehlgeschlagen')
+            return Response(
+                {'error': 'Ein interner Fehler ist aufgetreten. Bitte versuchen Sie es '
+                          'später noch einmal oder wenden Sie sich an den Support.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 class OnboardingView(APIView):

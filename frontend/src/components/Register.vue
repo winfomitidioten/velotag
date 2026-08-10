@@ -96,6 +96,15 @@ const handleRegister = async () => {
             password: password.value,
         });
 
+        // Ohne Token ist kein Konto entstanden, egal welchen Status die Antwort trug.
+        // Sonst landete der String "undefined" im localStorage und der Nutzer bekäme
+        // eine Erfolgsmeldung, obwohl er sich anschließend nicht anmelden kann.
+        if (!response.data?.token) {
+            errorMessage.value = response.data?.error
+                ?? 'Registrierung ist fehlgeschlagen. Bitte versuchen Sie es später noch einmal.';
+            return;
+        }
+
         localStorage.setItem('auth_token', response.data.token);
         emit('registered');
     } catch (error) {
