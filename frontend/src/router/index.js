@@ -11,6 +11,7 @@ import JoinGroupView from '../views/JoinGroupView.vue'
 import ComingSoon from '@/components/ComingSoon.vue';
 import PublicUserProfile from '../views/PublicUserProfile.vue'
 import { useUserStore } from '@/store/userStore';
+import { setPendingRedirect } from '@/utils/pendingRedirect';
 
 import SettingsView from '@/views/SettingsView.vue';
 
@@ -145,11 +146,16 @@ router.beforeEach((to) => {
 
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!token) {
+      // Ziel merken (z.B. Einladungslink), damit Login.vue nach erfolgreichem
+      // Login/Registrieren dorthin statt zur Karte springen kann.
+      setPendingRedirect(to.fullPath);
       return { name: 'login' };
     }
 
     const userStore = useUserStore();
     if (userStore.onboardingCompleted === false && to.name !== 'onboarding') {
+      // Gleiches Prinzip, falls schon eingeloggt aber Onboarding noch offen ist.
+      setPendingRedirect(to.fullPath);
       return { name: 'onboarding' };
     }
     if (userStore.onboardingCompleted === true && to.name === 'onboarding') {

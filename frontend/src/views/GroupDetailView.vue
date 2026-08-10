@@ -78,11 +78,16 @@ const generateInviteLink = async () => {
     try {
         inviteLinkLoading.value = true;
         const response = await api.get(`groups/${groupId.value}/invite-link/`);
-        // window.location.origin zeigt in der nativen App auf http://localhost (WebView-intern,
-        // von außen nicht erreichbar) - dort brauchen wir die echte Produktions-Adresse, damit der
-        // Link/QR-Code auf einem anderen Gerät funktioniert.
-        const baseUrl = Capacitor.isNativePlatform() ? 'http://167.233.33.166' : window.location.origin;
-        inviteLink.value = `${baseUrl}/join/${response.data.token}`;
+        // In der nativen App das eigene velotag://-Schema verwenden statt eines normalen
+        // http-Links: Seit Android 12 öffnet das System generische http(s)-Links nur dann in
+        // einer App, wenn diese als verifizierter App Link eingetragen ist (echte Domain +
+        // HTTPS + assetlinks.json) - haben wir nicht (Backend läuft auf einer nackten IP ohne
+        // HTTPS). Ohne Verifizierung landet ein http-Link beim Antippen aus anderen Apps immer
+        // im Browser (getestet). Das eigene Schema wird zuverlässig direkt an die App
+        // weitergereicht - Nachteil: in Mail/Notizen-Apps nicht als klickbarer Link erkannt.
+        inviteLink.value = Capacitor.isNativePlatform()
+            ? `velotag://join?token=${response.data.token}`
+            : `${window.location.origin}/join/${response.data.token}`;
         inviteQrDataUrl.value = await QRCode.toDataURL(inviteLink.value);
     } catch (error) {
         console.error("Fehler beim Erzeugen des Einladungslinks:", error);
