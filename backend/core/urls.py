@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthToken
 from groups.views import GroupView, GroupDetailView, GroupInviteAdmin, UserInvitationsView, GroupLeaveView, GroupKickView, SetGroupFavoriteView, RemoveFavoriteView, GetGroupFavoriteView, GroupTransferAdminView, GroupInviteLinkView, GroupJoinByTokenView, GroupLeaderboardView
@@ -16,8 +17,13 @@ from users.views import ProfileView, LogoutView, RegisterView, CustomObtainAuthT
 from .views.strava import strava_status, strava_connect, strava_callback, get_activities, import_activity
 
 
-urlpatterns = [ 
+urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # API-Dokumentation (Swagger UI / Redoc)
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
     # Includes
     path('api/routes/', include('routes.urls')),  # Bug Fix: aus routes/urls.py - api/routes/ wird hier schon angehängt

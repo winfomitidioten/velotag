@@ -6,6 +6,7 @@ django-cors-headers==4.9.0
 django-environ==0.13.0
 django-filter==25.2
 djangorestframework==3.17.1
+drf-spectacular==0.30.0
 firebase-admin==6.6.0
 gunicorn==26.0.0
 idna==3.16
