@@ -344,8 +344,4 @@ Authorization: Token <dein-token>
 | `GET` | `/api/strava/activities/` | Strava-Aktivitäten des Nutzers abrufen |
 | `POST` | `/api/strava/activities/<id>/import/` | Einzelne Strava-Aktivität als Route importieren |
 
----
 
-## Lizenz
-
-[LIZENZ-INFORMATION EINFÜGEN]
