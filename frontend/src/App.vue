@@ -16,6 +16,7 @@ import { useStravaImport } from '@/composables/useStravaImport'
 import { useToast } from '@/composables/useToast'
 import { useSwipeBack } from '@/composables/useSwipeBack'
 import { isMobile, updateIsMobile } from '@/composables/viewport'
+import { consumePendingRedirect } from '@/utils/pendingRedirect'
 
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
@@ -191,7 +192,7 @@ onMounted(async () => {
     // Strava-Login zurück in die App) sowie Gruppeneinladungslinks, egal ob als
     // velotag://join?token=... oder als normaler http-Link geöffnet (siehe
     // AndroidManifest.xml für die zugehörigen Intent-Filter).
-    CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+    const handleAppUrl = (url) => {
       if (url.startsWith('velotag://strava-callback')) {
         router.push('/map');
         showStravaImport.value = true;
@@ -204,7 +205,18 @@ onMounted(async () => {
       if (joinToken) {
         router.push(`/join/${joinToken}`);
       }
-    });
+    };
+
+    CapacitorApp.addListener('appUrlOpen', ({ url }) => handleAppUrl(url));
+
+    // Wird die App per Deep Link erst frisch gestartet (statt nur aus dem
+    // Hintergrund geholt), kann appUrlOpen feuern bevor der Listener oben
+    // registriert ist - getLaunchUrl() liefert die Start-URL in diesem Fall
+    // zusätzlich explizit nach.
+    const launch = await CapacitorApp.getLaunchUrl();
+    if (launch?.url) {
+      handleAppUrl(launch.url);
+    }
   }
 
   setAppHeight();
@@ -220,7 +232,7 @@ onMounted(async () => {
       // router/index.js) - mit gültigem Token wollen wir stattdessen direkt zur Karte,
       // statt den Nutzer bei jedem App-Neustart erneut das Login-Formular sehen zu lassen.
       if (route.path === '/login' || route.path === '/') {
-        router.push('/map');
+        router.push(consumePendingRedirect() ?? '/map');
       }
 
     } catch {
