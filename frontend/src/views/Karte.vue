@@ -1,6 +1,6 @@
 <script setup>
 
-import { onMounted, onUnmounted, ref, computed, watch, shallowRef } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
+import { onMounted, onUnmounted, onActivated, ref, computed, watch, shallowRef } from 'vue' //onmounted, da Karte erst nach dem Laden der Seite angezeigt werden soll -- ref, da showModal eine reaktive Variable ist, die den Zustand des Modals steuert
 import velotagLogo from '@/assets/velotag-logo.png'
 import api from '@/api/api'
 import GpxUploadModal from '@/components/GpxUploadModal.vue'
@@ -222,10 +222,16 @@ onMounted(async () => {
   drawPhotoPins(map.value, isGroupView.value, favoriteGroupId.value)
   console.log("übergebene Gruppen-ID in Karte.vue:", favoriteGroupId.value)
 
-  fetchGroups(); // Gruppenliste für das Auswahl-Dropdown laden
+  // Gruppenliste kommt aus onActivated (siehe unten), nicht von hier
 
   document.addEventListener('click', handleClickOutside);
 })
+
+// Die Karte hängt in <keep-alive> (App.vue), onMounted läuft daher nur beim allerersten
+// Aufbau. onActivated dagegen bei jeder Rückkehr auf die Karte - inklusive des ersten
+// Mals. Ohne das fehlte eine zwischenzeitlich erstellte oder beigetretene Gruppe im
+// Umschalter, bis die App neu geladen wird.
+onActivated(fetchGroups);
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
