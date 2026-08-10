@@ -59,6 +59,9 @@ const fetchProfile = async () => {
 watch(() => route.params.id, fetchProfile)
 
 const toggleLike = async (ride) => {
+    // Eigene Routen lehnt RouteLikeView im Backend mit 400 ab - hier gar nicht erst
+    // senden. Der Button ist zusätzlich disabled (siehe Template).
+    if (isOwnProfile.value) return
     try {
         const method = ride.liked_by_me ? 'delete' : 'post'
         const { data } = await api[method](`routes/${ride.strecken_id}/like/`)
@@ -119,8 +122,11 @@ onMounted(fetchProfile)
             type="button"
             class="like-btn"
             :class="{ liked: ride.liked_by_me }"
+            :disabled="isOwnProfile"
             @click="toggleLike(ride)"
-            :title="ride.liked_by_me ? 'Gefällt mir entfernen' : 'Gefällt mir'"
+            :title="isOwnProfile
+              ? 'Eigene Fahrten lassen sich nicht liken'
+              : (ride.liked_by_me ? 'Gefällt mir entfernen' : 'Gefällt mir')"
           >
 
             <span class="like-count">
@@ -283,9 +289,16 @@ h3 {
   transition: color 0.15s, background-color 0.15s;
 }
 
-.like-btn:hover {
-  background-color: color-mix(in srgb, #e53e3e 12%, white);
+/* :not(:disabled) ist hier der Kern: auf dem eigenen Profil färbte sich das Herz beim
+   Antippen rot, obwohl das Backend den Like ablehnt - auf Touch-Geräten bleibt der
+   Hover-Zustand nach dem Tap hängen und sah aus wie ein erfolgreicher Like. */
+.like-btn:hover:not(:disabled) {
+  background-color: color-mix(in srgb, #e53e3e 12%, var(--color-bg-card));
   color: #e53e3e;
+}
+
+.like-btn:disabled {
+  cursor: default;
 }
 
 .like-btn.liked {

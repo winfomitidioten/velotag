@@ -37,7 +37,13 @@ const newMemberMail = ref("")
 const userStore = useUserStore()
 
 const goToProfile = (member) => {
-    router.push({ name: 'user-profile', params: { id: member.id } })
+    // from= merkt sich die Gruppe, damit "Zurück" im Profil hierher führt und nicht
+    // auf die Karte (ausgewertet in der backTo-Funktion der user-profile-Route).
+    router.push({
+        name: 'user-profile',
+        params: { id: member.id },
+        query: { from: route.fullPath }
+    })
 }
 
 const fetchGroup = async () => {
@@ -309,7 +315,8 @@ onMounted(() => {
                                     {{ (member.first_name || member.email).charAt(0).toUpperCase() }}
                                 </div>
                                 
-                                <div class="member-info-text">
+                                <div class="member-info-text" @click="goToProfile(member)" role="button" tabindex="0"
+                                     @keydown.enter="goToProfile(member)" @keydown.space.prevent="goToProfile(member)">
                                     <span class="member-name">
                                         <template v-if="member.first_name || member.last_name">
                                             {{ member.first_name }} {{ member.last_name }}
@@ -617,7 +624,12 @@ onMounted(() => {
         height: 2.2rem;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid var(--color-primary); 
+        border: 2px solid var(--color-primary);
+        /* Ohne flex-shrink staucht der Flex-Container das Bild in der Breite, sobald
+           es eng wird - als Admin kommen zwei weitere Buttons in die Zeile, und der
+           Kreis wurde dadurch zum Oval. Der Buchstaben-Avatar hat es längst. */
+        flex-shrink: 0;
+        cursor: pointer;
     }
 
     .member-avatar {
@@ -634,12 +646,20 @@ onMounted(() => {
         flex-shrink: 0;
     }
 
+    /* Name und E-Mail führen wie das Profilbild zum öffentlichen Profil des Mitglieds.
+       Die Admin-Buttons daneben sind eigene Elemente und lösen das nicht mit aus. */
     .member-info-text {
         display: flex;
         flex-direction: column;
         gap: 0.1rem;
         flex-grow: 1;
         min-width: 0;
+        cursor: pointer;
+    }
+
+    .member-info-text:hover .member-name,
+    .member-info-text:focus-visible .member-name {
+        color: var(--color-primary);
     }
 
     .member-name {

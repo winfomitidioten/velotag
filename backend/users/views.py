@@ -387,7 +387,11 @@ class PublicUserProfileView(APIView):
         return Response({
             "profile": profile_data,
             "stats": Route.get_stats_for_user(target_user),
-            "recentRides": RouteListSerializer(recent_rides, many=True).data
+            # context ist Pflicht: get_liked_by_me im RouteListSerializer braucht den
+            # request, um zu prüfen, ob der eingeloggte Nutzer die Route geliked hat.
+            # Ohne ihn lieferte das Feld immer False und die Herzen waren nach jedem
+            # Neuladen wieder grau.
+            "recentRides": RouteListSerializer(recent_rides, many=True, context={'request': request}).data
         }, status=status.HTTP_200_OK)
 
 

@@ -122,11 +122,24 @@ const routes = [
     meta: { requiresAuth: true, showBack: true, backTo: '/settings', title: 'Impressum' }
   },
   {
-  path: '/user/:id',
-  name: 'user-profile',
-  component: PublicUserProfile,
-  meta: { requiresAuth: true, showBack: true }
-},
+    path: '/user/:id',
+    name: 'user-profile',
+    component: PublicUserProfile,
+    meta: {
+      requiresAuth: true,
+      showBack: true,
+      // Fremde Profile werden aus verschiedenen Ansichten geöffnet (Gruppe,
+      // Bestenliste). Der Aufrufer hängt seinen Pfad als ?from= an, damit "Zurück"
+      // dorthin führt statt auf die Karte. Nur interne Pfade zulassen - ein
+      // absoluter Wert aus der URL soll die Navigation nicht umlenken können.
+      backTo: (route) => {
+        const from = route.query.from;
+        return typeof from === 'string' && from.startsWith('/') && !from.startsWith('//')
+          ? from
+          : '/map';
+      }
+    }
+  },
   {
     path: '/onboarding',
     name: 'onboarding',
