@@ -114,7 +114,31 @@ cd frontend
 npm install
 ```
 
-In `frontend/vite.config.js` ist der Dev-Proxy standardmäßig auf einen entfernten Server (`167.233.33.166`) konfiguriert. Für lokale Entwicklung gegen das lokale Backend die auskommentierte Zeile aktivieren bzw. das `target` auf `http://127.0.0.1:8000` umstellen (in beiden Proxy-Einträgen `/api` und `/media`).
+Wohin das Frontend seine API-Anfragen schickt, hängt davon ab, **wie** es läuft — es gibt zwei getrennte Mechanismen:
+
+**a) Web-Dev-Server (`npm run dev`)**
+
+Nutzt den Proxy aus `frontend/vite.config.js`. Der ist standardmäßig auf den Produktionsserver (`167.233.33.166`) konfiguriert. Für lokale Entwicklung gegen das lokale Backend die auskommentierte Zeile aktivieren bzw. das `target` auf `http://127.0.0.1:8000` umstellen (in beiden Proxy-Einträgen `/api` und `/media`).
+
+**b) Native Builds (Web-Build, Android, iOS)**
+
+Der Proxy aus `vite.config.js` greift hier **nicht** (es läuft kein Dev-Server mehr). Stattdessen entscheidet die Umgebungsvariable `VITE_API_BASE_URL`:
+
+- **Nicht gesetzt (Standard):** zeigt automatisch auf den Produktionsserver (`http://167.233.33.166/api`) — für einen "normalen" Mobile-Build ist also nichts weiter zu tun
+- **Gesetzt:** überschreibt das Ziel, z. B. um gegen ein lokales Backend zu testen
+
+Dazu eine Datei `frontend/.env.local` anlegen (wird von Vite automatisch geladen, ist gitignored):
+
+```env
+# Android-Emulator: 10.0.2.2 ist die spezielle Adresse, unter der der Emulator
+# den Host-Laptop erreicht (nicht localhost/127.0.0.1!)
+VITE_API_BASE_URL=http://10.0.2.2:8000/api/
+
+# Physisches Gerät im gleichen WLAN: LAN-IP des Laptops verwenden, z. B.
+# VITE_API_BASE_URL=http://192.168.1.23:8000/api/
+```
+
+Nach Änderungen an `.env.local` muss die App neu gebaut werden (`npm run build` + `npx cap copy ...`), damit sie greifen.
 
 ### Umgebungsvariablen
 
@@ -196,6 +220,8 @@ gunicorn core.wsgi:application
 ```
 
 ### Mobile (iOS / Android)
+
+Zeigt standardmäßig auf den Produktionsserver. Für einen Test gegen das lokale Backend vorher `frontend/.env.local` mit `VITE_API_BASE_URL` anlegen (siehe [Frontend einrichten](#3-frontend-einrichten)).
 
 ```bash
 cd frontend
@@ -300,8 +326,10 @@ Authorization: Token <dein-token>
 | `GET` | `/api/routes/map/` | Routendaten für die Kartenansicht (Heatmap) |
 | `GET` | `/api/routes/stats/` | Statistiken zu den eigenen Routen |
 | `GET` | `/api/routes/performance/` | Performance-Daten (Puls/Watt/Zeit) |
-| `GET` | `/api/routes/<id>/` | Detailansicht einer Route |
+| `PATCH` | `/api/routes/<id>/` | Route bearbeiten (Name, Gruppe) |
+| `DELETE` | `/api/routes/<id>/` | Route löschen |
 | `POST` | `/api/routes/<id>/like/` | Route liken |
+| `DELETE` | `/api/routes/<id>/like/` | Like zurücknehmen |
 | `GET` | `/api/routes/intersections/<group_id>/` | Streckenüberschneidungen einer Gruppe als GeoJSON |
 
 ### Gruppen
@@ -311,12 +339,13 @@ Authorization: Token <dein-token>
 | `GET` | `/api/groups/` | Eigene Gruppen auflisten |
 | `POST` | `/api/groups/` | Neue Gruppe erstellen |
 | `GET` | `/api/groups/<id>/` | Gruppendetails abrufen |
-| `DELETE` | `/api/groups/<id>/` | Gruppe/Mitglied entfernen (nur Admin) |
+| `PATCH` | `/api/groups/<id>/` | Gruppe bearbeiten (Name, Beschreibung, Bild; nur Admin) |
+| `DELETE` | `/api/groups/<id>/` | Gruppe löschen (nur Admin) |
 | `POST` | `/api/groups/<id>/invite/` | Mitglied per E-Mail einladen (nur Admin) |
-| `GET`/`POST` | `/api/groups/<id>/invite-link/` | Einladungslink/QR-Code für die Gruppe erzeugen |
+| `GET` | `/api/groups/<id>/invite-link/` | Einladungslink/QR-Code für die Gruppe erzeugen (nur Admin) |
 | `POST` | `/api/groups/join/` | Gruppe per Einladungstoken beitreten |
 | `POST` | `/api/groups/<id>/leave` | Eigene Mitgliedschaft in Gruppe kündigen |
-| `POST` | `/api/groups/<id>/kick/` | Mitglied aus Gruppe entfernen (nur Admin) |
+| `DELETE` | `/api/groups/<id>/kick/` | Mitglied aus Gruppe entfernen (nur Admin) |
 | `POST` | `/api/groups/<id>/transfer-admin/` | Admin-Rechte an anderes Mitglied übertragen |
 | `GET` | `/api/groups/<id>/leaderboard/` | Gruppen-Leaderboard abrufen |
 | `GET` | `/api/groups/favorite/` | Favorisierte Gruppe abrufen |
@@ -332,7 +361,8 @@ Authorization: Token <dein-token>
 | `POST` | `/api/photo-pins/create/` | Foto-Pin (Bild + Standort) erstellen |
 | `GET` | `/api/photo-pins/list/` | Eigene Foto-Pins auflisten |
 | `GET` | `/api/photo-pins/group/<id>/` | Foto-Pins einer Gruppe auflisten |
-| `GET` | `/api/photo-pins/<id>/` | Detailansicht eines Foto-Pins |
+| `PATCH` | `/api/photo-pins/<id>/` | Eigenen Foto-Pin bearbeiten (Beschreibung, Gruppen) |
+| `DELETE` | `/api/photo-pins/<id>/` | Eigenen Foto-Pin löschen |
 
 ### Strava-Integration
 
