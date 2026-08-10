@@ -11,9 +11,10 @@ Das Projekt löst damit das Problem, dass klassische Trainings-Apps zwar einzeln
 - [Features](#features)
 - [Technologie-Stack](#technologie-stack)
 - [Voraussetzungen](#voraussetzungen)
+- [Datenbank einrichten (PostgreSQL + PostGIS)](#datenbank-einrichten-postgresql--postgis)
 - [Installation & Setup](#installation--setup)
+- [Konfiguration: Wohin zeigt das Frontend?](#konfiguration-wohin-zeigt-das-frontend)
 - [Nutzung / Ausführung](#nutzung--ausführung)
-- [Tests](#tests)
 - [Projektstruktur](#projektstruktur)
 - [API-Referenz](#api-referenz)
 
@@ -33,6 +34,7 @@ Das Projekt löst damit das Problem, dass klassische Trainings-Apps zwar einzeln
 - **Geocoding-Proxy** – Backend-Proxy zu Nominatim (Adress-Suche & Reverse-Geocoding), damit der Client nicht direkt gegen OSM-Nominatim spricht
 - **Push- & lokale Benachrichtigungen** – Firebase-Cloud-Messaging-Anbindung über Capacitor
 - **Benutzerprofil** – öffentliches und eigenes Profil, Profilbild, Name und E-Mail bearbeitbar
+- **API-Dokumentation** – interaktive Swagger UI unter `/api/docs/` (generiert mit drf-spectacular)
 - **Cross-Platform** – identische Codebasis läuft als Web-App sowie als native iOS- und Android-App über Capacitor
 
 ---
@@ -50,6 +52,7 @@ Das Projekt löst damit das Problem, dass klassische Trainings-Apps zwar einzeln
 | Geodaten-Backend | GeoDjango (`django.contrib.gis`) mit PostGIS, GDAL/GEOS |
 | Datenbank | PostgreSQL mit PostGIS-Erweiterung |
 | Auth | DRF Token Authentication |
+| API-Doku | drf-spectacular (OpenAPI 3 / Swagger UI) |
 | Bildverarbeitung | Pillow |
 | Push-Benachrichtigungen | Firebase Admin SDK |
 | Produktionsserver | Gunicorn |
@@ -61,13 +64,57 @@ Das Projekt löst damit das Problem, dass klassische Trainings-Apps zwar einzeln
 
 - **Python** 3.10+
 - **Node.js** `^20.19.0` oder `>=22.12.0` (siehe `frontend/package.json` → `engines`)
-- **PostgreSQL** mit installierter **PostGIS**-Erweiterung (die Anwendung nutzt GeoDjango und erwartet die Postgis-Backend-Engine – ein einfaches PostgreSQL ohne PostGIS oder SQLite reicht **nicht**)
-- **GDAL** und **GEOS** Bibliotheken lokal installiert
-  - Windows: z. B. über die PostgreSQL-Installation (`C:\Program Files\PostgreSQL\<Version>\bin`) – `backend/core/settings.py` sucht diesen Pfad automatisch; alternativ eigenen Pfad über `WINDOWS_GDAL_BIN_PATH` setzen
-  - macOS: über Homebrew (`brew install gdal geos`); alternativer Pfad über `MACOS_GDAL_LIB_PATH`
-  - Linux: über die jeweilige Paketverwaltung (z. B. `apt install gdal-bin libgeos-dev`)
+- **PostgreSQL mit PostGIS-Erweiterung** – siehe [Datenbank einrichten](#datenbank-einrichten-postgresql--postgis). Ein einfaches PostgreSQL ohne PostGIS oder SQLite funktioniert **nicht**.
 - Optional: **Android Studio** (für Android-Build), **Xcode** (für iOS-Build)
-- Optional: **Firebase-Projekt** inkl. `firebase_credentials.json`, falls Push-Benachrichtigungen genutzt werden sollen
+- Optional: **Firebase-Projekt** inkl. `firebase_credentials.json`, falls Push-Benachrichtigungen genutzt werden sollen. Ohne die Datei startet das Backend normal, Push ist dann nur deaktiviert.
+
+---
+
+## Datenbank einrichten (PostgreSQL + PostGIS)
+
+Das Backend nutzt GeoDjango und ist in `settings.py` fest auf die PostGIS-Engine eingestellt (`django.contrib.gis.db.backends.postgis`). Eine PostgreSQL-Instanz **mit aktivierter PostGIS-Erweiterung** wird deshalb immer benötigt – auch, wenn man nur lokal testen will.
+
+### 1. PostgreSQL + PostGIS installieren
+
+| System | Vorgehen |
+|---|---|
+| **Windows** | [PostgreSQL-Installer](https://www.postgresql.org/download/windows/) ausführen. Am Ende startet der **Stack Builder** – dort unter *Spatial Extensions* **PostGIS** mit auswählen und installieren. |
+| **macOS** | `brew install postgresql postgis` und anschließend `brew services start postgresql` |
+| **Linux (Debian/Ubuntu)** | `sudo apt install postgresql postgis postgresql-<version>-postgis-3` |
+
+Die PostGIS-Installation liefert gleichzeitig die benötigten **GDAL-/GEOS-Bibliotheken** mit. `backend/core/settings.py` sucht diese auf Windows und macOS automatisch in den Standardpfaden (z. B. `C:\Program Files\PostgreSQL\18\bin` bzw. `/opt/homebrew/lib`). Nur falls sie dort nicht liegen, muss der Pfad in der `.env` gesetzt werden (`WINDOWS_GDAL_BIN_PATH` bzw. `MACOS_GDAL_LIB_PATH`).
+
+### 2. Datenbank und Benutzer anlegen
+
+Als PostgreSQL-Superuser verbinden (Windows: *SQL Shell (psql)* aus dem Startmenü, macOS/Linux: `psql -U postgres`) und ausführen:
+
+```sql
+CREATE DATABASE velotag;
+CREATE USER velotag_dev WITH PASSWORD 'dein-passwort';
+GRANT ALL PRIVILEGES ON DATABASE velotag TO velotag_dev;
+```
+
+### 3. PostGIS in der Datenbank aktivieren
+
+Die Erweiterung muss **in der Datenbank selbst** aktiviert werden – weiterhin als Superuser:
+
+```sql
+\c velotag
+
+CREATE EXTENSION postgis;
+
+-- Ab PostgreSQL 15 hat ein neuer Benutzer standardmäßig keine Schreibrechte
+-- im public-Schema. Ohne diese Zeile scheitern die Django-Migrationen.
+GRANT ALL ON SCHEMA public TO velotag_dev;
+```
+
+Prüfen, ob PostGIS aktiv ist:
+
+```sql
+SELECT PostGIS_Version();
+```
+
+Kommt hier eine Versionsnummer zurück, ist die Datenbank fertig eingerichtet. Die dabei vergebenen Werte (`velotag`, `velotag_dev`, Passwort) werden gleich in `backend/.env` als `DB_NAME`, `DB_USER` und `DB_PASSW` eingetragen.
 
 ---
 
@@ -80,7 +127,11 @@ git clone [REPOSITORY-URL]
 cd velotag
 ```
 
-### 2. Backend einrichten
+### 2. Datenbank einrichten
+
+Siehe [Datenbank einrichten](#datenbank-einrichten-postgresql--postgis) – muss vor dem ersten `migrate` erledigt sein.
+
+### 3. Backend einrichten
 
 ```bash
 cd backend
@@ -96,87 +147,139 @@ python -m venv venv-windows          # Windows
 pip install -r requirements.txt
 ```
 
-Lege anschließend die Datei `backend/.env` an (siehe [Umgebungsvariablen](#umgebungsvariablen)) und führe die Migrationen aus:
+> Die Namen `venv-windows` bzw. `venv-macos` sind nicht beliebig: die Schnellstart-Skripte `start_server.bat` / `start_server.sh` erwarten genau diese Ordner.
+
+### 4. Umgebungsvariablen anlegen (`backend/.env`)
+
+Datei `backend/.env` mit folgendem Inhalt anlegen. Bis auf `DEBUG` sind alle Werte **Pflicht** – fehlt einer davon, startet das Backend gar nicht:
+
+```env
+# Django
+SECRET_KEY=dein-geheimer-schluessel
+
+# Einziger optionaler Wert hier (Standard: False) - lokal auf True setzen
+DEBUG=True
+
+# Datenbank (Werte aus dem Datenbank-Setup oben)
+DB_NAME=velotag
+DB_USER=velotag_dev
+DB_PASSW=dein-passwort
+DB_HOST=localhost
+DB_PORT=5432
+
+# Strava OAuth 2 (App unter https://www.strava.com/settings/api registrieren)
+STRAVA_CLIENT_ID=deine-client-id
+STRAVA_CLIENT_SECRET=dein-client-secret
+STRAVA_REDIRECT_URI=http://127.0.0.1:8000/api/strava/callback/
+```
+
+Optionale Werte, die nur bei Bedarf gesetzt werden müssen:
+
+```env
+# Ziel-Deep-Link, in den das Backend nach dem Strava-Login zurückspringt
+# (Standard, wenn nicht gesetzt: velotag://strava-callback)
+STRAVA_APP_REDIRECT_URL=velotag://strava-callback
+
+# Nur nötig, wenn GDAL/GEOS NICHT in den Standardpfaden liegen
+WINDOWS_GDAL_BIN_PATH=C:\Program Files\PostgreSQL\18\bin
+MACOS_GDAL_LIB_PATH=/opt/homebrew/lib
+```
+
+Anschließend die Migrationen ausführen:
 
 ```bash
 python manage.py migrate
 
-# Optional: Admin-Benutzer anlegen
+# Optional: Admin-Benutzer für /admin/ anlegen
 python manage.py createsuperuser
 ```
 
-Falls Push-Benachrichtigungen genutzt werden sollen, `firebase_credentials.json` (aus der Firebase-Konsole) im `backend/`-Verzeichnis ablegen.
+Falls Push-Benachrichtigungen genutzt werden sollen, zusätzlich `firebase_credentials.json` (aus der Firebase-Konsole) im `backend/`-Verzeichnis ablegen.
 
-### 3. Frontend einrichten
+### 5. Frontend einrichten
 
 ```bash
 cd frontend
 npm install
 ```
 
-Wohin das Frontend seine API-Anfragen schickt, hängt davon ab, **wie** es läuft — es gibt zwei getrennte Mechanismen:
+Wohin das Frontend seine Anfragen schickt, hängt vom Einsatzszenario ab – siehe nächster Abschnitt.
 
-**a) Web-Dev-Server (`npm run dev`)**
+---
 
-Nutzt den Proxy aus `frontend/vite.config.js`. Der ist standardmäßig auf den Produktionsserver (`167.233.33.166`) konfiguriert. Für lokale Entwicklung gegen das lokale Backend die auskommentierte Zeile aktivieren bzw. das `target` auf `http://127.0.0.1:8000` umstellen (in beiden Proxy-Einträgen `/api` und `/media`).
+## Konfiguration: Wohin zeigt das Frontend?
 
-**b) Native Builds (Web-Build, Android, iOS)**
+Das ist der Punkt, an dem beim Aufsetzen am häufigsten etwas schiefgeht. Es gibt **zwei** Stellschrauben, und welche greift, hängt davon ab, wie das Frontend läuft:
 
-Der Proxy aus `vite.config.js` greift hier **nicht** (es läuft kein Dev-Server mehr). Stattdessen entscheidet die Umgebungsvariable `VITE_API_BASE_URL`:
+| Stellschraube | Wirkt bei | Wirkt **nicht** bei |
+|---|---|---|
+| Proxy in `frontend/vite.config.js` | nur `npm run dev` (Browser) | Mobile-Builds, `npm run build` |
+| `VITE_API_BASE_URL` in `frontend/.env.local` | immer – **überschreibt den Proxy** | – |
 
-- **Nicht gesetzt (Standard):** zeigt automatisch auf den Produktionsserver (`http://167.233.33.166/api`) — für einen "normalen" Mobile-Build ist also nichts weiter zu tun
-- **Gesetzt:** überschreibt das Ziel, z. B. um gegen ein lokales Backend zu testen
+Die Auflösung in `src/api/client.js` / `src/api/api.js` ist:
 
-Dazu eine Datei `frontend/.env.local` anlegen (wird von Vite automatisch geladen, ist gitignored):
+1. `VITE_API_BASE_URL` gesetzt → **gewinnt immer**
+2. sonst im Dev-Server (`npm run dev`) → relativer Pfad `/api` durch den Vite-Proxy
+3. sonst (fertiger Build, also auch Mobile) → fest `http://167.233.33.166/api`
+
+> **Häufigster Fehler:** Eine `frontend/.env.local` von einem früheren Mobile-Test liegt noch herum. Sie überschreibt auch bei `npm run dev` still den Proxy, und man wundert sich, warum die Proxy-Änderung in `vite.config.js` keine Wirkung zeigt. Im Zweifel die Datei löschen oder umbenennen.
+
+### Szenario A: Alles lokal auf dem Rechner (Backend + Frontend im Browser)
+
+1. Sicherstellen, dass **keine** `frontend/.env.local` existiert (bzw. `VITE_API_BASE_URL` darin auskommentiert ist)
+2. In `frontend/vite.config.js` in **beiden** Proxy-Einträgen (`/api` und `/media`) das `target` auf das lokale Backend umstellen:
+
+Konkret heißt das: in beiden Blöcken die Produktions-Zeile auskommentieren und die lokale aktivieren. Die übrigen Optionen (`changeOrigin`, `rewrite`) bleiben unverändert.
+
+```js
+'/api': {
+//  target: 'http://167.233.33.166',   // <- auskommentieren
+    target: 'http://127.0.0.1:8000',   // <- aktivieren
+    ...
+},
+'/media': {
+//  target: 'http://167.233.33.166',   // <- auskommentieren
+    target: 'http://127.0.0.1:8000',   // <- aktivieren
+    ...
+}
+```
+
+3. In `backend/.env` sollte `STRAVA_REDIRECT_URI=http://127.0.0.1:8000/api/strava/callback/` stehen, damit auch der Strava-Login lokal zurückfindet
+4. Beide Server starten (siehe [Nutzung / Ausführung](#nutzung--ausführung))
+
+### Szenario B: Mobile-App gegen den echten Server (Normalfall)
+
+Hier ist **keine Konfiguration nötig**: ohne `VITE_API_BASE_URL` fällt ein fertiger Build automatisch auf den Produktionsserver `http://167.233.33.166/api` zurück. Der Proxy aus `vite.config.js` spielt keine Rolle, weil im Mobile-Build kein Dev-Server läuft.
+
+```bash
+cd frontend
+# Falls vorhanden: .env.local loeschen oder VITE_API_BASE_URL darin auskommentieren
+npm run build
+npx cap sync android      # bzw. ios
+npx cap open android      # bzw. ios
+```
+
+### Szenario C: Mobile-App gegen das lokale Backend (zum Entwickeln)
+
+Dafür `frontend/.env.local` anlegen:
 
 ```env
-# Android-Emulator: 10.0.2.2 ist die spezielle Adresse, unter der der Emulator
-# den Host-Laptop erreicht (nicht localhost/127.0.0.1!)
+# Android-Emulator: 10.0.2.2 ist die Adresse, unter der der Emulator den
+# Host-Rechner erreicht. localhost/127.0.0.1 zeigt im Emulator auf das
+# Geraet selbst und funktioniert hier NICHT.
 VITE_API_BASE_URL=http://10.0.2.2:8000/api/
-
-# Physisches Gerät im gleichen WLAN: LAN-IP des Laptops verwenden, z. B.
-# VITE_API_BASE_URL=http://192.168.1.23:8000/api/
 ```
 
-Nach Änderungen an `.env.local` muss die App neu gebaut werden (`npm run build` + `npx cap copy ...`), damit sie greifen.
+Danach neu bauen und übertragen (`.env.local` wird nur beim Build eingelesen):
 
-### Umgebungsvariablen
-
-Lege die Datei `backend/.env` mit folgenden Werten an:
-
-```env
-# Django
-SECRET_KEY=dein-geheimer-schluessel
-DEBUG=True
-
-# PostgreSQL / PostGIS (Produktion)
-DB_NAME=velotag_db
-DB_USER=postgres
-DB_PASSW=dein-passwort
-DB_HOST=localhost
-DB_PORT=5432
-
-# PostgreSQL / PostGIS (lokale Entwicklung, optional getrennt von Prod)
-DEV_DB_NAME=velotag_dev_db
-DEV_DB_USER=postgres
-DEV_DB_PASSW=dein-passwort
-DEV_DB_HOST=localhost
-DEV_DB_PORT=5432
-
-# Strava OAuth 2
-STRAVA_CLIENT_ID=deine-client-id
-STRAVA_CLIENT_SECRET=dein-client-secret
-STRAVA_REDIRECT_URI=http://127.0.0.1:8000/api/strava/callback/
-STRAVA_APP_REDIRECT_URL=velotag://strava-callback
-
-# Nur Windows, falls GDAL/GEOS nicht automatisch gefunden werden
-WINDOWS_GDAL_BIN_PATH=[PFAD-ZU-POSTGRESQL-BIN]
-
-# Nur macOS, falls GDAL/GEOS nicht automatisch gefunden werden
-MACOS_GDAL_LIB_PATH=[PFAD-ZU-HOMEBREW-LIB]
+```bash
+npm run build
+npx cap sync android
 ```
 
-> Die Datenbank-Engine ist fest auf PostGIS eingestellt (`django.contrib.gis.db.backends.postgis`). Eine laufende PostgreSQL-Instanz mit aktivierter PostGIS-Erweiterung wird also **immer** benötigt, auch lokal.
+Das Backend kann dabei ganz normal mit `python manage.py runserver` laufen – `10.0.2.2` ist in `ALLOWED_HOSTS` bereits eingetragen.
+
+> **Physisches Gerät statt Emulator:** Dann die LAN-IP des Rechners verwenden (z. B. `VITE_API_BASE_URL=http://192.168.1.23:8000/api/`), das Backend mit `python manage.py runserver 0.0.0.0:8000` starten **und** dieselbe IP in `ALLOWED_HOSTS` in `backend/core/settings.py` ergänzen – sonst blockt Django die Anfragen mit `DisallowedHost` ab.
 
 ---
 
@@ -208,8 +311,37 @@ npm run preview
 # Windows (öffnet Windows Terminal mit geteiltem Bildschirm)
 start_server.bat
 
-# macOS
+# macOS (öffnet zwei Terminal-Fenster)
 ./start_server.sh
+```
+
+### API-Dokumentation
+
+Bei laufendem Backend erreichbar unter:
+
+| URL | Inhalt |
+|---|---|
+| `http://localhost:8000/api/docs/` | Swagger UI (interaktiv, Endpunkte direkt testbar) |
+| `http://localhost:8000/api/redoc/` | Redoc (lesefreundliche Darstellung) |
+| `http://localhost:8000/api/schema/` | OpenAPI-3-Schema als YAML |
+
+### Mobile (iOS / Android)
+
+Vor dem Build klären, gegen welchen Server die App laufen soll – siehe [Konfiguration](#konfiguration-wohin-zeigt-das-frontend), Szenario B (echter Server) bzw. C (lokales Backend).
+
+```bash
+cd frontend
+
+# Produktions-Build erzeugen
+npm run build
+
+# Android
+npx cap sync android
+npx cap open android        # Öffnet Android Studio
+
+# iOS
+npx cap sync ios
+npx cap open ios            # Öffnet Xcode
 ```
 
 ### Produktionsbetrieb (Backend)
@@ -219,42 +351,6 @@ cd backend
 gunicorn core.wsgi:application
 ```
 
-### Mobile (iOS / Android)
-
-Zeigt standardmäßig auf den Produktionsserver. Für einen Test gegen das lokale Backend vorher `frontend/.env.local` mit `VITE_API_BASE_URL` anlegen (siehe [Frontend einrichten](#3-frontend-einrichten)).
-
-```bash
-cd frontend
-
-# Produktions-Build erzeugen
-npm run build
-
-# Android
-npx cap copy android
-npx cap open android        # Öffnet Android Studio
-
-# iOS
-npx cap copy ios
-npx cap open ios            # Öffnet Xcode
-```
-
----
-
-## Tests
-
-**Backend:**
-
-```bash
-cd backend
-python manage.py test
-```
-
-Django's Test-Runner erkennt automatisch die `tests.py`-Dateien in den Apps (`routes/tests.py`, `groups/tests.py`). Aktuell enthalten diese Dateien nur das Standard-Gerüst (`TestCase`) und noch keine ausgefüllten Testfälle – neue Tests werden nach dem Django-`TestCase`-Muster in der jeweiligen App ergänzt.
-
-**Frontend:**
-
-Für das Frontend ist aktuell kein automatisierter Test-Runner in `frontend/package.json` konfiguriert. Manuelle Verifikation erfolgt über `npm run dev` bzw. `npm run build` + `npm run preview`.
-
 ---
 
 ## Projektstruktur
@@ -262,31 +358,32 @@ Für das Frontend ist aktuell kein automatisierter Test-Runner in `frontend/pack
 ```
 velotag/
 ├── backend/
-│   ├── core/                    # Django-Settings, Haupt-URL-Router, Strava-Views (core/views/strava.py)
-│   ├── users/                   # Auth, Profil, Registrierung, Onboarding, Geocoding-Proxy, Device/Push-Token
-│   ├── routes/                  # Routen-App: GPX-Upload, Polyline-Speicherung, Stats, Performance, Likes,
+│   ├── core/                     # Django-Settings, Haupt-URL-Router, Strava-Views (core/views/strava.py)
+│   ├── users/                    # Auth, Profil, Registrierung, Onboarding, Geocoding-Proxy, Device/Push-Token
+│   ├── routes/                   # Routen-App: GPX-Upload, Polyline-Speicherung, Stats, Performance, Likes,
 │   │                             #   Gruppen-Streckenüberschneidungen (GeoJSON)
-│   ├── groups/                  # Gruppen-App: Mitglieder, Einladungen (E-Mail & Link/QR), Leaderboard,
+│   ├── groups/                   # Gruppen-App: Mitglieder, Einladungen (E-Mail & Link/QR), Leaderboard,
 │   │                             #   Favoriten, Admin-Übertragung
-│   ├── photos/                  # Foto-Pins: Erstellen, Auflisten je Nutzer/Gruppe, Detailansicht
-│   ├── utils/                   # Geteilte Hilfsfunktionen, u. a. Push-Benachrichtigungen (Firebase)
-│   ├── media/                   # Hochgeladene Bilder (Profilbilder, Foto-Pins) — nicht versioniert
+│   ├── photos/                   # Foto-Pins: Erstellen, Auflisten je Nutzer/Gruppe, Bearbeiten/Löschen
+│   ├── utils/                    # Geteilte Hilfsfunktionen, u. a. Push-Benachrichtigungen (Firebase)
+│   ├── media/                    # Hochgeladene Bilder — wird beim ersten Upload erzeugt, nicht versioniert
 │   ├── manage.py
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └── .env                      # Lokale Konfiguration — nicht versioniert
 ├── frontend/
 │   ├── src/
-│   │   ├── api/                 # Axios-Instanz (client.js) mit Token-Interceptor + gebündelte API-Calls (api.js)
-│   │   ├── components/          # Wiederverwendbare UI-Komponenten (Modals, TabBar, Header, Picker …)
-│   │   ├── composables/         # GPX-Parsing, Karten-Rendering, Foto-Pins, Favoriten, Strava-Import u. a.
+│   │   ├── api/                  # Axios-Instanzen (client.js, api.js) mit Token-Interceptor
+│   │   ├── assets/               # Statische Assets (Logos, Kartenlayer-Vorschaubilder, globales CSS)
+│   │   ├── components/           # Wiederverwendbare UI-Komponenten (Modals, TabBar, Header, Picker …)
+│   │   ├── composables/          # GPX-Parsing, Karten-Rendering, Foto-Pins, Favoriten, Strava-Import u. a.
 │   │   ├── router/               # Vue-Router-Konfiguration inkl. Auth- & Onboarding-Guard
 │   │   ├── store/                # Pinia-Stores (User, Heatmap-Style, Settings)
-│   │   ├── utils/                 # Kleine Utility-Funktionen (z. B. Intensitäts-Farbverlauf der Heatmap)
+│   │   ├── utils/                # Kleine Utility-Funktionen (z. B. Intensitäts-Farbverlauf der Heatmap)
 │   │   └── views/                # Seiten: Karte, Login/Register, Onboarding, Profil, Gruppen, Strecken, Settings
 │   ├── android/                  # Capacitor Android-Projekt
 │   ├── ios/                      # Capacitor iOS-Projekt
-│   ├── vite.config.js
+│   ├── vite.config.js            # Dev-Server-Proxy (nur für npm run dev)
 │   └── package.json
-├── docs/                         # Projektdokumentation [aktuell noch leer]
 ├── start_server.bat              # Windows-Schnellstart (Backend + Frontend)
 ├── start_server.sh               # macOS-Schnellstart (Backend + Frontend)
 └── README.md
@@ -295,6 +392,8 @@ velotag/
 ---
 
 ## API-Referenz
+
+Eine interaktive, immer aktuelle Fassung dieser Übersicht liefert die Swagger UI unter `/api/docs/` (siehe [API-Dokumentation](#api-dokumentation)).
 
 Alle Endpunkte erfordern (sofern nicht anders angegeben) den HTTP-Header:
 
@@ -373,5 +472,3 @@ Authorization: Token <dein-token>
 | `GET` | `/api/strava/callback/` | OAuth-Callback (speichert Tokens) |
 | `GET` | `/api/strava/activities/` | Strava-Aktivitäten des Nutzers abrufen |
 | `POST` | `/api/strava/activities/<id>/import/` | Einzelne Strava-Aktivität als Route importieren |
-
-

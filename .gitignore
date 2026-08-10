@@ -1,5 +1,7 @@
 # --- Backend (Django) ---
 backend/venv-windows/
+backend/venv-macos/
+backend/venv/
 backend/.env
 backend/firebase_credentials.json
 backend/__pycache__/
@@ -15,6 +17,8 @@ frontend/node_modules/
 frontend/dist/
 frontend/dist-ssr/
 frontend/.local
+frontend/.env.local
+frontend/.env*.local
 frontend/coverage/
 frontend/.eslintcache
 frontend/*.timestamp-*-*.mjs
