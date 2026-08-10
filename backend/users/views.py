@@ -331,6 +331,7 @@ class PublicUserProfileView(APIView):
 
         recent_rides = Route.objects.filter(user=target_user).order_by('-created_at')[:4]
 
+
         return Response({
             "profile": profile_data,
             "stats": Route.get_stats_for_user(target_user),
