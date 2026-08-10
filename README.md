@@ -13,6 +13,7 @@ Das Projekt löst damit das Problem, dass klassische Trainings-Apps zwar einzeln
 - [Voraussetzungen](#voraussetzungen)
 - [Datenbank einrichten (PostgreSQL + PostGIS)](#datenbank-einrichten-postgresql--postgis)
 - [Installation & Setup](#installation--setup)
+- [Strava-Anbindung: läuft nur über den produktiven Server](#strava-anbindung-läuft-nur-über-den-produktiven-server)
 - [Konfiguration: Wohin zeigt das Frontend?](#konfiguration-wohin-zeigt-das-frontend)
 - [Nutzung / Ausführung](#nutzung--ausführung)
 - [Projektstruktur](#projektstruktur)
@@ -151,39 +152,77 @@ pip install -r requirements.txt
 
 ### 4. Umgebungsvariablen anlegen (`backend/.env`)
 
-Datei `backend/.env` mit folgendem Inhalt anlegen. Bis auf `DEBUG` sind alle Werte **Pflicht** – fehlt einer davon, startet das Backend gar nicht:
+Im Repo liegt die Vorlage **`backend/.env.example`** mit allen Schlüsseln und Erklärungen. Diese kopieren und ausfüllen:
+
+```bash
+cd backend
+
+copy .env.example .env      # Windows
+# cp .env.example .env      # macOS / Linux
+```
+
+Bis auf `DEBUG` sind alle Werte darin **Pflicht** – fehlt einer, startet das Backend gar nicht.
+
+#### a) SECRET_KEY erzeugen
+
+Django bringt einen Generator mit (venv muss aktiv sein):
+
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+Die Ausgabe in die `.env` übernehmen – **in einfachen Anführungszeichen**. Die Zeile sieht dann etwa so aus (Beispielwert, bitte den selbst erzeugten Key eintragen):
 
 ```env
-# Django
-SECRET_KEY=dein-geheimer-schluessel
+SECRET_KEY='xxxxxxxx(xxxxx#xxxxx=xxxxx@xxxxx&xxxxx*xxxxx_xxxxx)#x'
+```
 
-# Einziger optionaler Wert hier (Standard: False) - lokal auf True setzen
-DEBUG=True
+> Die Quotes sind kein Schönheitsfehler: generierte Keys enthalten häufig ein `#`. Ohne Anführungszeichen würde alles ab diesem Zeichen als Kommentar gewertet und der Key wäre abgeschnitten.
 
-# Datenbank (Werte aus dem Datenbank-Setup oben)
+#### b) Datenbank-Zugangsdaten eintragen
+
+Das sind exakt die Werte, die beim [Datenbank-Setup](#datenbank-einrichten-postgresql--postgis) vergeben wurden:
+
+| `.env`-Schlüssel | Wert aus dem SQL-Setup |
+|---|---|
+| `DB_NAME` | Name aus `CREATE DATABASE velotag;` |
+| `DB_USER` | Name aus `CREATE USER velotag_dev ...` |
+| `DB_PASSW` | Passwort aus `... WITH PASSWORD 'dein-passwort';` |
+| `DB_HOST` | `localhost` (lokale PostgreSQL-Installation) |
+| `DB_PORT` | `5432` (PostgreSQL-Standardport) |
+
+```env
 DB_NAME=velotag
 DB_USER=velotag_dev
-DB_PASSW=dein-passwort
+DB_PASSW=dein-datenbank-passwort
 DB_HOST=localhost
 DB_PORT=5432
-
-# Strava OAuth 2 (App unter https://www.strava.com/settings/api registrieren)
-STRAVA_CLIENT_ID=deine-client-id
-STRAVA_CLIENT_SECRET=dein-client-secret
-STRAVA_REDIRECT_URI=http://127.0.0.1:8000/api/strava/callback/
 ```
 
-Optionale Werte, die nur bei Bedarf gesetzt werden müssen:
+Getestet werden die Zugangsdaten automatisch beim `migrate` weiter unten – das ist der erste Befehl, der sich wirklich mit der Datenbank verbindet. Stimmt etwas nicht, meldet PostgreSQL das im Klartext, z. B.:
+
+```
+FATAL: Datenbank »velotag« existiert nicht
+FATAL: Passwort-Authentifizierung für Benutzer »velotag_dev« fehlgeschlagen
+```
+
+> `python manage.py check` prüft **nicht** die Datenbankverbindung – der Befehl meldet auch bei falschen Zugangsdaten „System check identified no issues“.
+
+#### c) Strava-Zugangsdaten eintragen
+
+Client-ID und Secret stehen nach dem Anlegen einer App unter <https://www.strava.com/settings/api> in den API-Einstellungen:
 
 ```env
-# Ziel-Deep-Link, in den das Backend nach dem Strava-Login zurückspringt
-# (Standard, wenn nicht gesetzt: velotag://strava-callback)
-STRAVA_APP_REDIRECT_URL=velotag://strava-callback
-
-# Nur nötig, wenn GDAL/GEOS NICHT in den Standardpfaden liegen
-WINDOWS_GDAL_BIN_PATH=C:\Program Files\PostgreSQL\18\bin
-MACOS_GDAL_LIB_PATH=/opt/homebrew/lib
+STRAVA_CLIENT_ID=deine-client-id
+STRAVA_CLIENT_SECRET=dein-client-secret
+STRAVA_REDIRECT_URI=http://167.233.33.166/api/strava/callback/
 ```
+
+> **`STRAVA_REDIRECT_URI` bleibt auch lokal auf dem Produktivserver stehen** – der Strava-Login funktioniert nur darüber. Die Begründung steht unter [Strava-Anbindung](#strava-anbindung-läuft-nur-über-den-produktiven-server).
+
+#### d) Optionale Werte
+
+Stehen in der `.env.example` auskommentiert und müssen nur bei Bedarf aktiviert werden: `STRAVA_APP_REDIRECT_URL` (Standard: `velotag://strava-callback`) sowie `WINDOWS_GDAL_BIN_PATH` / `MACOS_GDAL_LIB_PATH`, falls GDAL/GEOS nicht in den Standardpfaden liegen.
 
 Anschließend die Migrationen ausführen:
 
@@ -203,7 +242,23 @@ cd frontend
 npm install
 ```
 
-Wohin das Frontend seine Anfragen schickt, hängt vom Einsatzszenario ab – siehe nächster Abschnitt.
+Wohin das Frontend seine Anfragen schickt, hängt vom Einsatzszenario ab – siehe [Konfiguration](#konfiguration-wohin-zeigt-das-frontend).
+
+---
+
+## Strava-Anbindung: läuft nur über den produktiven Server
+
+Der Strava-Login lässt sich **nicht rein lokal** durchspielen. Das ist keine Fehlkonfiguration, sondern liegt am OAuth-Ablauf:
+
+Bei Strava ist pro registrierter App genau **eine** „Authorization Callback Domain" hinterlegt, und die zeigt für die velotag-App auf den Produktivserver `167.233.33.166`. Nach dem Login auf strava.com schickt Strava den Nutzer immer dorthin zurück – unabhängig davon, wo das Backend gerade läuft. Ein lokales Backend auf `127.0.0.1:8000` bekommt den Callback also nie zu sehen und kann den Vorgang nicht abschließen. Deshalb bleibt `STRAVA_REDIRECT_URI` in der `.env` auch bei lokaler Entwicklung auf dem Produktivwert stehen.
+
+Praktisch heißt das:
+
+- **Strava-Funktionen testen:** gegen den produktiven Server arbeiten – Frontend mit dem Standard-Proxy bzw. Mobile-Build ohne `VITE_API_BASE_URL` (siehe [Szenario B](#szenario-b-mobile-app-gegen-den-echten-server-normalfall))
+- **Lokal entwickeln:** funktioniert für alles andere normal. Nur „Mit Strava verbinden" und der anschließende Aktivitäten-Import bleiben lokal wirkungslos.
+- **Eigene Strava-App:** Wer den Flow trotzdem lokal braucht, legt sich unter <https://www.strava.com/settings/api> eine eigene App mit Callback-Domain `localhost` an und trägt deren `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET` sowie `STRAVA_REDIRECT_URI=http://localhost:8000/api/strava/callback/` in die eigene `.env` ein.
+
+> **Bekannte Einschränkung im Callback:** `strava_callback` speichert den Token und leitet danach auf `/karte` weiter. Diese Route existiert weder im Django- noch im Vue-Router – die Kartenseite liegt unter `/map`. Nach dem Verbinden landet man deshalb auf einer leeren Seite bzw. einem 404. Der Token ist zu diesem Zeitpunkt bereits gespeichert, die Verbindung also trotzdem hergestellt.
 
 ---
 
@@ -344,14 +399,8 @@ npx cap sync ios
 npx cap open ios            # Öffnet Xcode
 ```
 
-### Produktionsbetrieb (Backend)
 
-```bash
-cd backend
-gunicorn core.wsgi:application
-```
 
----
 
 ## Projektstruktur
 
