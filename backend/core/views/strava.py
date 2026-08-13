@@ -82,10 +82,6 @@ def strava_callback(request):
             'expires_at':    token_data['expires_at'],
         }
     )
-    return redirect('/karte') 
-
-    # Unreachable: die Funktion kehrt oben bereits mit return redirect('/karte') zurück -
-    # alter Deep-Link-Ansatz, durch den festen /karte-Redirect ersetzt.
     # HttpResponseRedirect erlaubt nur http/https/ftp als Ziel-Protokoll und würde bei
     # velotag:// eine DisallowedRedirect werfen - deshalb Location-Header manuell setzen
     redirect_response = HttpResponse(status=302)

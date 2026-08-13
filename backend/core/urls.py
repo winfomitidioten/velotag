@@ -49,13 +49,11 @@ urlpatterns = [
 
     # Groups
     path('api/groups/', GroupView.as_view(), name='my-groups'),
-    path('api/register/', RegisterView.as_view(), name='register'),  # Duplikat von oben (Zeile ~33), nie erreichbar
     path('api/groups/<int:pk>/', GroupDetailView.as_view(), name='group-detail'),
-    path('api/logout/', LogoutView.as_view()),  # Duplikat von oben (Zeile ~35), nie erreichbar
     path('api/groups/<int:pk>/invite/', GroupInviteAdmin.as_view(), name='group-invite-admin'),
     path('api/groups/<int:pk>/invite-link/', GroupInviteLinkView.as_view(), name='group-invite-link'),
     path('api/groups/join/', GroupJoinByTokenView.as_view(), name='group-join-by-token'),
-    path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),  # Duplikat von oben (Zeile ~40), nie erreichbar
+    path('api/user/invitations/', UserInvitationsView.as_view(), name='user-invitations'),
     path('api/groups/<int:pk>/leave', GroupLeaveView.as_view(), name="group-leave"),
     path('api/groups/<int:pk>/kick/', GroupKickView.as_view(), name="group-kick"),
     path('api/users/<int:pk>/profile/', PublicUserProfileView.as_view(), name='user-public-profile'),
