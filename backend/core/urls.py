@@ -47,7 +47,7 @@ urlpatterns = [
     path('api/strava/activities/', get_activities),
     path('api/strava/activities/<int:activity_id>/import/', import_activity),
 
-    # Groups
+    # Gruppen
     path('api/groups/', GroupView.as_view(), name='my-groups'),
     path('api/groups/<int:pk>/', GroupDetailView.as_view(), name='group-detail'),
     path('api/groups/<int:pk>/invite/', GroupInviteAdmin.as_view(), name='group-invite-admin'),
